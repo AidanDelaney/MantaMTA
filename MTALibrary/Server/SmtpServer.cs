@@ -71,18 +71,11 @@ namespace Colony101.MTA.Library.Server
 		/// <param name="client">Connection with the client.</param>
 		private void HandleSmtpConnection(object obj)
 		{
-			TcpClient client = (obj as TcpClient);
-
-			// Don't need to use using on client stream as TcpClient will dispose it for us.
-			StreamReader reader = new StreamReader(client.GetStream());
-			StreamWriter writer = new StreamWriter(client.GetStream());
-
-			IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint).Address;
-			IPAddress serverAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
-
+			TcpClient client = (TcpClient)obj;
+			SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);			
 
 			// Identify our MTA
-			SendSmtpResponse(writer, "220 " + GetServerHostname(client) + " SMTP " + MtaParameters.MTA_NAME + " Ready");
+			smtpStream.WriteLine("220 " + GetServerHostname(client) + " SMTP " + MtaParameters.MTA_NAME + " Ready");
 
 			// Set to true when the client has sent quit command.
 			bool quit = false;
@@ -99,7 +92,11 @@ namespace Colony101.MTA.Library.Server
 			while (client.Connected && !quit)
 			{
 				// Read the next command. If no line then this will wait for one.
-				string cmd = ReadSmtpRequest(reader);
+				string cmd = smtpStream.ReadLine();
+
+				// Client Disconnected.
+				if (cmd == null)
+					break;
 
 				#region SMTP Commands that can be run before HELO is issued by client.
 
@@ -107,7 +104,7 @@ namespace Colony101.MTA.Library.Server
 				if (cmd.Equals("QUIT", StringComparison.OrdinalIgnoreCase))
 				{
 					quit = true;
-					SendSmtpResponse(writer, "221 Goodbye");
+					smtpStream.WriteLine("221 Goodbye");
 					continue;
 				}
 
@@ -115,14 +112,14 @@ namespace Colony101.MTA.Library.Server
 				if (cmd.Equals("RSET", StringComparison.OrdinalIgnoreCase))
 				{
 					mailTransaction = null;
-					SendSmtpResponse(writer, "250 Ok");
+					smtpStream.WriteLine("250 Ok");
 					continue;
 				}
 
 				// Do nothing except return 250. Do nothing just return success (250).
 				if (cmd.Equals("NOOP", StringComparison.OrdinalIgnoreCase))
 				{
-					SendSmtpResponse(writer, "250 Ok");
+					smtpStream.WriteLine("250 Ok");
 					continue;
 				}
 
@@ -135,7 +132,7 @@ namespace Colony101.MTA.Library.Server
 					// Helo should be followed by a hostname, if not syntax error.
 					if(cmd.IndexOf(" ") < 0)
 					{
-						SendSmtpResponse(writer, "501 Syntax error");
+						smtpStream.WriteLine("501 Syntax error");
 						continue;
 					}
 
@@ -145,14 +142,14 @@ namespace Colony101.MTA.Library.Server
 					// There should not be any spaces in the hostname if it is sytax error.
 					if(heloHost.IndexOf(" ") >= 0)
 					{
-						SendSmtpResponse(writer, "501 Syntax error");
+						smtpStream.WriteLine("501 Syntax error");
 						heloHost = string.Empty;
 						continue;
 					}
 
 					// Client has now said hello so set connection variable to true and 250 back to the client.
 					hasHello = true;
-					SendSmtpResponse(writer, "250 Hello " + heloHost + "[" + clientAddress.ToString() + "]");
+					smtpStream.WriteLine("250 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 					continue;
 				}
 
@@ -161,7 +158,7 @@ namespace Colony101.MTA.Library.Server
 				// Client MUST helo before being allowed to do any of these commands.
 				if (!hasHello)
 				{
-					SendSmtpResponse(writer, "503 HELO first");
+					smtpStream.WriteLine("503 HELO first");
 					continue;
 				}
 
@@ -179,14 +176,14 @@ namespace Colony101.MTA.Library.Server
 					catch (Exception)
 					{
 						// Mail from not valid email.
-						SendSmtpResponse(writer, "501 Syntax error");
+						smtpStream.WriteLine("501 Syntax error");
 						continue;
 					}
 
 					// If we got this far mail from has an valid email address parameter so set it in the transaction
 					// and return success to the client.
 					mailTransaction.MailFrom = mailFrom;
-					SendSmtpResponse(writer, "250 Ok");
+					smtpStream.WriteLine("250 Ok");
 					continue;
 				}
 
@@ -198,7 +195,7 @@ namespace Colony101.MTA.Library.Server
 					if (mailTransaction == null ||
 						string.IsNullOrWhiteSpace(mailTransaction.MailFrom))
 					{
-						SendSmtpResponse(writer, "503 Bad sequence of commands");
+						smtpStream.WriteLine("503 Bad sequence of commands");
 						continue;
 					}
 
@@ -211,7 +208,7 @@ namespace Colony101.MTA.Library.Server
 					catch (Exception)
 					{
 						// Mail from not valid email.
-						SendSmtpResponse(writer, "501 Syntax error");
+						smtpStream.WriteLine("501 Syntax error");
 						continue;
 					}
 
@@ -221,11 +218,11 @@ namespace Colony101.MTA.Library.Server
 					{
 						// Messages isn't for delivery on this server.
 						// Check if we are allowed to relay for the client IP
-						if (!MtaParameters.IPsToAllowRelaying.Contains(clientAddress.ToString()))
+						if (!MtaParameters.IPsToAllowRelaying.Contains(smtpStream.RemoteAddress.ToString()))
 						{
 							// This server cannot deliver or relay message for the MAIL FROM + RCPT TO addresses.
 							// This should be treated as a permament failer, tell client not to retry.
-							SendSmtpResponse(writer, "554 Cannot relay");
+							smtpStream.WriteLine("554 Cannot relay");
 							continue;
 						}
 
@@ -241,7 +238,7 @@ namespace Colony101.MTA.Library.Server
 
 					// Add the recipient.
 					mailTransaction.RcptTo.Add(rcptTo.ToString());
-					SendSmtpResponse(writer, "250 Ok");
+					smtpStream.WriteLine("250 Ok");
 					continue;
 				}
 
@@ -253,21 +250,21 @@ namespace Colony101.MTA.Library.Server
 					if (mailTransaction == null ||
 						string.IsNullOrWhiteSpace(mailTransaction.MailFrom))
 					{
-						SendSmtpResponse(writer, "503 Bad sequence of commands");
+						smtpStream.WriteLine("503 Bad sequence of commands");
 						continue;
 					}
 					// Must have RCPT's before data.
 					else if (mailTransaction.RcptTo.Count < 1)
 					{
-						SendSmtpResponse(writer, "554 No valid recipients");
+						smtpStream.WriteLine("554 No valid recipients");
 						continue;
 					}
 					
 					// Tell the client we are now accepting there data.
-					SendSmtpResponse(writer, "354 Go ahead");
+					smtpStream.WriteLine("354 Go ahead");
 
 					// Wait for the first data line. Don't log data in SMTP log file.
-					string dataline = ReadSmtpRequest(reader, false);
+					string dataline = smtpStream.ReadLine(false);
 					// Loop until data client stops sending us data.
 					while(!dataline.Equals("."))
 					{
@@ -275,22 +272,22 @@ namespace Colony101.MTA.Library.Server
 						mailTransaction.Data += dataline + Environment.NewLine;
 
 						// Wait for the next data line. Don't log data in SMTP log file.
-						dataline = ReadSmtpRequest(reader, false);
+						dataline = smtpStream.ReadLine(false);
 					}
 
 					// Once data is finished we have mail for delivery or relaying.
 					// Add the Received header.
 					mailTransaction.SetHeaders(string.Format("Received: from {0}[{1}] by {2}[{3}] on {4}",
 						heloHost,
-						clientAddress.ToString(),
+						smtpStream.RemoteAddress.ToString(),
 						GetServerHostname(client),
-						serverAddress.ToString(),
+						smtpStream.LocalAddress.ToString(),
 						DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
-					mailTransaction.Save(serverAddress.ToString());
+					mailTransaction.Save(smtpStream.LocalAddress.ToString());
 					
 					// Done with transaction, clear it and inform client message success and QUEUED
 					mailTransaction = null;
-					SendSmtpResponse(writer, "250 Message queued for delivery");
+					smtpStream.WriteLine("250 Message queued for delivery");
 					continue;
 				}
 
@@ -298,7 +295,7 @@ namespace Colony101.MTA.Library.Server
 
 
 				// If got this far then we don't known the command.
-				SendSmtpResponse(writer, "500 Unknown command");
+				smtpStream.WriteLine("500 Unknown command");
 			}
 
 			// Client has issued QUIT command or connecion lost.
@@ -325,34 +322,6 @@ namespace Colony101.MTA.Library.Server
 			}
 
 			return serverHost;
-		}
-
-		/// <summary>
-		/// Send an SMTP line to the client
-		/// </summary>
-		/// <param name="client"></param>
-		/// <param name="message"></param>
-		private void SendSmtpResponse(StreamWriter writer, string message, bool log = true)
-		{
-			writer.WriteLine(message);
-			writer.Flush();
-
-			if (log)
-				SmtpTransactionLogger.Instance.Log(message);
-		}
-
-		/// <summary>
-		/// Read an SMTP line from the client.
-		/// </summary>
-		/// <param name="client"></param>
-		/// <returns></returns>
-		private string ReadSmtpRequest(StreamReader reader, bool log = true)
-		{
-			string response = reader.ReadLine();
-			if (log)
-				SmtpTransactionLogger.Instance.Log(response);
-
-			return response;
 		}
 	}
 }
