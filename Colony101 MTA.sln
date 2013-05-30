@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTA-Console", "MTA-Console\MTA-Console.csproj", "{2AB901CF-C93E-45B8-87E0-922AAC59EDA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTALibrary", "MTALibrary\MTALibrary.csproj", "{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2AB901CF-C93E-45B8-87E0-922AAC59EDA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AB901CF-C93E-45B8-87E0-922AAC59EDA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AB901CF-C93E-45B8-87E0-922AAC59EDA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AB901CF-C93E-45B8-87E0-922AAC59EDA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
