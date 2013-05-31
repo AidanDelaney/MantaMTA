@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Colony101.MTA.Library</RootNamespace>
     <AssemblyName>MTALibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -42,7 +42,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\SmtpClient.cs" />
+    <Compile Include="DAL\DataRetrieval.cs" />
     <Compile Include="DAL\MtaQueue.cs" />
+    <Compile Include="DNS\DnsApiInterop.cs" />
+    <Compile Include="DNS\DNSClasses.cs" />
+    <Compile Include="DNS\DNSManager.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
     <Compile Include="MtaParameters.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
