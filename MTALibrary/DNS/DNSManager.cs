@@ -28,7 +28,6 @@ namespace Colony101.MTA.Library.DNS
 			// This is what we'll be returning.
 			MXRecord[] mxRecords = null;
 
-
 			try
 			{
 				// Try and get cached records

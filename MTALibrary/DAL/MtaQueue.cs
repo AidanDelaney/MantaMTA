@@ -51,6 +51,7 @@ DECLARE @msgIdTbl TABLE (mta_queue_msgID uniqueidentifier)
 INSERT INTO @msgIdTbl
 SELECT TOP (@maxItems) mta_queue_msgID
 FROM c101_mta_queue
+WHERE mta_queue_isMtaLocked = 0
 ORDER BY mta_queue_queuedTimestamp ASC
 
 UPDATE c101_mta_queue 

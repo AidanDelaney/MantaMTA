@@ -13,8 +13,7 @@ namespace MTA_Console
 	{
 		static void Main(string[] args)
 		{
-			//SmtpServer smtpServer = new SmtpServer(25);
-			
+			SmtpServer smtpServer = new SmtpServer(25);
 			SmtpClient.Start();
 
 			Console.WriteLine("Press any key to quit");

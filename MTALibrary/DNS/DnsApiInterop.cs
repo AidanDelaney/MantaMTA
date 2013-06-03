@@ -12,6 +12,7 @@ namespace Colony101.MTA.Library.DNS
 	{
 		/// <summary>
 		/// The DnsQuery function type is the generic query interface to the DNS namespace, and provides application developers with a DNS query resolution interface.
+		/// http://msdn.microsoft.com/en-us/library/windows/desktop/ms682016%28v=vs.85%29.aspx
 		/// </summary>
 		/// <param name="pszName">A pointer to a string that represents the DNS name to query.</param>
 		/// <param name="wType">A value that represents the Resource Record (RR)DNS Record Type that is queried.</param>
@@ -21,7 +22,7 @@ namespace Colony101.MTA.Library.DNS
 		/// <param name="pReserved"></param>
 		/// <returns></returns>
 		[DllImport("dnsapi", EntryPoint = "DnsQuery_W", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
-		private static extern int DnsQuery_W([MarshalAs(UnmanagedType.VBByRefStr)]ref string pszName, QueryTypes wType, QueryOptions options, int aipServers, ref IntPtr ppQueryResults, int pReserved);
+		private static extern int DnsQuery_W([MarshalAs(UnmanagedType.VBByRefStr)]ref string lpstrName, QueryTypes wType, QueryOptions Options, int pExtra, ref IntPtr ppQueryResultsSet, int pReserved);
 
 		/// <summary>
 		/// 
@@ -47,7 +48,7 @@ namespace Colony101.MTA.Library.DNS
 			try
 			{
 				// Do the DNS query.
-				int retVal = dnsapi.DnsQuery_W(ref domain, QueryTypes.DNS_TYPE_MX, QueryOptions.DNS_QUERY_BYPASS_CACHE, 0, ref ptrFirstRecord, 0);
+				int retVal = dnsapi.DnsQuery_W(ref domain, QueryTypes.DNS_TYPE_MX, QueryOptions.DNS_QUERY_STANDARD, 0, ref ptrFirstRecord, 0);
 
 				// If the retVal isn't 0 then something went wrong
 				if (retVal != 0)

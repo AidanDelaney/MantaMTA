@@ -46,7 +46,6 @@ namespace Colony101.MTA.Library
 			get
 			{
 				List<string> tmp = new List<string>();
-				tmp.Add("dan");
 				tmp.Add("local");
 				tmp.Add("localhost");
 				return tmp;
@@ -62,6 +61,7 @@ namespace Colony101.MTA.Library
 			{
 				List<string> tmp = new List<string>();
 				tmp.Add("127.0.0.1");
+				tmp.Add("10.173.10.11");
 				return tmp;
 			}
 		}
