@@ -41,9 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\BO\MtaMessage.cs" />
+    <Compile Include="Client\BO\MtaQueuedMessage.cs" />
     <Compile Include="Client\SmtpClient.cs" />
     <Compile Include="DAL\DataRetrieval.cs" />
-    <Compile Include="DAL\MtaQueue.cs" />
+    <Compile Include="DAL\MtaMessageDB.cs" />
+    <Compile Include="DAL\MtaTransaction.cs" />
     <Compile Include="DNS\DnsApiInterop.cs" />
     <Compile Include="DNS\DNSClasses.cs" />
     <Compile Include="DNS\DNSManager.cs" />

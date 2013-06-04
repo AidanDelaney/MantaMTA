@@ -25,6 +25,19 @@ namespace Colony101.MTA.Library
 		}
 
 		/// <summary>
+		/// Queue folder, for messages to be sent.
+		/// </summary>
+		internal static string MTA_QUEUEFOLDER
+		{
+			get
+			{
+				string path = @"c:\temp\queue\";
+				Directory.CreateDirectory(path);
+				return path;
+			}
+		}
+
+		/// <summary>
 		/// Log foler, where SMTP Transaction logs will go.
 		/// This should be in config.
 		/// </summary>
