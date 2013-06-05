@@ -39,8 +39,24 @@ namespace Colony101.MTA.Library.Server
 					_TcpListener.Start();
 					while (_TcpListener != null)
 					{
-						// AcceptTcpClient will block until done.
-						TcpClient client = _TcpListener.AcceptTcpClient();
+						
+						TcpClient client = null;
+
+						try
+						{
+							// AcceptTcpClient will block until done.
+							client = _TcpListener.AcceptTcpClient();
+						}
+						catch (SocketException ex)
+						{
+							// Error code 10004 is AcceptTcpClient having block removed.
+							// So server is shuting down.
+							if (ex.ErrorCode == 10004)
+								return;
+
+							throw;
+						}
+
 
 						// When client connects create new thread and call handler.
 						// DanL : This should use a threadpool or server could easily get overloaded.
@@ -163,7 +179,11 @@ namespace Colony101.MTA.Library.Server
 					string mailFrom = string.Empty;
 					try
 					{
-						mailFrom = new System.Net.Mail.MailAddress(cmd.Substring(cmd.IndexOf(":") + 1)).Address;
+						string address = cmd.Substring(cmd.IndexOf(":") + 1);
+						if (address.Trim().Equals("<>"))
+							mailFrom = null;
+						else
+							mailFrom = new System.Net.Mail.MailAddress(address).Address;
 					}
 					catch (Exception)
 					{
@@ -185,7 +205,7 @@ namespace Colony101.MTA.Library.Server
 				{
 					// Check we have a Mail From address.
 					if (mailTransaction == null ||
-						string.IsNullOrWhiteSpace(mailTransaction.MailFrom))
+						!mailTransaction.HasMailFrom)
 					{
 						smtpStream.WriteLine("503 Bad sequence of commands");
 						continue;
@@ -240,7 +260,7 @@ namespace Colony101.MTA.Library.Server
 				{
 					// Must have a MAIL FROM before data.
 					if (mailTransaction == null ||
-						string.IsNullOrWhiteSpace(mailTransaction.MailFrom))
+						!mailTransaction.HasMailFrom)
 					{
 						smtpStream.WriteLine("503 Bad sequence of commands");
 						continue;

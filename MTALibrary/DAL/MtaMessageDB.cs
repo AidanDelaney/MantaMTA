@@ -35,7 +35,10 @@ ELSE
 	VALUES(@msgID, @rcptTo, @mailFrom, @dataPath, @outboundIP)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt.Address));
-				cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
+				if (message.MailFrom == null)
+					cmd.Parameters.AddWithValue("@mailFrom", DBNull.Value);
+				else
+					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
 				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
 				cmd.Parameters.AddWithValue("@outboundIP", message.OutboundIP);
 
@@ -173,7 +176,11 @@ COMMIT TRANSACTION";
 			MtaMessage msg = new MtaMessage();
 			msg.DataPath = record.GetString("mta_msg_dataPath");
 			msg.ID = record.GetGuid("mta_msg_id");
-			msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
+			if (!record.IsDBNull("mta_msg_mailFrom"))
+				msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
+			else
+				msg.MailFrom = null;
+
 			msg.OutboundIP = record.GetString("mta_msg_outboundIP");
 
 			// Get the recipients.

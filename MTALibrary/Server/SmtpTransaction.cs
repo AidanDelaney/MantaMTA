@@ -20,7 +20,24 @@ namespace Colony101.MTA.Library.Server
 		/// <summary>
 		/// The mail from.
 		/// </summary>
-		public string MailFrom { get; set; }
+		public string MailFrom
+		{
+			get
+			{
+				return _mailFrom;
+			}
+			set
+			{
+				_mailFrom = value;
+				_hasMailFrom = true;
+			}
+		}
+		public string _mailFrom { get; set; }
+		/// <summary>
+		/// FALSE until a MailFrom has been set.
+		/// </summary>
+		public bool HasMailFrom { get { return _hasMailFrom; } }
+		private bool _hasMailFrom { get; set; }
 
 		/// <summary>
 		/// List of the recipients.
@@ -36,6 +53,7 @@ namespace Colony101.MTA.Library.Server
 		{
 			RcptTo = new List<string>();
 			MessageDestination = Enums.MessageDestination.Unknown;
+			_hasMailFrom = false;
 		}
 
 		public void SetHeaders(string receivedFrom)

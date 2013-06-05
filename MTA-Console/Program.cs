@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using Colony101.MTA.Library.Client;
 using Colony101.MTA.Library.Server;
 
@@ -9,16 +10,19 @@ namespace MTA_Console
 	{
 		static void Main(string[] args)
 		{
-			int[] ports = new int[] { 25, 587 };
+			ArrayList smtpServers = new ArrayList();
+			int[] ports = new int[] {/* 25,*/ 587 };
 			for (int i = 0; i < ports.Length; i++)
-			{
-				SmtpServer smtpServer = new SmtpServer(ports[i]);
-				Console.WriteLine("Started Server on " + ports[i]);
-			}
+				smtpServers.Add(new SmtpServer(ports[i]));
 			SmtpClient.Start();
 
 			Console.WriteLine("Press any key to quit");
 			Console.ReadKey(true);
+
+			Console.WriteLine("Quiting...Please Wait.");
+			SmtpClient.Stop();
+			for (int i = 0; i < smtpServers.Count; i++)
+				(smtpServers[i] as SmtpServer).Dispose();
 		}
 	}
 }

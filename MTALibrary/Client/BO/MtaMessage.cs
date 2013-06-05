@@ -82,7 +82,10 @@ namespace Colony101.MTA.Library.Client.BO
 			MtaMessage mtaMessage = new MtaMessage();
 			mtaMessage.ID = Guid.NewGuid();
 			mtaMessage.DataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, mtaMessage.ID + ".eml");
-			mtaMessage.MailFrom = new MailAddress(mailFrom);
+			if (mailFrom != null)
+				mtaMessage.MailFrom = new MailAddress(mailFrom);
+			else
+				mtaMessage.MailFrom = null;
 
 			mtaMessage.RcptTo = new MailAddress[rcptTo.Length];
 			for (int i = 0; i < rcptTo.Length; i++)

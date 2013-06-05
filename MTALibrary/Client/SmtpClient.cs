@@ -8,8 +8,14 @@ namespace Colony101.MTA.Library.Client
 {
 	public class SmtpClient
 	{
+		/// <summary>
+		/// Client thread.
+		/// </summary>
 		private static Thread _ClientThread = null;
-
+		/// <summary>
+		/// If TRUE then request for client to stop has been made.
+		/// </summary>
+		private static bool _IsStopping = false;
 		/// <summary>
 		/// Enqueue a message for delivery.
 		/// </summary>
@@ -29,14 +35,13 @@ namespace Colony101.MTA.Library.Client
 		/// </summary>
 		public static void Start()
 		{
+			_IsStopping = false;
 			if (_ClientThread == null || _ClientThread.ThreadState != ThreadState.Running)
 			{
 				_ClientThread = new Thread(new ThreadStart(delegate()
 					{
 						MtaQueuedMessageCollection messagesToSend = DAL.MtaMessageDB.PickupForSending(10);
-						bool done = false;
-
-						while (!done)
+						while (!_IsStopping)
 						{
 							for (int i = 0; i < messagesToSend.Count; i++)
 							{
@@ -59,6 +64,14 @@ namespace Colony101.MTA.Library.Client
 			}
 		}
 
+		/// <summary>
+		/// Stop the client from sending.
+		/// </summary>
+		public static void Stop()
+		{
+			_IsStopping = true;
+		}
+
 		private static void SendMessage(MtaQueuedMessage msg)
 		{
 			MailAddress rcptTo = msg.RcptTo[0];
@@ -74,9 +87,6 @@ namespace Colony101.MTA.Library.Client
 				return;
 			}
 
-
-
-			
 			using (TcpClient tcpClient = new TcpClient(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(msg.OutboundIP), 0)))
 			{
 				for (int i = 0; i < mxs.Length; i++)
@@ -85,8 +95,9 @@ namespace Colony101.MTA.Library.Client
 					{
 						tcpClient.Connect(mxs[i].Host, 25);
 					}
-					catch(SocketException)
+					catch(SocketException ex)
 					{
+						Console.WriteLine(ex.Message);
 						// Failed to connect to MX
 						if (i == (mxs.Length - 1))
 						{
@@ -131,7 +142,7 @@ namespace Colony101.MTA.Library.Client
 							return;
 						}
 					
-						smtpStream.WriteLine("MAIL FROM: <" + mailFrom.Address + ">");
+						smtpStream.WriteLine("MAIL FROM: <" + (mailFrom == null ? string.Empty : mailFrom.Address) + ">");
 						response = smtpStream.ReadAllLines();
 						if (!response.StartsWith("250"))
 						{
