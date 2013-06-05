@@ -11,6 +11,9 @@ namespace Colony101.MTA.Library.DAL
 {
 	internal static class MtaMessageDB
 	{
+		/// <summary>
+		/// Delimiter user for RCPT addresses.
+		/// </summary>
 		private const string _RcptToDelimiter = ",";
 
 		/// <summary>
@@ -95,9 +98,9 @@ ELSE
 		}
 
 		/// <summary>
-		/// 
+		/// Gets messages that are due to be sent.
 		/// </summary>
-		/// <param name="p"></param>
+		/// <param name="maxMessages">The maximum amount of messages get</param>
 		/// <returns></returns>
 		internal static MtaQueuedMessageCollection PickupForSending(int maxMessages)
 		{
@@ -135,7 +138,7 @@ COMMIT TRANSACTION";
 		}
 
 		/// <summary>
-		/// 
+		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>
 		/// <param name="mtaQueuedMessage"></param>
 		internal static void Delete(MtaQueuedMessage mtaQueuedMessage)
@@ -153,7 +156,7 @@ COMMIT TRANSACTION";
 		}
 
 		/// <summary>
-		/// 
+		/// Creates and fills a MtaQueuedMessage from the IDataRecord.
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
@@ -167,7 +170,7 @@ COMMIT TRANSACTION";
 		}
 
 		/// <summary>
-		/// 
+		/// Creates and fills a MtaMessage from the IDataRecord.
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>

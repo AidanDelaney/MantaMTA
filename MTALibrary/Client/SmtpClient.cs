@@ -6,7 +6,10 @@ using Colony101.MTA.Library.Client.BO;
 
 namespace Colony101.MTA.Library.Client
 {
-	public class SmtpClient
+	/// <summary>
+	/// SMTP Client sends Emails to other servers from the Queue.
+	/// </summary>
+	public static class SmtpClient
 	{
 		/// <summary>
 		/// Client thread.
@@ -121,9 +124,9 @@ namespace Colony101.MTA.Library.Client
 								// Otherwise message is deferred
 								msg.HandleDeliveryDeferral(smtpRespose);
 						});
-						
 
-						// We have connected to the MX, Say HELLO
+
+						// Read the Server greeting.
 						SmtpStreamHandler smtpStream = new SmtpStreamHandler(tcpClient);
 						string response = string.Empty;
 						response = smtpStream.ReadAllLines();
@@ -133,39 +136,23 @@ namespace Colony101.MTA.Library.Client
 							return;
 						}
 
-
-						smtpStream.WriteLine("HELO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName);
-						response = smtpStream.ReadAllLines();
-						if (!response.StartsWith("250"))
+						// Action for sending commands to SMTP server.
+						Action<string, string> doCommand = delegate(string cmd, string expectedResult)
 						{
-							handleSmtpError(smtpStream, response);
-							return;
-						}
-					
-						smtpStream.WriteLine("MAIL FROM: <" + (mailFrom == null ? string.Empty : mailFrom.Address) + ">");
-						response = smtpStream.ReadAllLines();
-						if (!response.StartsWith("250"))
-						{
-							handleSmtpError(smtpStream, response);
-							return;
-						}
+							smtpStream.WriteLine(cmd);
+							response = smtpStream.ReadAllLines();
+							if (!response.StartsWith(expectedResult))
+							{
+								handleSmtpError(smtpStream, response);
+								throw new SmtpTransactionFailedException();
+							}
+						};
 
-						smtpStream.WriteLine("RCPT TO: <" + rcptTo.Address + ">");
-						response = smtpStream.ReadAllLines();
-						if (!response.StartsWith("250"))
-						{
-							handleSmtpError(smtpStream, response);
-							return;
-						}
-
-						smtpStream.WriteLine("DATA");
-						response = smtpStream.ReadAllLines();
-						if (!response.StartsWith("354"))
-						{
-							handleSmtpError(smtpStream, response);
-							return;
-						}
-
+						// We have connected to the MX, Say HELLO
+						doCommand("HELO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName, "250");
+						doCommand("MAIL FROM: <" + (mailFrom == null ? string.Empty : mailFrom.Address) + ">", "250");
+						doCommand("RCPT TO: <" + rcptTo.Address + ">", "250");
+						doCommand("DATA", "354");
 						string[] dataLines = msg.Data.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 						for (int l = 0; l < dataLines.Length; l++)
 						{
@@ -183,6 +170,11 @@ namespace Colony101.MTA.Library.Client
 						msg.HandleDeliverySuccess();
 						return;
 					}
+					catch (SmtpTransactionFailedException)
+					{
+						// Exception is trown to exit transaction, logging of deferrals/failers already handled.
+						return;
+					}
 					catch (Exception ex)
 					{
 						Console.WriteLine(ex.Message);
@@ -191,5 +183,12 @@ namespace Colony101.MTA.Library.Client
 				}
 			}
 		}
+
+		/// <summary>
+		/// Exception is used to halt SMTP transaction if the server responds with unexpected code.
+		/// </summary>
+		private class SmtpTransactionFailedException : Exception { }
 	}
+
+	
 }

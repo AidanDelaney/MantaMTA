@@ -1,6 +1,9 @@
 ﻿
 namespace Colony101.MTA.Library.Enums
 {
+	/// <summary>
+	/// Specifies where the Message being received should go.
+	/// </summary>
 	internal enum MessageDestination
 	{
 		/// <summary>
@@ -18,7 +21,7 @@ namespace Colony101.MTA.Library.Enums
 	}
 
 	/// <summary>
-	/// 
+	/// Specifies the status of a Transaction.
 	/// </summary>
 	internal enum TransactionStatus : int
 	{

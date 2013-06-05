@@ -6,6 +6,9 @@ using System.Threading;
 
 namespace Colony101.MTA.Library.Server
 {
+	/// <summary>
+	/// Provides a server for receiving SMTP commands/messages.
+	/// </summary>
 	public class SmtpServer : IDisposable
 	{
 		/// <summary>
@@ -13,7 +16,7 @@ namespace Colony101.MTA.Library.Server
 		/// </summary>
 		private TcpListener _TcpListener = null;
 		/// <summary>
-		/// Thread for the server to run on.
+		/// Thread that this instance of SmtpServer will run on.
 		/// </summary>
 		private Thread _ServerThread = null;
 
@@ -26,7 +29,7 @@ namespace Colony101.MTA.Library.Server
 		}
 
 		/// <summary>
-		/// Creates an instance if the SMTP Server.
+		/// Creates an instance of the Colony101 SMTP Server.
 		/// </summary>
 		/// <param name="port">Port number that server bind to.</param>
 		public SmtpServer(int port)
@@ -39,7 +42,7 @@ namespace Colony101.MTA.Library.Server
 					_TcpListener.Start();
 					while (_TcpListener != null)
 					{
-						
+						// Connection with client.
 						TcpClient client = null;
 
 						try
@@ -67,6 +70,9 @@ namespace Colony101.MTA.Library.Server
 			_ServerThread.Start();
 		}
 		
+		/// <summary>
+		/// SmtpServer dispose method. Ensures the TcpListener is stopped.
+		/// </summary>
 		public void Dispose()
 		{
 			_TcpListener.Stop();

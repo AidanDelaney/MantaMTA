@@ -122,7 +122,7 @@ namespace Colony101.MTA.Library.Client.BO
 	}
 
 	/// <summary>
-	/// Holds a collection of MtaQueuedMessage
+	/// Holds a collection of MtaQueuedMessage.
 	/// </summary>
 	internal class MtaQueuedMessageCollection : List<MtaQueuedMessage>
 	{

@@ -7,7 +7,7 @@ using Colony101.MTA.Library.DAL;
 namespace Colony101.MTA.Library.Client.BO
 {
 	/// <summary>
-	/// 
+	/// Holds a single message for the MTA.
 	/// </summary>
 	internal class MtaMessage
 	{
@@ -17,6 +17,7 @@ namespace Colony101.MTA.Library.Client.BO
 		public Guid ID { get; set; }
 		/// <summary>
 		/// The Mail From to used when sending this message.
+		/// May be NULL for NullSender
 		/// </summary>
 		public MailAddress MailFrom { get; set; }
 		/// <summary>
@@ -33,13 +34,15 @@ namespace Colony101.MTA.Library.Client.BO
 		public string OutboundIP { get; set; }
 		/// <summary>
 		/// The DATA for this message. Is read from <paramref name="DataPath"/>
+		/// If DataPath is empty, will throw exception.
 		/// </summary>
 		public string Data
 		{
 			get
 			{
+				// If the DATA path is empty, then Data shouldn't be called.
 				if (string.IsNullOrWhiteSpace(this.DataPath))
-					return string.Empty;
+					throw new FileNotFoundException("Data doesn't exist.");
 
 				using (StreamReader reader = new StreamReader(this.DataPath))
 				{
@@ -82,6 +85,7 @@ namespace Colony101.MTA.Library.Client.BO
 			MtaMessage mtaMessage = new MtaMessage();
 			mtaMessage.ID = Guid.NewGuid();
 			mtaMessage.DataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, mtaMessage.ID + ".eml");
+
 			if (mailFrom != null)
 				mtaMessage.MailFrom = new MailAddress(mailFrom);
 			else
@@ -116,7 +120,7 @@ namespace Colony101.MTA.Library.Client.BO
 	}
 
 	/// <summary>
-	/// 
+	/// Holds a collection of MtaMessages.
 	/// </summary>
 	internal class MtaMessageCollection : List<MtaMessage>
 	{

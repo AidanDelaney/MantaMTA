@@ -8,7 +8,7 @@ namespace Colony101.MTA.Library.DAL
 	internal class MtaTransaction
 	{
 		/// <summary>
-		/// 
+		/// Logs an MTA Transaction to the database.
 		/// </summary>
 		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse)
 		{
