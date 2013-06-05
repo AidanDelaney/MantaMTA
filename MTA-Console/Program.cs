@@ -9,7 +9,12 @@ namespace MTA_Console
 	{
 		static void Main(string[] args)
 		{
-			SmtpServer smtpServer = new SmtpServer(25);
+			int[] ports = new int[] { 25, 587 };
+			for (int i = 0; i < ports.Length; i++)
+			{
+				SmtpServer smtpServer = new SmtpServer(ports[i]);
+				Console.WriteLine("Started Server on " + ports[i]);
+			}
 			SmtpClient.Start();
 
 			Console.WriteLine("Press any key to quit");

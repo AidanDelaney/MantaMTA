@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
@@ -7,12 +6,8 @@ using System.Threading;
 
 namespace Colony101.MTA.Library.Server
 {
-	public class SmtpServer
+	public class SmtpServer : IDisposable
 	{
-		/// <summary>
-		/// When set to the true, the server has been requested to stop.
-		/// </summary>
-		private bool _StopRequested = false;
 		/// <summary>
 		/// Listens to TCP socket.
 		/// </summary>
@@ -42,7 +37,7 @@ namespace Colony101.MTA.Library.Server
 				new ThreadStart(delegate()
 				{
 					_TcpListener.Start();
-					while (!_StopRequested)
+					while (_TcpListener != null)
 					{
 						// AcceptTcpClient will block until done.
 						TcpClient client = _TcpListener.AcceptTcpClient();
@@ -55,14 +50,11 @@ namespace Colony101.MTA.Library.Server
 				}));
 			_ServerThread.Start();
 		}
-
-		/// <summary>
-		/// Stops the SMTP Server.
-		/// </summary>
-		public void Stop()
+		
+		public void Dispose()
 		{
 			_TcpListener.Stop();
-			_StopRequested = true;
+			_TcpListener = null;
 		}
 
 		/// <summary>
@@ -149,7 +141,7 @@ namespace Colony101.MTA.Library.Server
 
 					// Client has now said hello so set connection variable to true and 250 back to the client.
 					hasHello = true;
-					smtpStream.WriteLine("250 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+					smtpStream.WriteLine("220 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 					continue;
 				}
 

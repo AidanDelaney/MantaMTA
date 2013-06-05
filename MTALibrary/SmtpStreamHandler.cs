@@ -8,7 +8,7 @@ namespace Colony101.MTA.Library
 	/// <summary>
 	/// Makes it easy to work with TCP SMTP connections.
 	/// </summary>
-	class SmtpStreamHandler
+	public class SmtpStreamHandler
 	{
 		/// <summary>
 		/// The local address is the address on the server that the client is connected to.
@@ -31,6 +31,9 @@ namespace Colony101.MTA.Library
 
 		public SmtpStreamHandler(TcpClient client)
 		{
+			client.ReceiveTimeout = 30 * 1000;
+			client.SendTimeout = 30 * 1000;
+
 			this.RemoteAddress = (client.Client.RemoteEndPoint as IPEndPoint).Address;
 			this.LocalAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
 
