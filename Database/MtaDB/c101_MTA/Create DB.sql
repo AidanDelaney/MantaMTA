@@ -16,7 +16,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[c101_mta_transaction](
-	[mta_transaction_msgID] [uniqueidentifier] NOT NULL,
+	[mta_msg_id] [uniqueidentifier] NOT NULL,
 	[mta_transaction_timestamp] [datetime] NOT NULL,
 	[mta_transactionStatus_id] [int] NOT NULL,
 	[mta_transaction_serverResponse] [nvarchar](max) NOT NULL

@@ -53,7 +53,7 @@ namespace Colony101.MTA.Library.Server
 						catch (SocketException ex)
 						{
 							// Error code 10004 is AcceptTcpClient having block removed.
-							// So server is shuting down.
+							// So server is shutting down.
 							if (ex.ErrorCode == 10004)
 								return;
 
@@ -82,7 +82,7 @@ namespace Colony101.MTA.Library.Server
 		/// <summary>
 		/// Method handles a single connection from a client.
 		/// </summary>
-		/// <param name="client">Connection with the client.</param>
+		/// <param name="obj">Connection with the client.</param>
 		private void HandleSmtpConnection(object obj)
 		{
 			TcpClient client = (TcpClient)obj;

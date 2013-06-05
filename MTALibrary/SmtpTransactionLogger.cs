@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Colony101.MTA.Library
 {
-	internal class SmtpTransactionLogger
+	internal class SmtpTransactionLogger : IDisposable
 	{
 		// Use singleton so only one logging instance will be reading/writing to the file at a time
 		private static SmtpTransactionLogger _Instance = new SmtpTransactionLogger();
@@ -23,6 +23,24 @@ namespace Colony101.MTA.Library
 					_Writer.Close();
 				}
 			};
+		}
+
+		~SmtpTransactionLogger()
+		{
+			Dispose();
+		}
+
+		public void Dispose()
+		{
+			try
+			{
+				if (_Writer != null)
+					_Writer.Dispose();
+			}
+			catch (Exception)
+			{
+
+			}
 		}
 
 		/// <summary>

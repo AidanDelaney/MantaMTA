@@ -30,7 +30,6 @@ namespace Colony101.MTA.Library.Client
 		{
 			MtaMessage msg = MtaMessage.Create(outboundIP, mailFrom, rcptTo, message);
 			msg.Queue();
-			Start();
 		}
 
 		/// <summary>
@@ -38,9 +37,9 @@ namespace Colony101.MTA.Library.Client
 		/// </summary>
 		public static void Start()
 		{
-			_IsStopping = false;
 			if (_ClientThread == null || _ClientThread.ThreadState != ThreadState.Running)
 			{
+				_IsStopping = false;
 				_ClientThread = new Thread(new ThreadStart(delegate()
 					{
 						MtaQueuedMessageCollection messagesToSend = DAL.MtaMessageDB.PickupForSending(10);
@@ -100,7 +99,7 @@ namespace Colony101.MTA.Library.Client
 					}
 					catch(SocketException ex)
 					{
-						Console.WriteLine(ex.Message);
+						
 						// Failed to connect to MX
 						if (i == (mxs.Length - 1))
 						{
@@ -115,21 +114,20 @@ namespace Colony101.MTA.Library.Client
 
 					try
 					{
-						Action<SmtpStreamHandler, string> handleSmtpError = new Action<SmtpStreamHandler, string>(delegate(SmtpStreamHandler streamHandler, string smtpRespose)
+						Action<SmtpStreamHandler, string> handleSmtpError = new Action<SmtpStreamHandler, string>(delegate(SmtpStreamHandler streamHandler, string smtpResponse)
 						{
 							// If smtpRespose starts with 5 then perm error should cause fail
-							if (smtpRespose.StartsWith("5"))
-								msg.HandleDeliveryFail(smtpRespose);
+							if (smtpResponse.StartsWith("5"))
+								msg.HandleDeliveryFail(smtpResponse);
 							else
 								// Otherwise message is deferred
-								msg.HandleDeliveryDeferral(smtpRespose);
+								msg.HandleDeliveryDeferral(smtpResponse);
 						});
 
 
 						// Read the Server greeting.
 						SmtpStreamHandler smtpStream = new SmtpStreamHandler(tcpClient);
-						string response = string.Empty;
-						response = smtpStream.ReadAllLines();
+						string response = smtpStream.ReadAllLines();
 						if (!response.StartsWith("2"))
 						{
 							handleSmtpError(smtpStream, response);
@@ -172,12 +170,11 @@ namespace Colony101.MTA.Library.Client
 					}
 					catch (SmtpTransactionFailedException)
 					{
-						// Exception is trown to exit transaction, logging of deferrals/failers already handled.
+						// Exception is thrown to exit transaction, logging of deferrals/failers already handled.
 						return;
 					}
-					catch (Exception ex)
+					catch (Exception)
 					{
-						Console.WriteLine(ex.Message);
 						return;
 					}
 				}
@@ -187,6 +184,7 @@ namespace Colony101.MTA.Library.Client
 		/// <summary>
 		/// Exception is used to halt SMTP transaction if the server responds with unexpected code.
 		/// </summary>
+		[Serializable]
 		private class SmtpTransactionFailedException : Exception { }
 	}
 

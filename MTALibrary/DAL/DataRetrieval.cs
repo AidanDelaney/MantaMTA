@@ -58,8 +58,6 @@ namespace Colony101.MTA.Library.DAL
 				{
 					obj = createObjectMethod(reader);
 				}
-
-				reader.Close();
 			}
 
 
@@ -98,8 +96,6 @@ namespace Colony101.MTA.Library.DAL
 
 					toReturn = true;
 				}
-
-				reader.Close();
 			}
 
 
@@ -124,8 +120,6 @@ namespace Colony101.MTA.Library.DAL
 						collection.Add(createObjectMethod(reader));
 					}
 				}
-
-				reader.Close();
 			}
 
 			command.Connection.Close();

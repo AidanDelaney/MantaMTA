@@ -13,9 +13,9 @@ namespace Colony101.MTA.Library.DNS
 		public string Host { get; set; }
 
 		/// <summary>
-		/// The preferance of the MX
+		/// The preference of the MX
 		/// </summary>
-		public uint Preferance { get; set; }
+		public uint Preference { get; set; }
 
 		/// <summary>
 		/// The TTL seconds
@@ -39,16 +39,16 @@ namespace Colony101.MTA.Library.DNS
 			}
 		}
 
-		public MXRecord(string host, uint preferance, uint ttl)
+		public MXRecord(string host, uint preference, uint ttl)
 		{
 			this.Host = host;
-			this.Preferance = preferance;
+			this.Preference = preference;
 			this.TTL = ttl;
 			this.LookupTimestamp = DateTime.Now;
 		}
 	}
 
 
-	
+	[Serializable]
 	internal class DNSDomainNotFoundException : Exception { }
 }

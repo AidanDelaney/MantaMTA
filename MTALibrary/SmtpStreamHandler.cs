@@ -22,12 +22,12 @@ namespace Colony101.MTA.Library
 		/// <summary>
 		/// Stream reader for the underlying connection
 		/// </summary>
-		private StreamReader ConnReader { get; set; }
+		private StreamReader ClientStreamReader { get; set; }
 
 		/// <summary>
 		/// Stream writer for the underlying connection
 		/// </summary>
-		private StreamWriter ConnWriter { get; set; }
+		private StreamWriter ClientStreamWriter { get; set; }
 
 		public SmtpStreamHandler(TcpClient client)
 		{
@@ -38,8 +38,8 @@ namespace Colony101.MTA.Library
 			this.LocalAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
 
 			// Don't need to use using on client stream as TcpClient will dispose it for us.
-			this.ConnReader = new StreamReader(client.GetStream());
-			this.ConnWriter = new StreamWriter(client.GetStream());
+			this.ClientStreamReader = new StreamReader(client.GetStream());
+			this.ClientStreamWriter = new StreamWriter(client.GetStream());
 		}
 
 		/// <summary>
@@ -49,7 +49,7 @@ namespace Colony101.MTA.Library
 		/// <returns></returns>
 		public string ReadLine(bool log = true)
 		{
-			string response = ConnReader.ReadLine();
+			string response = ClientStreamReader.ReadLine();
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Inbound, " + response);
 
@@ -89,8 +89,8 @@ namespace Colony101.MTA.Library
 		/// <param name="message"></param>
 		public void WriteLine(string message, bool log = true)
 		{
-			ConnWriter.WriteLine(message);
-			ConnWriter.Flush();
+			ClientStreamWriter.WriteLine(message);
+			ClientStreamWriter.Flush();
 
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + message);
@@ -103,8 +103,8 @@ namespace Colony101.MTA.Library
 		/// <param name="log"></param>
 		public void Write(string msg, bool log = true)
 		{
-			ConnWriter.Write(msg);
-			ConnWriter.Flush();
+			ClientStreamWriter.Write(msg);
+			ClientStreamWriter.Flush();
 
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + msg);

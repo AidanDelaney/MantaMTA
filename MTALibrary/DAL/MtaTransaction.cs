@@ -16,7 +16,7 @@ namespace Colony101.MTA.Library.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-INSERT INTO c101_mta_transaction (mta_transaction_msgID, mta_transaction_timestamp, mta_transactionStatus_id, mta_transaction_serverResponse)
+INSERT INTO c101_mta_transaction (mta_msg_id, mta_transaction_timestamp, mta_transactionStatus_id, mta_transaction_serverResponse)
 VALUES(@msgID, GETDATE(), @status, @serverResponse)";
 				cmd.Parameters.AddWithValue("@msgID", msgID);
 				cmd.Parameters.AddWithValue("@status", (int)status);
