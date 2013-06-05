@@ -4,3 +4,4 @@ syntax: glob
 */obj/*
 *.psess
 *.vspx
+Database/MtaDB/scriptDb.log

@@ -40,7 +40,7 @@ GO
 CREATE TABLE [dbo].[c101_mta_msg](
 	[mta_msg_id] [uniqueidentifier] NOT NULL,
 	[mta_msg_rcptTo] [nvarchar](max) NOT NULL,
-	[mta_msg_mailFrom] [nvarchar](max) NOT NULL,
+	[mta_msg_mailFrom] [nvarchar](max) NULL,
 	[mta_msg_dataPath] [varchar](max) NULL,
 	[mta_msg_outboundIP] [varchar](50) NOT NULL
 ) ON [PRIMARY]
