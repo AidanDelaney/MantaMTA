@@ -12,8 +12,8 @@ namespace MTA_Console
 		{
 			AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs e)
 			{
-				Trace.WriteLine(e.Exception.Message);
-				Trace.Write(e.Exception.StackTrace);
+				Console.WriteLine(e.Exception.Message);
+				Console.Write(e.Exception.StackTrace);
 			};
 
 

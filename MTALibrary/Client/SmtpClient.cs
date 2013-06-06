@@ -97,9 +97,8 @@ namespace Colony101.MTA.Library.Client
 					{
 						tcpClient.Connect(mxs[i].Host, 25);
 					}
-					catch(SocketException ex)
+					catch(SocketException)
 					{
-						
 						// Failed to connect to MX
 						if (i == (mxs.Length - 1))
 						{

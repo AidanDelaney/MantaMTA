@@ -86,238 +86,244 @@ namespace Colony101.MTA.Library.Server
 		private void HandleSmtpConnection(object obj)
 		{
 			TcpClient client = (TcpClient)obj;
-			SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);			
-
-			// Identify our MTA
-			smtpStream.WriteLine("220 " + GetServerHostname(client) + " SMTP " + MtaParameters.MTA_NAME + " Ready");
-
-			// Set to true when the client has sent quit command.
-			bool quit = false;
-
-			// Set to true when the client has said hello.
-			bool hasHello = false;
-
-			// Hostname of the client as it self identified in the HELO.
-			string heloHost = string.Empty;
-
-			SmtpTransaction mailTransaction = null;
-
-			// As long as the client is connected and hasn't sent the quit command then keep accepting commands.
-			while (client.Connected && !quit)
+			try
 			{
-				// Read the next command. If no line then this will wait for one.
-				string cmd = smtpStream.ReadLine();
+				SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);
 
-				// Client Disconnected.
-				if (cmd == null)
-					break;
+				// Identify our MTA
+				smtpStream.WriteLine("220 " + GetServerHostname(client) + " SMTP " + MtaParameters.MTA_NAME + " Ready");
 
-				#region SMTP Commands that can be run before HELO is issued by client.
+				// Set to true when the client has sent quit command.
+				bool quit = false;
 
-				// Handle the QUIT command. Should return 221 and close connection.
-				if (cmd.Equals("QUIT", StringComparison.OrdinalIgnoreCase))
+				// Set to true when the client has said hello.
+				bool hasHello = false;
+
+				// Hostname of the client as it self identified in the HELO.
+				string heloHost = string.Empty;
+
+				SmtpTransaction mailTransaction = null;
+
+				// As long as the client is connected and hasn't sent the quit command then keep accepting commands.
+				while (client.Connected && !quit)
 				{
-					quit = true;
-					smtpStream.WriteLine("221 Goodbye");
-					continue;
-				}
+					// Read the next command. If no line then this will wait for one.
+					string cmd = smtpStream.ReadLine();
 
-				// Reset the mail transaction state. Forget any mail from rcpt to data.
-				if (cmd.Equals("RSET", StringComparison.OrdinalIgnoreCase))
-				{
-					mailTransaction = null;
-					smtpStream.WriteLine("250 Ok");
-					continue;
-				}
+					// Client Disconnected.
+					if (cmd == null)
+						break;
 
-				// Do nothing except return 250. Do nothing just return success (250).
-				if (cmd.Equals("NOOP", StringComparison.OrdinalIgnoreCase))
-				{
-					smtpStream.WriteLine("250 Ok");
-					continue;
-				}
+					#region SMTP Commands that can be run before HELO is issued by client.
 
-				#endregion
-
-				// EHLO should 500 Bad Command as we don't support enhanced services, clients should then HELO.
-				// We need to get the hostname provided by the client as it will be used in the recivied header.
-				if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
-				{
-					// Helo should be followed by a hostname, if not syntax error.
-					if(cmd.IndexOf(" ") < 0)
+					// Handle the QUIT command. Should return 221 and close connection.
+					if (cmd.Equals("QUIT", StringComparison.OrdinalIgnoreCase))
 					{
-						smtpStream.WriteLine("501 Syntax error");
+						quit = true;
+						smtpStream.WriteLine("221 Goodbye");
 						continue;
 					}
 
-					// Grab the hostname.
-					heloHost = cmd.Substring(cmd.IndexOf(" ")).Trim();
-
-					// There should not be any spaces in the hostname if it is sytax error.
-					if(heloHost.IndexOf(" ") >= 0)
+					// Reset the mail transaction state. Forget any mail from rcpt to data.
+					if (cmd.Equals("RSET", StringComparison.OrdinalIgnoreCase))
 					{
-						smtpStream.WriteLine("501 Syntax error");
-						heloHost = string.Empty;
+						mailTransaction = null;
+						smtpStream.WriteLine("250 Ok");
 						continue;
 					}
 
-					// Client has now said hello so set connection variable to true and 250 back to the client.
-					hasHello = true;
-					smtpStream.WriteLine("220 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
-					continue;
-				}
-
-				#region Commands that must be after a HELO
-
-				// Client MUST helo before being allowed to do any of these commands.
-				if (!hasHello)
-				{
-					smtpStream.WriteLine("503 HELO first");
-					continue;
-				}
-
-				// Mail From should have a valid email address parameter, if it doesn't system error.
-				// Mail From should also begin new transaction and forget any previous mail from, rcpt to or data commands.
-				// Do this by creating new instance of SmtpTransaction class.
-				if (cmd.StartsWith("MAIL FROM:", StringComparison.OrdinalIgnoreCase))
-				{
-					mailTransaction = new SmtpTransaction();
-					string mailFrom = string.Empty;
-					try
+					// Do nothing except return 250. Do nothing just return success (250).
+					if (cmd.Equals("NOOP", StringComparison.OrdinalIgnoreCase))
 					{
-						string address = cmd.Substring(cmd.IndexOf(":") + 1);
-						if (address.Trim().Equals("<>"))
-							mailFrom = null;
-						else
-							mailFrom = new System.Net.Mail.MailAddress(address).Address;
-					}
-					catch (Exception)
-					{
-						// Mail from not valid email.
-						smtpStream.WriteLine("501 Syntax error");
+						smtpStream.WriteLine("250 Ok");
 						continue;
 					}
 
-					// If we got this far mail from has an valid email address parameter so set it in the transaction
-					// and return success to the client.
-					mailTransaction.MailFrom = mailFrom;
-					smtpStream.WriteLine("250 Ok");
-					continue;
-				}
+					#endregion
 
-				// RCPT TO should have an email address parameter. It can only be set if MAIL FROM has already been set,
-				// multiple RCPT TO addresses can be added.
-				if (cmd.StartsWith("RCPT TO:", StringComparison.OrdinalIgnoreCase))
-				{
-					// Check we have a Mail From address.
-					if (mailTransaction == null ||
-						!mailTransaction.HasMailFrom)
+					// EHLO should 500 Bad Command as we don't support enhanced services, clients should then HELO.
+					// We need to get the hostname provided by the client as it will be used in the recivied header.
+					if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
 					{
-						smtpStream.WriteLine("503 Bad sequence of commands");
-						continue;
-					}
-
-					// Check that the RCPT TO has a valid email address parameter.
-					MailAddress rcptTo = null;
-					try
-					{
-						rcptTo = new MailAddress(cmd.Substring(cmd.IndexOf(":") + 1));
-					}
-					catch (Exception)
-					{
-						// Mail from not valid email.
-						smtpStream.WriteLine("501 Syntax error");
-						continue;
-					}
-
-
-					// Check to see if mail is to be delivered locally or relayed for delivery somewhere else.
-					if (!MtaParameters.LocalDomains.Contains(rcptTo.Host.ToLower()))
-					{
-						// Messages isn't for delivery on this server.
-						// Check if we are allowed to relay for the client IP
-						if (!MtaParameters.IPsToAllowRelaying.Contains(smtpStream.RemoteAddress.ToString()))
+						// Helo should be followed by a hostname, if not syntax error.
+						if (cmd.IndexOf(" ") < 0)
 						{
-							// This server cannot deliver or relay message for the MAIL FROM + RCPT TO addresses.
-							// This should be treated as a permament failer, tell client not to retry.
-							smtpStream.WriteLine("554 Cannot relay");
+							smtpStream.WriteLine("501 Syntax error");
 							continue;
 						}
 
-						// Message is for relaying.
-						mailTransaction.MessageDestination = Enums.MessageDestination.Relay;
-					}
-					else
-					{
+						// Grab the hostname.
+						heloHost = cmd.Substring(cmd.IndexOf(" ")).Trim();
 
-						// Message to be delivered locally.
-						mailTransaction.MessageDestination = Enums.MessageDestination.Self;
-					}
+						// There should not be any spaces in the hostname if it is sytax error.
+						if (heloHost.IndexOf(" ") >= 0)
+						{
+							smtpStream.WriteLine("501 Syntax error");
+							heloHost = string.Empty;
+							continue;
+						}
 
-					// Add the recipient.
-					mailTransaction.RcptTo.Add(rcptTo.ToString());
-					smtpStream.WriteLine("250 Ok");
-					continue;
-				}
-
-				// Handle the data command, all commands from the client until single line with only '.' should be treated as
-				// a single blob of data.
-				if (cmd.Equals("DATA", StringComparison.OrdinalIgnoreCase))
-				{
-					// Must have a MAIL FROM before data.
-					if (mailTransaction == null ||
-						!mailTransaction.HasMailFrom)
-					{
-						smtpStream.WriteLine("503 Bad sequence of commands");
+						// Client has now said hello so set connection variable to true and 250 back to the client.
+						hasHello = true;
+						smtpStream.WriteLine("220 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 						continue;
 					}
-					// Must have RCPT's before data.
-					else if (mailTransaction.RcptTo.Count < 1)
+
+					#region Commands that must be after a HELO
+
+					// Client MUST helo before being allowed to do any of these commands.
+					if (!hasHello)
 					{
-						smtpStream.WriteLine("554 No valid recipients");
+						smtpStream.WriteLine("503 HELO first");
 						continue;
 					}
-					
-					// Tell the client we are now accepting there data.
-					smtpStream.WriteLine("354 Go ahead");
 
-					// Wait for the first data line. Don't log data in SMTP log file.
-					string dataline = smtpStream.ReadLine(false);
-					// Loop until data client stops sending us data.
-					while(!dataline.Equals("."))
+					// Mail From should have a valid email address parameter, if it doesn't system error.
+					// Mail From should also begin new transaction and forget any previous mail from, rcpt to or data commands.
+					// Do this by creating new instance of SmtpTransaction class.
+					if (cmd.StartsWith("MAIL FROM:", StringComparison.OrdinalIgnoreCase))
 					{
-						// Add the line to existing data.
-						mailTransaction.Data += dataline + Environment.NewLine;
+						mailTransaction = new SmtpTransaction();
+						string mailFrom = string.Empty;
+						try
+						{
+							string address = cmd.Substring(cmd.IndexOf(":") + 1);
+							if (address.Trim().Equals("<>"))
+								mailFrom = null;
+							else
+								mailFrom = new System.Net.Mail.MailAddress(address).Address;
+						}
+						catch (Exception)
+						{
+							// Mail from not valid email.
+							smtpStream.WriteLine("501 Syntax error");
+							continue;
+						}
 
-						// Wait for the next data line. Don't log data in SMTP log file.
-						dataline = smtpStream.ReadLine(false);
+						// If we got this far mail from has an valid email address parameter so set it in the transaction
+						// and return success to the client.
+						mailTransaction.MailFrom = mailFrom;
+						smtpStream.WriteLine("250 Ok");
+						continue;
 					}
 
-					// Once data is finished we have mail for delivery or relaying.
-					// Add the Received header.
-					mailTransaction.SetHeaders(string.Format("Received: from {0}[{1}] by {2}[{3}] on {4}",
-						heloHost,
-						smtpStream.RemoteAddress.ToString(),
-						GetServerHostname(client),
-						smtpStream.LocalAddress.ToString(),
-						DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
-					mailTransaction.Save(smtpStream.LocalAddress.ToString());
-					
-					// Done with transaction, clear it and inform client message success and QUEUED
-					mailTransaction = null;
-					smtpStream.WriteLine("250 Message queued for delivery");
-					continue;
+					// RCPT TO should have an email address parameter. It can only be set if MAIL FROM has already been set,
+					// multiple RCPT TO addresses can be added.
+					if (cmd.StartsWith("RCPT TO:", StringComparison.OrdinalIgnoreCase))
+					{
+						// Check we have a Mail From address.
+						if (mailTransaction == null ||
+							!mailTransaction.HasMailFrom)
+						{
+							smtpStream.WriteLine("503 Bad sequence of commands");
+							continue;
+						}
+
+						// Check that the RCPT TO has a valid email address parameter.
+						MailAddress rcptTo = null;
+						try
+						{
+							rcptTo = new MailAddress(cmd.Substring(cmd.IndexOf(":") + 1));
+						}
+						catch (Exception)
+						{
+							// Mail from not valid email.
+							smtpStream.WriteLine("501 Syntax error");
+							continue;
+						}
+
+
+						// Check to see if mail is to be delivered locally or relayed for delivery somewhere else.
+						if (!MtaParameters.LocalDomains.Contains(rcptTo.Host.ToLower()))
+						{
+							// Messages isn't for delivery on this server.
+							// Check if we are allowed to relay for the client IP
+							if (!MtaParameters.IPsToAllowRelaying.Contains(smtpStream.RemoteAddress.ToString()))
+							{
+								// This server cannot deliver or relay message for the MAIL FROM + RCPT TO addresses.
+								// This should be treated as a permament failer, tell client not to retry.
+								smtpStream.WriteLine("554 Cannot relay");
+								continue;
+							}
+
+							// Message is for relaying.
+							mailTransaction.MessageDestination = Enums.MessageDestination.Relay;
+						}
+						else
+						{
+
+							// Message to be delivered locally.
+							mailTransaction.MessageDestination = Enums.MessageDestination.Self;
+						}
+
+						// Add the recipient.
+						mailTransaction.RcptTo.Add(rcptTo.ToString());
+						smtpStream.WriteLine("250 Ok");
+						continue;
+					}
+
+					// Handle the data command, all commands from the client until single line with only '.' should be treated as
+					// a single blob of data.
+					if (cmd.Equals("DATA", StringComparison.OrdinalIgnoreCase))
+					{
+						// Must have a MAIL FROM before data.
+						if (mailTransaction == null ||
+							!mailTransaction.HasMailFrom)
+						{
+							smtpStream.WriteLine("503 Bad sequence of commands");
+							continue;
+						}
+						// Must have RCPT's before data.
+						else if (mailTransaction.RcptTo.Count < 1)
+						{
+							smtpStream.WriteLine("554 No valid recipients");
+							continue;
+						}
+
+						// Tell the client we are now accepting there data.
+						smtpStream.WriteLine("354 Go ahead");
+
+						// Wait for the first data line. Don't log data in SMTP log file.
+						string dataline = smtpStream.ReadLine(false);
+						// Loop until data client stops sending us data.
+						while (!dataline.Equals("."))
+						{
+							// Add the line to existing data.
+							mailTransaction.Data += dataline + Environment.NewLine;
+
+							// Wait for the next data line. Don't log data in SMTP log file.
+							dataline = smtpStream.ReadLine(false);
+						}
+
+						// Once data is finished we have mail for delivery or relaying.
+						// Add the Received header.
+						mailTransaction.SetHeaders(string.Format("Received: from {0}[{1}] by {2}[{3}] on {4}",
+							heloHost,
+							smtpStream.RemoteAddress.ToString(),
+							GetServerHostname(client),
+							smtpStream.LocalAddress.ToString(),
+							DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
+						mailTransaction.Save(smtpStream.LocalAddress.ToString());
+
+						// Done with transaction, clear it and inform client message success and QUEUED
+						mailTransaction = null;
+						smtpStream.WriteLine("250 Message queued for delivery");
+						continue;
+					}
+
+					#endregion
+
+
+					// If got this far then we don't known the command.
+					smtpStream.WriteLine("500 Unknown command");
 				}
-
-				#endregion
-
-
-				// If got this far then we don't known the command.
-				smtpStream.WriteLine("500 Unknown command");
 			}
-
-			// Client has issued QUIT command or connecion lost.
-			client.Close();
+			catch (System.IO.IOException ex) { /* Connection timeout */ }
+			finally
+			{
+				// Client has issued QUIT command or connecion lost.
+				client.Close();
+			}
 		}
 		
 		/// <summary>
