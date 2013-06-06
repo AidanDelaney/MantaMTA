@@ -54,6 +54,7 @@ namespace Colony101.MTA.Library.Server
 			RcptTo = new List<string>();
 			MessageDestination = Enums.MessageDestination.Unknown;
 			_hasMailFrom = false;
+			Data = string.Empty;
 		}
 
 		public void SetHeaders(string receivedFrom)

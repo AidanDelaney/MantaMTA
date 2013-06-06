@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
@@ -318,7 +319,7 @@ namespace Colony101.MTA.Library.Server
 					smtpStream.WriteLine("500 Unknown command");
 				}
 			}
-			catch (System.IO.IOException ex) { /* Connection timeout */ }
+			catch (System.IO.IOException) { /* Connection timeout */ }
 			finally
 			{
 				// Client has issued QUIT command or connecion lost.

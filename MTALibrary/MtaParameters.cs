@@ -53,30 +53,31 @@ namespace Colony101.MTA.Library
 
 		/// <summary>
 		/// List of domains to accept messages for drop folder.
+		/// All domains are toLowered!
 		/// </summary>
-		internal static List<string> LocalDomains
+		internal static string[] LocalDomains
 		{
 			get
 			{
-				List<string> tmp = new List<string>();
-				tmp.Add("local");
-				tmp.Add("localhost");
-				return tmp;
+				if (_LocalDomains == null)
+					_LocalDomains = DAL.CfgLocalDomains.GetLocalDomainsArray();
+				return _LocalDomains;
 			}
 		}
+		private static string[] _LocalDomains { get; set; }
 
 		/// <summary>
 		/// List of IP addresses to allow relaying for.
 		/// </summary>
-		internal static List<string> IPsToAllowRelaying
+		internal static string[] IPsToAllowRelaying
 		{
 			get
 			{
-				List<string> tmp = new List<string>();
-				tmp.Add("127.0.0.1");
-				tmp.Add("10.173.10.11");
-				return tmp;
+				if (_IPsToAllowRelaying == null)
+					_IPsToAllowRelaying = DAL.cfgRelayingPermittedIP.GetRelayingPermittedIPAddresses();
+				return _IPsToAllowRelaying;
 			}
 		}
+		private static string[] _IPsToAllowRelaying { get; set; }
 	}
 }
