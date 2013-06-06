@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using Colony101.MTA.Library;
 using Colony101.MTA.Library.Client;
 using Colony101.MTA.Library.Server;
 
@@ -16,16 +16,12 @@ namespace MTA_Console
 				Console.Write(e.Exception.StackTrace);
 			};
 
-
-			// The ports that will be used to listen for incoming connections.
-			int[] ports = new int[] { /*25,*/ 587 };
-
-			// Array will hold all instances of SmtpServer, one for each port.
-			SmtpServer[] smtpServers = new SmtpServer[ports.Length];
+			// Array will hold all instances of SmtpServer, one for each port we will be listening on.
+			SmtpServer[] smtpServers = new SmtpServer[MtaParameters.ServerListeningPorts.Length];
 			
 			// Create the SmtpServers
-			for (int i = 0; i < ports.Length; i++)
-				smtpServers[i] = new SmtpServer(ports[i]);
+			for (int i = 0; i < MtaParameters.ServerListeningPorts.Length; i++)
+				smtpServers[i] = new SmtpServer(MtaParameters.ServerListeningPorts[i]);
 
 			// Start the SMTP Client
 			SmtpClient.Start();

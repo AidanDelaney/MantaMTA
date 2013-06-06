@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 
 namespace Colony101.MTA.Library.DAL
 {
-	internal static class cfgRelayingPermittedIP
+	internal static class CfgRelayingPermittedIP
 	{
 		/// <summary>
 		/// Gets an array of the IP addresses that are permitted to use this server for relaying from the database.

@@ -3,12 +3,27 @@ using System.IO;
 
 namespace Colony101.MTA.Library
 {
-	internal class MtaParameters
+	public class MtaParameters
 	{
 		/// <summary>
 		/// Name of the MTA. Used in welcome banner to identify product.
 		/// </summary>
 		internal const string MTA_NAME = "Colony101-MTA";
+
+		/// <summary>
+		/// Gets the ports that the SMTP server should listen for client connections on.
+		/// This will almost always be 25 & 587.
+		/// </summary>
+		public static int[] ServerListeningPorts
+		{
+			get 
+			{
+				if (_ServerListeningPorts == null)
+					_ServerListeningPorts = DAL.CfgPara.GetServerListenPorts();
+				return _ServerListeningPorts;
+			}
+		}
+		private static int[] _ServerListeningPorts { get; set; }
 
 		/// <summary>
 		/// Drop folder, for incoming messages.
@@ -18,11 +33,16 @@ namespace Colony101.MTA.Library
 		{
 			get
 			{
-				string path = @"c:\temp\drop\";
-				Directory.CreateDirectory(path);
-				return path;
+				if(string.IsNullOrEmpty(_MtaDropFolder))
+				{
+					_MtaDropFolder = DAL.CfgPara.GetDropFolder();
+					Directory.CreateDirectory(_MtaDropFolder);
+				}
+
+				return _MtaDropFolder;
 			}
 		}
+		private static string _MtaDropFolder { get; set; }
 
 		/// <summary>
 		/// Queue folder, for messages to be sent.
@@ -31,11 +51,16 @@ namespace Colony101.MTA.Library
 		{
 			get
 			{
-				string path = @"c:\temp\queue\";
-				Directory.CreateDirectory(path);
-				return path;
+				if (string.IsNullOrEmpty(_MtaQueueFolder))
+				{
+					_MtaQueueFolder = DAL.CfgPara.GetQueueFolder();
+					Directory.CreateDirectory(_MtaQueueFolder);
+				}
+
+				return _MtaQueueFolder;
 			}
 		}
+		private static string _MtaQueueFolder { get; set; }
 
 		/// <summary>
 		/// Log foler, where SMTP Transaction logs will go.
@@ -45,11 +70,16 @@ namespace Colony101.MTA.Library
 		{
 			get
 			{
-				string path = @"c:\temp\logs\";
-				Directory.CreateDirectory(path);
-				return path;
+				if (string.IsNullOrEmpty(_MtaDropFolder))
+				{
+					_MtaLogFolder = DAL.CfgPara.GetLogFolder();
+					Directory.CreateDirectory(_MtaLogFolder);
+				}
+
+				return _MtaLogFolder;
 			}
 		}
+		private static string _MtaLogFolder { get; set; }
 
 		/// <summary>
 		/// List of domains to accept messages for drop folder.
@@ -74,7 +104,7 @@ namespace Colony101.MTA.Library
 			get
 			{
 				if (_IPsToAllowRelaying == null)
-					_IPsToAllowRelaying = DAL.cfgRelayingPermittedIP.GetRelayingPermittedIPAddresses();
+					_IPsToAllowRelaying = DAL.CfgRelayingPermittedIP.GetRelayingPermittedIPAddresses();
 				return _IPsToAllowRelaying;
 			}
 		}
