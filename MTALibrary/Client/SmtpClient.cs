@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
 using System.Threading;
@@ -78,14 +79,27 @@ namespace Colony101.MTA.Library.Client
 		{
 			MailAddress rcptTo = msg.RcptTo[0];
 			MailAddress mailFrom = msg.MailFrom;
-			
-			//DNS.MXRecord[] mxs = DNS.DNSManager.GetMXRecords(rcptTo.Host);
-			DNS.MXRecord[] mxs = new DNS.MXRecord[] { new DNS.MXRecord("RA", 1, uint.MaxValue) };
+
+			DNS.MXRecord[] mxs = null;
+			try
+			{
+				mxs = DNS.DNSManager.GetMXRecords(rcptTo.Host);
+			}
+			catch (DNS.DNSDomainNotFoundException)
+			{
+				try
+				{
+					// If there are no MX records use the hostname.
+					if(Dns.GetHostAddresses(rcptTo.Host).Length >0)
+						mxs = new DNS.MXRecord[] { new DNS.MXRecord(rcptTo.Host, 10, uint.MaxValue) };
+				}
+				catch(Exception){}
+			}
 			
 			// If mxs is null then there are no MX records.
 			if (mxs == null)
 			{
-				msg.HandleDeliveryFail("No MX in DNS.");
+				msg.HandleDeliveryFail("Domain doesn't exist.");
 				return;
 			}
 
