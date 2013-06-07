@@ -109,5 +109,35 @@ namespace Colony101.MTA.Library
 			}
 		}
 		private static string[] _IPsToAllowRelaying { get; set; }
+
+		/// <summary>
+		/// The time in minutes between send retries.
+		/// </summary>
+		internal static int MTA_RETRY_INTERVAL 
+		{
+			get
+			{
+				if(_MTA_RETRY_INTERVAL == -1)
+					_MTA_RETRY_INTERVAL = DAL.CfgPara.GetRetryIntervalMinutes();
+
+				return _MTA_RETRY_INTERVAL;
+			}
+		}
+		private static int _MTA_RETRY_INTERVAL = -1;
+
+		/// <summary>
+		/// The maximum time in minutes that a message can be in the queue.
+		/// </summary>
+		internal static int MTA_MAX_TIME_IN_QUEUE
+		{
+			get
+			{
+				if (_MTA_MAX_TIME_IN_QUEUE == -1)
+					_MTA_MAX_TIME_IN_QUEUE = DAL.CfgPara.GetMaxTimeInQueueMinutes();
+
+				return _MTA_MAX_TIME_IN_QUEUE;
+			}
+		}
+		private static int _MTA_MAX_TIME_IN_QUEUE = -1;
 	}
 }

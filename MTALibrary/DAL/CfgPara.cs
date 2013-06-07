@@ -49,6 +49,24 @@ namespace Colony101.MTA.Library.DAL
 		}
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public static int GetRetryIntervalMinutes()
+		{
+			return (int)GetColumnValue("cfg_para_retryIntervalMinutes");
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public static int GetMaxTimeInQueueMinutes()
+		{
+			return (int)GetColumnValue("cfg_para_maxTimeInQueueMinutes");
+		}
+
+		/// <summary>
 		/// ExecuteScalar getting value of colName in c101_cfg_para
 		/// </summary>
 		/// <param name="colName"></param>

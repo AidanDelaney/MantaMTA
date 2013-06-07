@@ -108,14 +108,8 @@ namespace Colony101.MTA.Library.Client.BO
 			// Log deferral
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg);
 
-			// Check the message hasn't timed out. If it has fail it.
-			if ((DateTime.Now - this.QueuedTimestamp) > new TimeSpan(0, 5, 0))
-			{
-				this.HandleDeliveryFail("Timed out in queue.");
-				return;
-			}
-
-			this.AttemptSendAfter = DateTime.Now.AddMinutes(1);
+			// Set next retry time and release the lock.
+			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
 			this._IsPickUpLocked = false;
 			MtaMessageDB.Save(this);
 		}

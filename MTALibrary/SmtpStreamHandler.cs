@@ -50,6 +50,10 @@ namespace Colony101.MTA.Library
 		public string ReadLine(bool log = true)
 		{
 			string response = ClientStreamReader.ReadLine();
+
+			if (response == null)
+				throw new IOException("Remote Endpoint Disconnected.");
+
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Inbound, " + response);
 
