@@ -105,11 +105,24 @@ namespace Colony101.MTA.Library.Client
 
 			using (TcpClient tcpClient = new TcpClient(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(msg.OutboundIP), 0)))
 			{
+				string connectedMX = string.Empty;
 				for (int i = 0; i < mxs.Length; i++)
 				{
 					try
 					{
+						// To prevent us bombarding a server that is blocking us we will check the service not avalible manager
+						// to see if we can send to this MX, Max 1 message/minute, if we can't we won't.
+						// At the moment we stop to all MXs for a domain if one of them responds with service unavalible.
+						// This could be improved to allow others to continue, we should however if blocked on all MX's with 
+						// lowest preference  not move on to the others.
+						if (ServiceNotAvailableManager.IsServiceUnavalible(msg.OutboundIP, mxs[i].Host))
+						{
+							msg.HandleDeliveryDeferral("Service unavalible");
+							return;
+						}
+
 						tcpClient.Connect(mxs[i].Host, 25);
+						connectedMX = mxs[i].Host;
 					}
 					catch(SocketException)
 					{
@@ -133,8 +146,15 @@ namespace Colony101.MTA.Library.Client
 							if (smtpResponse.StartsWith("5"))
 								msg.HandleDeliveryFail(smtpResponse);
 							else
+							{
 								// Otherwise message is deferred
 								msg.HandleDeliveryDeferral(smtpResponse);
+
+								// If the MX is actively denying use service access, SMTP code 421 then we should inform
+								// the ServiceNotAvailableManager manager so it limits our attepts to this MX to 1/minute.
+								if (smtpResponse.StartsWith("421"))
+									ServiceNotAvailableManager.Add(msg.OutboundIP, connectedMX, DateTime.Now);
+							}
 						});
 
 

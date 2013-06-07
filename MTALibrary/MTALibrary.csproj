@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
+    <Compile Include="Client\ServiceNotAvailableManager.cs" />
     <Compile Include="Client\SmtpClient.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
     <Compile Include="DAL\CfgPara.cs" />
