@@ -121,14 +121,14 @@ namespace Colony101.MTA.Library.Client
 				{
 					try
 					{
-						// To prevent us bombarding a server that is blocking us we will check the service not avalible manager
+						// To prevent us bombarding a server that is blocking us we will check the service not available manager
 						// to see if we can send to this MX, Max 1 message/minute, if we can't we won't.
-						// At the moment we stop to all MXs for a domain if one of them responds with service unavalible.
+						// At the moment we stop to all MXs for a domain if one of them responds with service unavailable.
 						// This could be improved to allow others to continue, we should however if blocked on all MX's with 
 						// lowest preference  not move on to the others.
-						if (ServiceNotAvailableManager.IsServiceUnavalible(msg.OutboundIP, mxs[i].Host))
+						if (ServiceNotAvailableManager.IsServiceUnavailable(msg.OutboundIP, mxs[i].Host))
 						{
-							msg.HandleDeliveryDeferral("Service unavalible");
+							msg.HandleDeliveryDeferral("Service unavailable");
 							return;
 						}
 

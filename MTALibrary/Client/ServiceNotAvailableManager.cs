@@ -4,28 +4,28 @@ using System.Collections.Concurrent;
 namespace Colony101.MTA.Library.Client
 {
 	/// <summary>
-	/// 421 Service not avalible likley means that an IP is being blocked.
+	/// 421 Service not available likley means that an IP is being blocked.
 	/// This manager helps us by keeping tack of these and we can use it to 
 	/// only send a maximum of 1 message/minute from IPs that seem to be blocked.
 	/// </summary>
 	internal static class ServiceNotAvailableManager
 	{	
 		/// <summary>
-		/// Dictionary<IPAddress, Dictionary<Hostname, LastUnavalible>
+		/// Dictionary<IPAddress, Dictionary<Hostname, LastUnavailable>
 		/// </summary>
-		public static ConcurrentDictionary<string, ConcurrentDictionary<string, DateTime>> _ServiceUnavalibleLog = new ConcurrentDictionary<string, ConcurrentDictionary<string, DateTime>>();
+		public static ConcurrentDictionary<string, ConcurrentDictionary<string, DateTime>> _ServiceUnavailableLog = new ConcurrentDictionary<string, ConcurrentDictionary<string, DateTime>>();
 
 		/// <summary>
-		/// Add a service unavalible event.
+		/// Add a service unavailable event.
 		/// </summary>
 		/// <param name="ip"></param>
 		/// <param name="mxHostname"></param>
-		/// <param name="lastAvalible"></param>
+		/// <param name="lastAvailable"></param>
 		public static void Add(string ip, string mxHostname, DateTime lastFail)
 		{
 			mxHostname = mxHostname.ToLower();
-			_ServiceUnavalibleLog.TryAdd(ip, new ConcurrentDictionary<string, DateTime>());
-			ConcurrentDictionary<string, DateTime> ipServices = _ServiceUnavalibleLog[ip];
+			_ServiceUnavailableLog.TryAdd(ip, new ConcurrentDictionary<string, DateTime>());
+			ConcurrentDictionary<string, DateTime> ipServices = _ServiceUnavailableLog[ip];
 			ipServices.AddOrUpdate(mxHostname, lastFail, new Func<string,DateTime,DateTime>(delegate(string key, DateTime existingValue)
 				{
 					// We should only use the "new" timestamp if it's a later date that the existing value.
@@ -37,16 +37,16 @@ namespace Colony101.MTA.Library.Client
 		}
 
 		/// <summary>
-		/// Chek to see if the MX hostname has denied the specified IP access within the last 1 minute.
+		/// Check to see if the MX hostname has denied the specified IP access within the last 1 minute.
 		/// </summary>
 		/// <param name="ip">IP to check</param>
 		/// <param name="mxHostname">Hostname of the MX to check</param>
-		/// <returns>TRUE if service is unavalible</returns>
-		public static bool IsServiceUnavalible(string ip, string mxHostname)
+		/// <returns>TRUE if service is unavailable</returns>
+		public static bool IsServiceUnavailable(string ip, string mxHostname)
 		{
 			mxHostname = mxHostname.ToLower();
 			ConcurrentDictionary<string, DateTime> ipServices = null;
-			if (_ServiceUnavalibleLog.TryGetValue(ip, out ipServices))
+			if (_ServiceUnavailableLog.TryGetValue(ip, out ipServices))
 			{
 				DateTime lastFail = DateTime.MinValue;
 

@@ -46,7 +46,11 @@ namespace Colony101.MTA.Library
 		/// </summary>
 		private SmtpTransportMIME _CurrentTransportMIME { get; set; }
 
-		public SmtpStreamHandler(TcpClient client)
+		/// <summary>
+		/// Create an SmtpStreamHandler from the TCP client.
+		/// </summary>
+		/// <param name="client"></param>
+		public SmtpStreamHandler(TcpClient client) : this(client.GetStream())
 		{
 			client.ReceiveTimeout = 30 * 1000;
 			client.SendTimeout = 30 * 1000;
@@ -54,13 +58,20 @@ namespace Colony101.MTA.Library
 
 			this.RemoteAddress = (client.Client.RemoteEndPoint as IPEndPoint).Address;
 			this.LocalAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
+		}
 
+		/// <summary>
+		/// Constructor is used for NUnit tests and SmtpStreamHandler(TcpClient).
+		/// </summary>
+		/// <param name="stream"></param>
+		public SmtpStreamHandler(Stream stream)
+		{
 			this._CurrentTransportMIME = SmtpTransportMIME._7BitASCII;
 
-			this.ClientStreamReaderUTF8 = new StreamReader(client.GetStream(), new UTF8Encoding(false));
-			this.ClientStreamWriterUTF8 = new StreamWriter(client.GetStream(), new UTF8Encoding(false));
-			this.ClientStreamReaderASCII = new StreamReader(client.GetStream(), Encoding.ASCII);
-			this.ClientStreamWriterASCII = new StreamWriter(client.GetStream(), Encoding.ASCII);
+			this.ClientStreamReaderUTF8 = new StreamReader(stream, new UTF8Encoding(false));
+			this.ClientStreamWriterUTF8 = new StreamWriter(stream, new UTF8Encoding(false));
+			this.ClientStreamReaderASCII = new StreamReader(stream, Encoding.ASCII);
+			this.ClientStreamWriterASCII = new StreamWriter(stream, Encoding.ASCII);
 		}
 
 		/// <summary>

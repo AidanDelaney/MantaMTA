@@ -49,7 +49,7 @@ namespace MTALibraryTests
 					});
 
 					smtp.ReadLine();
-					sendLine("HELO localhost", "220");
+					sendLine("HELO localhost", "250");
 					sendLine("MAIL FROM: <local@localhost>", "250");
 					sendLine("RCPT TO: <local@localhost>", "250");
 					sendLine("DATA", "354");
@@ -83,7 +83,7 @@ namespace MTALibraryTests
 					});
 
 					smtp.ReadLine();
-					sendLine("HELO localhost", "220");
+					sendLine("HELO localhost", "250");
 					sendLine("MAIL FROM: <local@localhost>", "250");
 					sendLine("RCPT TO: <daniel.longworth@colony101.co.uk>", "250");
 					sendLine("DATA", "354");
