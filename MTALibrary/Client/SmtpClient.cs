@@ -4,6 +4,7 @@ using System.Net.Mail;
 using System.Net.Sockets;
 using System.Threading;
 using Colony101.MTA.Library.Client.BO;
+using Colony101.MTA.Library.Enums;
 
 namespace Colony101.MTA.Library.Client
 {
@@ -189,17 +190,35 @@ namespace Colony101.MTA.Library.Client
 							}
 						};
 
-						// We have connected to the MX, Say HELLO
-						doCommand("HELO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName, "250");
-						doCommand("MAIL FROM: <" + (mailFrom == null ? string.Empty : mailFrom.Address) + ">", "250");
+						SmtpTransportMIME transportMime = SmtpTransportMIME._8BitUTF;
+
+						// We have connected to the MX, Say EHLO.
+						smtpStream.WriteLine("EHLO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName);
+						response = smtpStream.ReadAllLines();
+						if (!response.StartsWith("2"))
+							// If server didn't respond with a success code on hello then we should retry with HELO
+							doCommand("HELO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName, "250");
+						else
+						{
+							// Server responded to EHLO
+							// Check to see if it supports 8BITMIME
+							if (response.IndexOf("8BITMIME", StringComparison.OrdinalIgnoreCase) > -1)
+								transportMime = SmtpTransportMIME._8BitUTF;
+						}
+
+						doCommand("MAIL FROM: <" + 
+											(mailFrom == null ? string.Empty : mailFrom.Address) + ">" +
+											(transportMime == SmtpTransportMIME._8BitUTF ? " BODY=8BITMIME" : string.Empty), "250");
 						doCommand("RCPT TO: <" + rcptTo.Address + ">", "250");
 						doCommand("DATA", "354");
-						string[] dataLines = msg.Data.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-						for (int l = 0; l < dataLines.Length; l++)
-						{
-							smtpStream.WriteLine(dataLines[l], false);
-						}
+
+						// Send the message data using the correct transport MIME
+						smtpStream.SetSmtpTransportMIME(transportMime);
+						smtpStream.Write(msg.Data, false);
 						smtpStream.Write(Environment.NewLine + "." + Environment.NewLine, false);
+
+						// Data done so return to 7-Bit mode.
+						smtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 						response = smtpStream.ReadAllLines();
 						if (!response.StartsWith("250"))
 						{

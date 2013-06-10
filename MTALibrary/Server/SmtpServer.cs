@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
 using System.Threading;
+using Colony101.MTA.Library.Enums;
 
 namespace Colony101.MTA.Library.Server
 {
@@ -92,7 +93,7 @@ namespace Colony101.MTA.Library.Server
 				SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);
 
 				// Identify our MTA
-				smtpStream.WriteLine("220 " + GetServerHostname(client) + " SMTP " + MtaParameters.MTA_NAME + " Ready");
+				smtpStream.WriteLine("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
 
 				// Set to true when the client has sent quit command.
 				bool quit = false;
@@ -144,7 +145,7 @@ namespace Colony101.MTA.Library.Server
 
 					// EHLO should 500 Bad Command as we don't support enhanced services, clients should then HELO.
 					// We need to get the hostname provided by the client as it will be used in the recivied header.
-					if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
+					if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase) || cmd.StartsWith("EHLO", StringComparison.OrdinalIgnoreCase))
 					{
 						// Helo should be followed by a hostname, if not syntax error.
 						if (cmd.IndexOf(" ") < 0)
@@ -166,7 +167,17 @@ namespace Colony101.MTA.Library.Server
 
 						// Client has now said hello so set connection variable to true and 250 back to the client.
 						hasHello = true;
-						smtpStream.WriteLine("220 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+						if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
+						{
+							smtpStream.WriteLine("250 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+						}
+						else
+						{
+							// EHLO was sent, let the client know what extensions we support.
+							smtpStream.WriteLine("250-Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+							smtpStream.WriteLine("250-8BITMIME");
+							smtpStream.WriteLine("250 Ok");
+						}
 						continue;
 					}
 
@@ -185,6 +196,33 @@ namespace Colony101.MTA.Library.Server
 					if (cmd.StartsWith("MAIL FROM:", StringComparison.OrdinalIgnoreCase))
 					{
 						mailTransaction = new SmtpTransaction();
+
+						// Check for the 8BITMIME body parameter
+						int bodyParaIndex = cmd.IndexOf(" BODY=", StringComparison.OrdinalIgnoreCase);
+						string mimeMode = "";
+
+						if (bodyParaIndex > -1)
+						{
+							// The body parameter was passed in.
+							// Extract the mime mode, if it isn't reconised inform the client of invalid syntax.
+							mimeMode = cmd.Substring(bodyParaIndex + " BODY=".Length).Trim();
+							cmd = cmd.Substring(0, bodyParaIndex);
+
+							if (mimeMode.Equals("7BIT", StringComparison.OrdinalIgnoreCase))
+							{
+								mailTransaction.TransportMIME = SmtpTransportMIME._7BitASCII;
+							}
+							else if (mimeMode.Equals("8BITMIME", StringComparison.OrdinalIgnoreCase))
+							{
+								mailTransaction.TransportMIME = SmtpTransportMIME._8BitUTF;
+							}
+							else
+							{
+								smtpStream.WriteLine("501 Syntax error");
+								continue;
+							}
+						}
+						
 						string mailFrom = string.Empty;
 						try
 						{
@@ -284,6 +322,9 @@ namespace Colony101.MTA.Library.Server
 						// Tell the client we are now accepting there data.
 						smtpStream.WriteLine("354 Go ahead");
 
+						// Set the transport MIME to default or as specified by mail from body
+						smtpStream.SetSmtpTransportMIME(mailTransaction.TransportMIME);
+
 						// Wait for the first data line. Don't log data in SMTP log file.
 						string dataline = smtpStream.ReadLine(false);
 						// Loop until data client stops sending us data.
@@ -295,6 +336,9 @@ namespace Colony101.MTA.Library.Server
 							// Wait for the next data line. Don't log data in SMTP log file.
 							dataline = smtpStream.ReadLine(false);
 						}
+
+						// Data has been received, return to 7 bit ascii.
+						smtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 
 						// Once data is finished we have mail for delivery or relaying.
 						// Add the Received header.

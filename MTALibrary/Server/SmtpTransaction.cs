@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Colony101.MTA.Library.Client;
+using Colony101.MTA.Library.Enums;
 
 namespace Colony101.MTA.Library.Server
 {
@@ -49,12 +50,20 @@ namespace Colony101.MTA.Library.Server
 		/// </summary>
 		public string Data { get; set; }
 
+		/// <summary>
+		/// Holds the Transport MIME used to receive the Data message.
+		/// </summary>
+		public SmtpTransportMIME TransportMIME { get; set; }
+
 		public SmtpTransaction()
 		{
 			RcptTo = new List<string>();
 			MessageDestination = Enums.MessageDestination.Unknown;
 			_hasMailFrom = false;
 			Data = string.Empty;
+			// Default value is set to 8bit as nearly all messages are sent using it.
+			// Also some clients will send 8bit messages without passing a BODY parameter.
+			TransportMIME = SmtpTransportMIME._8BitUTF;
 		}
 
 		public void SetHeaders(string receivedFrom)
