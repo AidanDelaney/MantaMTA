@@ -49,7 +49,7 @@ namespace Colony101.MTA.Library.DAL
 		}
 
 		/// <summary>
-		/// 
+		/// Gets the mimimum time between message send retries.
 		/// </summary>
 		/// <returns></returns>
 		public static int GetRetryIntervalMinutes()
@@ -58,12 +58,21 @@ namespace Colony101.MTA.Library.DAL
 		}
 
 		/// <summary>
-		/// 
+		/// Gets the maximum time a message should be queued for from the DB.
 		/// </summary>
 		/// <returns></returns>
 		public static int GetMaxTimeInQueueMinutes()
 		{
 			return (int)GetColumnValue("cfg_para_maxTimeInQueueMinutes");
+		}
+
+		/// <summary>
+		/// Gets the ID of the default send group from the DB.
+		/// </summary>
+		/// <returns></returns>
+		public static int GetDefaultIPGroupID()
+		{
+			return (int)GetColumnValue("cfg_para_defaultIpGroupId");
 		}
 
 		/// <summary>

@@ -49,6 +49,8 @@
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />
     <Compile Include="DAL\DataRetrieval.cs" />
+    <Compile Include="DAL\MtaIpAddressDB.cs" />
+    <Compile Include="DAL\MtaIpGroupDB.cs" />
     <Compile Include="DAL\MtaMessageDB.cs" />
     <Compile Include="DAL\MtaTransaction.cs" />
     <Compile Include="DNS\DnsApiInterop.cs" />
@@ -56,6 +58,9 @@
     <Compile Include="DNS\DNSManager.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
+    <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
+    <Compile Include="MtaIpAddress\IpAddressManager.cs" />
+    <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
     <Compile Include="MtaParameters.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server\SmtpServer.cs" />

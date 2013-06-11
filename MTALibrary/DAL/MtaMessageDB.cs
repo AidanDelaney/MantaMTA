@@ -29,21 +29,17 @@ namespace Colony101.MTA.Library.DAL
 IF EXISTS(SELECT 1 FROM c101_mta_msg WHERE mta_msg_id = @msgID)
 	UPDATE c101_mta_msg
 	SET mta_msg_rcptTo = @rcptTo,
-	mta_msg_mailFrom = @mailFrom,
-	mta_msg_dataPath = @dataPath,
-	mta_msg_outboundIP = @outboundIP
+	mta_msg_mailFrom = @mailFrom
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO c101_mta_msg(mta_msg_id, mta_msg_rcptTo, mta_msg_mailFrom, mta_msg_dataPath, mta_msg_outboundIP)
-	VALUES(@msgID, @rcptTo, @mailFrom, @dataPath, @outboundIP)";
+	INSERT INTO c101_mta_msg(mta_msg_id, mta_msg_rcptTo, mta_msg_mailFrom)
+	VALUES(@msgID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt.Address));
 				if (message.MailFrom == null)
 					cmd.Parameters.AddWithValue("@mailFrom", DBNull.Value);
 				else
 					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
-				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
-				cmd.Parameters.AddWithValue("@outboundIP", message.OutboundIP);
 
 				conn.Open();
 				cmd.ExecuteNonQuery();
@@ -63,15 +59,19 @@ ELSE
 IF EXISTS(SELECT 1 FROM c101_mta_queue WHERE mta_msg_id = @msgID)
 	UPDATE c101_mta_queue
 	SET mta_queue_attemptSendAfter = @sendAfter,
-	mta_queue_isPickupLocked = @isPickupLocked
+	mta_queue_isPickupLocked = @isPickupLocked,
+	mta_queue_dataPath = @dataPath,
+	ip_group_id = @groupID
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO c101_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked)
-	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked)";
+	INSERT INTO c101_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id)
+	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestamp);
 				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfter);
 				cmd.Parameters.AddWithValue("@isPickupLocked", message.IsPickUpLocked);
+				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
+				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
 
 				conn.Open();
 				cmd.ExecuteNonQuery();
@@ -126,7 +126,7 @@ UPDATE c101_mta_queue
 SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
-SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp
+SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
 FROM c101_mta_queue as [que]
 JOIN c101_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
@@ -165,7 +165,9 @@ COMMIT TRANSACTION";
 			MtaQueuedMessage qMsg = new MtaQueuedMessage(CreateAndFillMessage(record),
 														 record.GetDateTime("mta_queue_queuedTimestamp"),
 														 record.GetDateTime("mta_queue_attemptSendAfter"),
-														 record.GetBoolean("mta_queue_isPickupLocked"));
+														 record.GetBoolean("mta_queue_isPickupLocked"),
+														 record.GetString("mta_queue_dataPath"),
+														 record.GetInt32("ip_group_id"));
 			return qMsg;
 		}
 
@@ -177,14 +179,12 @@ COMMIT TRANSACTION";
 		private static MtaMessage CreateAndFillMessage(IDataRecord record)
 		{
 			MtaMessage msg = new MtaMessage();
-			msg.DataPath = record.GetString("mta_msg_dataPath");
+			
 			msg.ID = record.GetGuid("mta_msg_id");
 			if (!record.IsDBNull("mta_msg_mailFrom"))
 				msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
 			else
 				msg.MailFrom = null;
-
-			msg.OutboundIP = record.GetString("mta_msg_outboundIP");
 
 			// Get the recipients.
 			msg.RcptTo = (from r

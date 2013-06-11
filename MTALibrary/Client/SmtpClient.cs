@@ -28,10 +28,10 @@ namespace Colony101.MTA.Library.Client
 		/// <param name="mailFrom"></param>
 		/// <param name="rcptTo"></param>
 		/// <param name="message"></param>
-		public static void Enqueue(string outboundIP, string mailFrom, string[] rcptTo, string message)
+		public static void Enqueue(int ipGroupID, string mailFrom, string[] rcptTo, string message)
 		{
-			MtaMessage msg = MtaMessage.Create(outboundIP, mailFrom, rcptTo, message);
-			msg.Queue();
+			MtaMessage msg = MtaMessage.Create(mailFrom, rcptTo);
+			msg.Queue(message, ipGroupID);
 		}
 
 		/// <summary>
@@ -114,7 +114,11 @@ namespace Colony101.MTA.Library.Client
 				return;
 			}
 
-			using (TcpClient tcpClient = new TcpClient(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(msg.OutboundIP), 0)))
+			// The IP group that will be used to send the queued message.
+			MtaIpAddress.MtaIPGroup messageIpGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(msg.IPGroupID);
+			IPAddress sndIpAddress = messageIpGroup.GetRandomIP().IPAddress;
+
+			using (TcpClient tcpClient = new TcpClient(new System.Net.IPEndPoint(sndIpAddress, 0)))
 			{
 				string connectedMX = string.Empty;
 				for (int i = 0; i < mxs.Length; i++)
@@ -126,7 +130,7 @@ namespace Colony101.MTA.Library.Client
 						// At the moment we stop to all MXs for a domain if one of them responds with service unavailable.
 						// This could be improved to allow others to continue, we should however if blocked on all MX's with 
 						// lowest preference  not move on to the others.
-						if (ServiceNotAvailableManager.IsServiceUnavailable(msg.OutboundIP, mxs[i].Host))
+						if (ServiceNotAvailableManager.IsServiceUnavailable(sndIpAddress.ToString(), mxs[i].Host))
 						{
 							msg.HandleDeliveryDeferral("Service unavailable");
 							return;
@@ -164,7 +168,7 @@ namespace Colony101.MTA.Library.Client
 								// If the MX is actively denying use service access, SMTP code 421 then we should inform
 								// the ServiceNotAvailableManager manager so it limits our attepts to this MX to 1/minute.
 								if (smtpResponse.StartsWith("421"))
-									ServiceNotAvailableManager.Add(msg.OutboundIP, connectedMX, DateTime.Now);
+									ServiceNotAvailableManager.Add(sndIpAddress.ToString(), connectedMX, DateTime.Now);
 							}
 						});
 
@@ -193,11 +197,11 @@ namespace Colony101.MTA.Library.Client
 						SmtpTransportMIME transportMime = SmtpTransportMIME._8BitUTF;
 
 						// We have connected to the MX, Say EHLO.
-						smtpStream.WriteLine("EHLO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName);
+						smtpStream.WriteLine("EHLO " + System.Net.Dns.GetHostEntry(sndIpAddress).HostName);
 						response = smtpStream.ReadAllLines();
 						if (!response.StartsWith("2"))
 							// If server didn't respond with a success code on hello then we should retry with HELO
-							doCommand("HELO " + System.Net.Dns.GetHostEntry(msg.OutboundIP).HostName, "250");
+							doCommand("HELO " + System.Net.Dns.GetHostEntry(sndIpAddress).HostName, "250");
 						else
 						{
 							// Server responded to EHLO

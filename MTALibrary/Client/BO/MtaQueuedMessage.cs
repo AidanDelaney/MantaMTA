@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Colony101.MTA.Library.DAL;
 using Colony101.MTA.Library.Enums;
 
@@ -32,6 +33,32 @@ namespace Colony101.MTA.Library.Client.BO
 				return _IsPickUpLocked;
 			}
 		}
+		/// <summary>
+		/// The path to the file containing this messages DATA.
+		/// </summary>
+		public string DataPath { get; set; }
+		/// <summary>
+		/// The DATA for this message. Is read from <paramref name="DataPath"/>
+		/// If DataPath is empty, will throw exception.
+		/// </summary>
+		public string Data
+		{
+			get
+			{
+				// If the DATA path is empty, then Data shouldn't be called.
+				if (string.IsNullOrWhiteSpace(this.DataPath))
+					throw new FileNotFoundException("Data doesn't exist.");
+
+				using (StreamReader reader = new StreamReader(this.DataPath))
+				{
+					return reader.ReadToEnd();
+				}
+			}
+		}
+		/// <summary>
+		/// The IP address used to send this Message.
+		/// </summary>
+		public int IPGroupID { get; set; }
 
 		/// <summary>
 		/// Create a Queued message object using the passed in parameters.
@@ -40,17 +67,17 @@ namespace Colony101.MTA.Library.Client.BO
 		/// <param name="queuedTimestamp">The original queued timestamp.</param>
 		/// <param name="attemptSendAfter">The date time before which to no attempts should be made to send.</param>
 		/// <param name="isPickUpLocked">TRUE only if the field in database is also true.</param>
-		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestamp, DateTime attemptSendAfter, bool isPickUpLocked)
+		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestamp, DateTime attemptSendAfter, bool isPickUpLocked, string dataPath, int ipGroupID)
 		{
-			base.DataPath = message.DataPath;
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
-			base.OutboundIP = message.OutboundIP;
 			base.RcptTo = message.RcptTo;
 
 			QueuedTimestamp = queuedTimestamp;
 			AttemptSendAfter = attemptSendAfter;
 			_IsPickUpLocked = isPickUpLocked;
+			DataPath = dataPath;
+			IPGroupID = ipGroupID;
 		}
 
 		/// <summary>
@@ -80,7 +107,7 @@ namespace Colony101.MTA.Library.Client.BO
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg);
 			MtaMessageDB.Delete(this);
-			base.DeleteMessageData();
+			DeleteMessageData();
 		}
 
 		/// <summary>
@@ -92,7 +119,7 @@ namespace Colony101.MTA.Library.Client.BO
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Success, string.Empty);
 			MtaMessageDB.Delete(this);
-			base.DeleteMessageData();
+			DeleteMessageData();
 		}
 
 		/// <summary>
@@ -112,6 +139,18 @@ namespace Colony101.MTA.Library.Client.BO
 			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
 			this._IsPickUpLocked = false;
 			MtaMessageDB.Save(this);
+		}
+
+		/// <summary>
+		/// Delete the DATA for this message.
+		/// </summary>
+		public void DeleteMessageData()
+		{
+			if (File.Exists(this.DataPath))
+			{
+				File.Delete(this.DataPath);
+				this.DataPath = string.Empty;
+			}
 		}
 	}
 

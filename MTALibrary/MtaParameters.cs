@@ -8,7 +8,7 @@ namespace Colony101.MTA.Library
 		/// <summary>
 		/// Name of the MTA. Used in welcome banner to identify product.
 		/// </summary>
-		internal const string MTA_NAME = "Colony101-MTA";
+		public const string MTA_NAME = "MantaMTA";
 
 		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.

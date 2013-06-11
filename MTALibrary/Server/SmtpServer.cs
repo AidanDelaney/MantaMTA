@@ -34,10 +34,17 @@ namespace Colony101.MTA.Library.Server
 		/// Creates an instance of the Colony101 SMTP Server.
 		/// </summary>
 		/// <param name="port">Port number that server bind to.</param>
-		public SmtpServer(int port)
+		public SmtpServer(int port) : this(IPAddress.Any, port)	{ }
+
+		/// <summary>
+		/// Creates an instance of the Colony101 SMTP Server.
+		/// </summary>
+		/// <param name="iPAddress">IP Address to use for binding.</param>
+		/// <param name="port">Port number that server bind to.</param>
+		public SmtpServer(IPAddress ipAddress, int port)
 		{
 			// Create the TCP Listener using specified port on all IPs
-			_TcpListener = new TcpListener(IPAddress.Any, port);
+			_TcpListener = new TcpListener(ipAddress, port);
 			_ServerThread = new Thread(
 				new ThreadStart(delegate()
 				{
@@ -348,7 +355,9 @@ namespace Colony101.MTA.Library.Server
 							GetServerHostname(client),
 							smtpStream.LocalAddress.ToString(),
 							DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
-						mailTransaction.Save(smtpStream.LocalAddress.ToString());
+
+						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
+						mailTransaction.Save(MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID);
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;

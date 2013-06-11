@@ -85,7 +85,7 @@ namespace Colony101.MTA.Library.Server
 		/// OR
 		/// Add message to queue for delivery (relay).
 		/// </summary>
-		public void Save(string destIP)
+		public void Save(int ipGroupID)
 		{
 			if (MessageDestination == Enums.MessageDestination.Self)
 			{
@@ -102,7 +102,7 @@ namespace Colony101.MTA.Library.Server
 			else if (MessageDestination == Enums.MessageDestination.Relay)
 			{
 				// Need to put this message in the database for relaying to pickup
-				SmtpClient.Enqueue(destIP, MailFrom, RcptTo.ToArray(), Data);
+				SmtpClient.Enqueue(ipGroupID, MailFrom, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");

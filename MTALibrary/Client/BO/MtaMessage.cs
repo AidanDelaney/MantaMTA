@@ -24,52 +24,13 @@ namespace Colony101.MTA.Library.Client.BO
 		/// Array of Rcpt To's for this message.
 		/// </summary>
 		public MailAddress[] RcptTo { get; set; }
-		/// <summary>
-		/// The path to the file containing this messages DATA.
-		/// </summary>
-		public string DataPath { get; set; }
-		/// <summary>
-		/// The IP address used to send this Message.
-		/// </summary>
-		public string OutboundIP { get; set; }
-		/// <summary>
-		/// The DATA for this message. Is read from <paramref name="DataPath"/>
-		/// If DataPath is empty, will throw exception.
-		/// </summary>
-		public string Data
-		{
-			get
-			{
-				// If the DATA path is empty, then Data shouldn't be called.
-				if (string.IsNullOrWhiteSpace(this.DataPath))
-					throw new FileNotFoundException("Data doesn't exist.");
-
-				using (StreamReader reader = new StreamReader(this.DataPath))
-				{
-					return reader.ReadToEnd();
-				}
-			}
-		}
-
+		
 		/// <summary>
 		/// Save this MTA message to the Database.
 		/// </summary>
 		public void Save()
 		{
 			MtaMessageDB.Save(this);
-		}
-
-		/// <summary>
-		/// Delete the DATA for this message.
-		/// </summary>
-		public void DeleteMessageData()
-		{
-			if (File.Exists(this.DataPath))
-			{
-				File.Delete(this.DataPath);
-				this.DataPath = string.Empty;
-				this.Save();
-			}
 		}
 
 		/// <summary>
@@ -80,12 +41,11 @@ namespace Colony101.MTA.Library.Client.BO
 		/// <param name="rcptTo">Rcpt To's used in SMTP.</param>
 		/// <param name="data">Data used in SMTP.</param>
 		/// <returns></returns>
-		public static MtaMessage Create(string outboundIP, string mailFrom, string[] rcptTo, string data)
+		public static MtaMessage Create(string mailFrom, string[] rcptTo)
 		{
 			MtaMessage mtaMessage = new MtaMessage();
 			mtaMessage.ID = Guid.NewGuid();
-			mtaMessage.DataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, mtaMessage.ID + ".eml");
-
+			
 			if (mailFrom != null)
 				mtaMessage.MailFrom = new MailAddress(mailFrom);
 			else
@@ -94,13 +54,6 @@ namespace Colony101.MTA.Library.Client.BO
 			mtaMessage.RcptTo = new MailAddress[rcptTo.Length];
 			for (int i = 0; i < rcptTo.Length; i++)
 				mtaMessage.RcptTo[i] = new MailAddress(rcptTo[i]);
-
-			mtaMessage.OutboundIP = outboundIP;
-
-			using (StreamWriter writer = new StreamWriter(mtaMessage.DataPath))
-			{
-				writer.Write(data);
-			}
 
 			mtaMessage.Save();
 
@@ -111,9 +64,16 @@ namespace Colony101.MTA.Library.Client.BO
 		/// Queue the message.
 		/// </summary>
 		/// <returns></returns>
-		public virtual MtaQueuedMessage Queue()
+		public virtual MtaQueuedMessage Queue(string data, int ipGroupID)
 		{
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.Now, DateTime.Now, false);
+			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml"); 
+			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.Now, DateTime.Now, false, dataPath, ipGroupID);
+
+			using (StreamWriter writer = new StreamWriter(dataPath))
+			{
+				writer.Write(data);
+			}
+			
 			MtaMessageDB.Save(qMsg);
 			return qMsg;
 		}
