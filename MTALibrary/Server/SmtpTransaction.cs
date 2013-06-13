@@ -131,6 +131,15 @@ namespace Colony101.MTA.Library.Server
 						mtaGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(ipGroupID);
 				}
 
+
+				// Look for a send id, if one doesn't exist create it.
+				MessageHeader sendIdHeader = headers.SingleOrDefault(h => h.Name.Equals(MessageHeaderNames.SendID, StringComparison.OrdinalIgnoreCase));
+				int internalSendId = -1;
+				if (sendIdHeader != null)
+					internalSendId = SendID.SendIDManager.GetInternalSendId(sendIdHeader.Value);
+				else
+					internalSendId = SendID.SendIDManager.GetDefaultInternalSendId();
+
 				// Remove any control headers.
 				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
 				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
@@ -141,7 +150,7 @@ namespace Colony101.MTA.Library.Server
 					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
 
 				// Need to put this message in the database for relaying to pickup
-				SmtpClient.Enqueue(ipGroupID, MailFrom, RcptTo.ToArray(), Data);
+				SmtpClient.Enqueue(ipGroupID, internalSendId, MailFrom, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");

@@ -28,9 +28,9 @@ namespace Colony101.MTA.Library.Client
 		/// <param name="mailFrom"></param>
 		/// <param name="rcptTo"></param>
 		/// <param name="message"></param>
-		public static void Enqueue(int ipGroupID, string mailFrom, string[] rcptTo, string message)
+		public static void Enqueue(int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
-			MtaMessage msg = MtaMessage.Create(mailFrom, rcptTo);
+			MtaMessage msg = MtaMessage.Create(internalSendID, mailFrom, rcptTo);
 			msg.Queue(message, ipGroupID);
 		}
 

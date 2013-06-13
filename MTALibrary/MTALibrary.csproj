@@ -53,6 +53,7 @@
     <Compile Include="DAL\MtaIpGroupDB.cs" />
     <Compile Include="DAL\MtaMessageDB.cs" />
     <Compile Include="DAL\MtaTransaction.cs" />
+    <Compile Include="DAL\SendIdDB.cs" />
     <Compile Include="DNS\DnsApiInterop.cs" />
     <Compile Include="DNS\DNSClasses.cs" />
     <Compile Include="DNS\DNSManager.cs" />
@@ -63,6 +64,8 @@
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
     <Compile Include="MtaParameters.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SendID\SendIDClasses.cs" />
+    <Compile Include="SendID\SendIDManager.cs" />
     <Compile Include="Server\SmtpServer.cs" />
     <Compile Include="Server\SmtpTransaction.cs" />
     <Compile Include="SmtpStreamHandler.cs" />

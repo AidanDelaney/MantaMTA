@@ -16,6 +16,11 @@ namespace Colony101.MTA.Library.Client.BO
 		/// </summary>
 		public Guid ID { get; set; }
 		/// <summary>
+		/// Internal ID that identifies the Send that this 
+		/// message is part of.
+		/// </summary>
+		public int InternalSendID { get; set; }
+		/// <summary>
 		/// The Mail From to used when sending this message.
 		/// May be NULL for NullSender
 		/// </summary>
@@ -24,7 +29,7 @@ namespace Colony101.MTA.Library.Client.BO
 		/// Array of Rcpt To's for this message.
 		/// </summary>
 		public MailAddress[] RcptTo { get; set; }
-		
+
 		/// <summary>
 		/// Save this MTA message to the Database.
 		/// </summary>
@@ -34,17 +39,17 @@ namespace Colony101.MTA.Library.Client.BO
 		}
 
 		/// <summary>
-		/// Creates and MTA message from the passed in parameters. Also creates the messages data file and saves to database.
+		/// Creates and MTA message from the passed in parameters.
 		/// </summary>
-		/// <param name="outboundIP">IP Address message is/was sent from.</param>
+		/// <param name="internalSendID">The internal ID of the Send this message is part of.</param>
 		/// <param name="mailFrom">Mail From used in SMTP.</param>
 		/// <param name="rcptTo">Rcpt To's used in SMTP.</param>
-		/// <param name="data">Data used in SMTP.</param>
 		/// <returns></returns>
-		public static MtaMessage Create(string mailFrom, string[] rcptTo)
+		public static MtaMessage Create(int internalSendID, string mailFrom, string[] rcptTo)
 		{
 			MtaMessage mtaMessage = new MtaMessage();
 			mtaMessage.ID = Guid.NewGuid();
+			mtaMessage.InternalSendID = internalSendID;
 			
 			if (mailFrom != null)
 				mtaMessage.MailFrom = new MailAddress(mailFrom);

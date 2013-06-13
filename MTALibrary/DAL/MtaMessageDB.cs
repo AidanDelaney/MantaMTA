@@ -28,13 +28,15 @@ namespace Colony101.MTA.Library.DAL
 				cmd.CommandText = @"
 IF EXISTS(SELECT 1 FROM c101_mta_msg WHERE mta_msg_id = @msgID)
 	UPDATE c101_mta_msg
-	SET mta_msg_rcptTo = @rcptTo,
+	SET mta_send_internalId = @internalSendID,
+	mta_msg_rcptTo = @rcptTo,
 	mta_msg_mailFrom = @mailFrom
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO c101_mta_msg(mta_msg_id, mta_msg_rcptTo, mta_msg_mailFrom)
-	VALUES(@msgID, @rcptTo, @mailFrom)";
+	INSERT INTO c101_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
+	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
+				cmd.Parameters.AddWithValue("@internalSendID", message.InternalSendID);
 				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt.Address));
 				if (message.MailFrom == null)
 					cmd.Parameters.AddWithValue("@mailFrom", DBNull.Value);
@@ -181,6 +183,7 @@ COMMIT TRANSACTION";
 			MtaMessage msg = new MtaMessage();
 			
 			msg.ID = record.GetGuid("mta_msg_id");
+			msg.InternalSendID = record.GetInt32("mta_send_internalId");
 			if (!record.IsDBNull("mta_msg_mailFrom"))
 				msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
 			else

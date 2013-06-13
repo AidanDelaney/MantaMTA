@@ -243,8 +243,8 @@ namespace Colony101.MTA.Library.Server
 		/// <param name="value">Headers value.</param>
 		public MessageHeader(string name, string value)
 		{
-			Name = name;
-			Value = value;
+			Name = name.Trim();
+			Value = value.Trim();
 		}
 	}
 
@@ -272,5 +272,10 @@ namespace Colony101.MTA.Library.Server
 		/// Used to pass in the Send Group.
 		/// </summary>
 		public const string SendGroupID = HeaderNamePrefix + "SendGroupID";
+
+		/// <summary>
+		/// The SendID is used by external systems to identify the send.
+		/// </summary>
+		public const string SendID = HeaderNamePrefix + "SendID";
 	}
 }
