@@ -93,14 +93,23 @@ namespace Colony101.MTA.Library.Server
 				// Add the MAIL FROM & RCPT TO headers.
 				MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
 				headers.Insert(0, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
-				headers.Insert(0, new MessageHeader("X-Sender", MailFrom));
+				if (HasMailFrom && string.IsNullOrWhiteSpace(MailFrom))
+					headers.Insert(0, new MessageHeader("X-Sender", "<>"));
+				else
+					headers.Insert(0, new MessageHeader("X-Sender", MailFrom));
 				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
 				
 				// Need to drop a copy of the message for each recipient.
 				for (int i = 0; i < RcptTo.Count; i++)
 				{
 					// Put the messages in a subfolder for each recipient.
-					string mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, RcptTo[i]);
+					// Unless the rcpt to is a return path message in which case put them all in a return-path folder
+					string mailDirPath = string.Empty;
+					if(RcptTo[i].StartsWith("return-", StringComparison.OrdinalIgnoreCase))
+						mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, "return-path");
+					else
+						mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, RcptTo[i]);
+						
 
 					// Ensure the directory exists by always calling create.
 					Directory.CreateDirectory(mailDirPath);
@@ -140,6 +149,22 @@ namespace Colony101.MTA.Library.Server
 				else
 					internalSendId = SendID.SendIDManager.GetDefaultInternalSendId();
 
+				string returnPath = string.Empty;
+				if(RcptTo.Count == 1)
+				{
+					// Generate a unique return path for this message.
+					returnPath = string.Format("return-{0}-{1}@{2}", 
+						System.Web.HttpUtility.UrlEncode(RcptTo[0]), 
+						internalSendId, 
+						new System.Net.Mail.MailAddress(MailFrom).Host);
+					headers.Insert(0, new MessageHeader("Return-Path", returnPath));
+				}
+				else
+				{
+					// multiple rcpt's so can't have unique return paths, use generic mail from.
+					returnPath = MailFrom;
+				}
+
 				// Remove any control headers.
 				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
 				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
@@ -150,7 +175,7 @@ namespace Colony101.MTA.Library.Server
 					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
 
 				// Need to put this message in the database for relaying to pickup
-				SmtpClient.Enqueue(ipGroupID, internalSendId, MailFrom, RcptTo.ToArray(), Data);
+				SmtpClient.Enqueue(ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");
