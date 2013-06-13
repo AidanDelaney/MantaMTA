@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Colony101.MTA.Library.Client;
 using Colony101.MTA.Library.Enums;
 
@@ -66,18 +67,16 @@ namespace Colony101.MTA.Library.Server
 			TransportMIME = SmtpTransportMIME._8BitUTF;
 		}
 
-		public void SetHeaders(string receivedFrom)
+		/// <summary>
+		/// Adds a header to the message data.
+		/// </summary>
+		/// <param name="name">The header name.</param>
+		/// <param name="value">Value for the header.</param>
+		public void AddHeader(string name, string value)
 		{
-			// If the Data doesn't have a header section make sure to add it with appropriate headers
-			if (Data.IndexOf("\r\n\r\n") < 0)
-			{
-				//Data = "From: <" + MailFrom + ">" + Environment.NewLine +
-				//	   "To: " + GetRcptAddresses() + Environment.NewLine + Environment.NewLine + Data;
-				Data = Environment.NewLine + Data;
-			}
-
-			// Add the receivedFrom header
-			Data = receivedFrom + Environment.NewLine + Data;
+			MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+			headers.Insert(0, new MessageHeader(name, value));
+			Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
 		}
 
 		/// <summary>
@@ -85,14 +84,28 @@ namespace Colony101.MTA.Library.Server
 		/// OR
 		/// Add message to queue for delivery (relay).
 		/// </summary>
-		public void Save(int ipGroupID)
+		public void Save()
 		{
 			if (MessageDestination == Enums.MessageDestination.Self)
 			{
+				// The message is for local delivery
+
+				// Add the MAIL FROM & RCPT TO headers.
+				MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+				headers.Insert(0, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
+				headers.Insert(0, new MessageHeader("X-Sender", MailFrom));
+				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
+				
+				// Need to drop a copy of the message for each recipient.
 				for (int i = 0; i < RcptTo.Count; i++)
 				{
+					// Put the messages in a subfolder for each recipient.
 					string mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, RcptTo[i]);
+
+					// Ensure the directory exists by always calling create.
 					Directory.CreateDirectory(mailDirPath);
+
+					// Write the Email File.
 					using (StreamWriter sw = new StreamWriter(Path.Combine(mailDirPath, Guid.NewGuid().ToString()) + ".eml"))
 					{
 						sw.Write(Data);
@@ -101,6 +114,28 @@ namespace Colony101.MTA.Library.Server
 			}
 			else if (MessageDestination == Enums.MessageDestination.Relay)
 			{
+				// The email is for relaying.
+
+				// Look for any MTA control headers.
+				MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+
+				// Will not be null if the SendGroupID header was present.
+				MessageHeader ipGroupHeader = headers.SingleOrDefault(m => m.Name.Equals(MessageHeaderNames.SendGroupID, StringComparison.OrdinalIgnoreCase));
+
+				// Parameter will hold the MtaIPGroup that will be used to relay this message.
+				MtaIpAddress.MtaIPGroup mtaGroup = null;
+				int ipGroupID = 0;
+				if (ipGroupHeader != null)
+				{
+					if(int.TryParse(ipGroupHeader.Value, out ipGroupID))
+						mtaGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(ipGroupID);
+				}
+
+				// If the MTA group doesn't exist or it's not got any IPs, use the default.
+				if (mtaGroup == null || 
+					mtaGroup.IpAddresses.Count == 0)
+					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
+
 				// Need to put this message in the database for relaying to pickup
 				SmtpClient.Enqueue(ipGroupID, MailFrom, RcptTo.ToArray(), Data);
 			}

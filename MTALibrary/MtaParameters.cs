@@ -11,6 +11,11 @@ namespace Colony101.MTA.Library
 		public const string MTA_NAME = "MantaMTA";
 
 		/// <summary>
+		/// New line as should be used in emails.
+		/// </summary>
+		internal const string NewLine = "\r\n";
+
+		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.
 		/// This will almost always be 25 & 587.
 		/// </summary>

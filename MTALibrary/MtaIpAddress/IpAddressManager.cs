@@ -102,6 +102,11 @@ namespace Colony101.MTA.Library.MtaIpAddress
 		public static MtaIPGroup GetMtaIPGroup(int id)
 		{
 			MtaIPGroup group = DAL.MtaIpGroupDB.GetMtaIpGroup(id);
+
+			// Group doesn't exist, so don't try and get it's IPs
+			if (group == null)
+				return null;
+
 			group.IpAddresses = DAL.MtaIpAddressDB.GetMtaIpGroupIps(id);
 			return group;
 		}

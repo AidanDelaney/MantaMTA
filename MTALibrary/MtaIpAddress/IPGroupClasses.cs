@@ -33,6 +33,10 @@ namespace Colony101.MTA.Library.MtaIpAddress
 		/// <returns></returns>
 		public MtaIpAddress GetRandomIP()
 		{
+			// There are no IP addresses in the group so return null.
+			if (IpAddresses == null)
+				return null;
+
 			return IpAddresses.OrderBy(x => new Random().Next()).FirstOrDefault();
 		}
 	}

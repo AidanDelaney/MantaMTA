@@ -349,7 +349,7 @@ namespace Colony101.MTA.Library.Server
 
 						// Once data is finished we have mail for delivery or relaying.
 						// Add the Received header.
-						mailTransaction.SetHeaders(string.Format("Received: from {0}[{1}] by {2}[{3}] on {4}",
+						mailTransaction.AddHeader("Received", string.Format("from {0}[{1}] by {2}[{3}] on {4}",
 							heloHost,
 							smtpStream.RemoteAddress.ToString(),
 							GetServerHostname(client),
@@ -357,7 +357,7 @@ namespace Colony101.MTA.Library.Server
 							DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
 
 						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
-						mailTransaction.Save(MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID);
+						mailTransaction.Save();
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;
