@@ -263,9 +263,14 @@ namespace Colony101.MTA.Library.Server
 	internal class MessageHeaderNames
 	{
 		/// <summary>
+		/// First bit of control/command headers.
+		/// </summary>
+		public const string HeaderNamePrefix = "X-BatHawk-";
+		
+		/// <summary>
 		/// The send group ID header name.
 		/// Used to pass in the Send Group.
 		/// </summary>
-		public const string SendGroupID = "X-Manta-SendGroupID";
+		public const string SendGroupID = HeaderNamePrefix + "SendGroupID";
 	}
 }

@@ -131,6 +131,10 @@ namespace Colony101.MTA.Library.Server
 						mtaGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(ipGroupID);
 				}
 
+				// Remove any control headers.
+				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
+				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
+
 				// If the MTA group doesn't exist or it's not got any IPs, use the default.
 				if (mtaGroup == null || 
 					mtaGroup.IpAddresses.Count == 0)

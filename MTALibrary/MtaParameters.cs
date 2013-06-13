@@ -8,7 +8,7 @@ namespace Colony101.MTA.Library
 		/// <summary>
 		/// Name of the MTA. Used in welcome banner to identify product.
 		/// </summary>
-		public const string MTA_NAME = "MantaMTA";
+		public const string MTA_NAME = "BatHawk";
 
 		/// <summary>
 		/// New line as should be used in emails.
