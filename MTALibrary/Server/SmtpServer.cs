@@ -48,7 +48,18 @@ namespace Colony101.MTA.Library.Server
 			_ServerThread = new Thread(
 				new ThreadStart(delegate()
 				{
-					_TcpListener.Start();
+					try
+					{
+						_TcpListener.Start();
+					}
+					catch (SocketException ex)
+					{
+						Logging.Error("Failed to create server on " + ipAddress.ToString() + ":" + port, ex);
+						return;
+					}
+
+					Logging.Info("Server started on " + ipAddress.ToString() + ":" + port);
+
 					while (_TcpListener != null)
 					{
 						// Connection with client.

@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net">
+      <HintPath>..\log4net\1.2.11\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -60,6 +63,7 @@
     <Compile Include="DNS\DNSManager.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
+    <Compile Include="Logging.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
@@ -72,6 +76,12 @@
     <Compile Include="SmtpStreamHandler.cs" />
     <Compile Include="SmtpTransactionLogger.cs" />
     <Compile Include="Server\MessageHeaderManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Log4net.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

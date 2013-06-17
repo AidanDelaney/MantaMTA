@@ -38,10 +38,7 @@ namespace Colony101.MTA.Library.MtaIpAddress
 		{
 			if (_ipAddresses != null &&
 				_lastGotIpAddresses.AddMinutes(5) > DateTime.Now)
-			{
-				Console.Write("IP addresses already loaded");
 				return;
-			}
 
 			_outboundIpAddresses = null;
 			_inboundIpAddresses = null;
