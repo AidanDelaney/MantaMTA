@@ -175,7 +175,7 @@ namespace Colony101.MTA.Library.Server
 					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
 
 				// Need to put this message in the database for relaying to pickup
-				SmtpClient.Enqueue(ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+				MessageSender.Enqueue(ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");

@@ -33,7 +33,7 @@ namespace MTA_Console
 			}
 
 			// Start the SMTP Client
-			SmtpClient.Start();
+			MessageSender.Start();
 			
 			bool quit = false;
 			while (!quit)
@@ -44,7 +44,7 @@ namespace MTA_Console
 			}
 
 			// Need to wait while servers & client shutdown.
-			SmtpClient.Stop();
+			MessageSender.Stop();
 			for (int i = 0; i < smtpServers.Count; i++)
 				(smtpServers[i] as SmtpServer).Dispose();
 

@@ -48,7 +48,7 @@
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
     <Compile Include="Client\ServiceNotAvailableManager.cs" />
-    <Compile Include="Client\SmtpClient.cs" />
+    <Compile Include="Client\MessageSender.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />
@@ -76,6 +76,8 @@
     <Compile Include="SmtpStreamHandler.cs" />
     <Compile Include="SmtpTransactionLogger.cs" />
     <Compile Include="Server\MessageHeaderManager.cs" />
+    <Compile Include="Smtp\SmtpClient.cs" />
+    <Compile Include="Smtp\SmtpConnectionPool.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Log4net.config">
