@@ -146,12 +146,14 @@ namespace Colony101.MTA.Library.Client
 						throw new SmtpTransactionFailedException();
 					});
 					
-					smtpClient.ExecHelo(handleSmtpError);
+					smtpClient.ExecHeloOrRset(handleSmtpError);
 					smtpClient.ExecMailFrom(mailFrom, handleSmtpError);
 					smtpClient.ExecRcptTo(rcptTo, handleSmtpError);
 					smtpClient.ExecData(msg.Data, handleSmtpError);
 
-					smtpClient.SmtpStream.WriteLine("QUIT");
+					// The connection worked so queue it in the pool.
+					SmtpClientPool.Enqueue(smtpClient);
+
 					msg.HandleDeliverySuccess();
 					return;
 				}

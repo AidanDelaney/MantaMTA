@@ -144,5 +144,30 @@ namespace Colony101.MTA.Library
 			}
 		}
 		private static int _MTA_MAX_TIME_IN_QUEUE = -1;
+
+		internal static class Client
+		{
+			/// <summary>
+			/// Port for SMTP connections by the client to remote servers when sending
+			/// messages. This will likely only every change when developing/debugging.
+			/// </summary>
+			public const int SMTP_PORT = 25;
+
+			/// <summary>
+			/// The time in seconds after which an active but idle connection should be
+			/// considered timed out.
+			/// </summary>
+			public const int CONNECTION_IDLE_TIMEOUT_INTERVAL = 30;
+
+			/// <summary>
+			/// The time in seconds for connection read timeouts.
+			/// </summary>
+			public const int CONNECTION_RECEIVE_TIMEOUT_INTERVAL = 30;
+
+			/// <summary>
+			/// The time in seconds for connection send timeouts.
+			/// </summary>
+			public const int CONNECTION_SEND_TIMEOUT_INTERVAL = 30;
+		}
 	}
 }

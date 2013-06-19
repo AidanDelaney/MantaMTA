@@ -106,6 +106,9 @@ namespace Colony101.MTA.Library.Server
 		private void HandleSmtpConnection(object obj)
 		{
 			TcpClient client = (TcpClient)obj;
+			client.ReceiveTimeout = MtaParameters.Client.CONNECTION_RECEIVE_TIMEOUT_INTERVAL * 1000;
+			client.SendTimeout = MtaParameters.Client.CONNECTION_SEND_TIMEOUT_INTERVAL * 1000;
+
 			try
 			{
 				SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);

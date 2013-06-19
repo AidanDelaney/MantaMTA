@@ -52,10 +52,6 @@ namespace Colony101.MTA.Library
 		/// <param name="client"></param>
 		public SmtpStreamHandler(TcpClient client) : this(client.GetStream())
 		{
-			client.ReceiveTimeout = 30 * 1000;
-			client.SendTimeout = 30 * 1000;
-
-
 			this.RemoteAddress = (client.Client.RemoteEndPoint as IPEndPoint).Address;
 			this.LocalAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
 		}
@@ -68,6 +64,7 @@ namespace Colony101.MTA.Library
 		{
 			this._CurrentTransportMIME = SmtpTransportMIME._7BitASCII;
 
+			// Use new UTF8Encoding(false) so we don't send BOM to the network stream.
 			this.ClientStreamReaderUTF8 = new StreamReader(stream, new UTF8Encoding(false));
 			this.ClientStreamWriterUTF8 = new StreamWriter(stream, new UTF8Encoding(false));
 			this.ClientStreamReaderASCII = new StreamReader(stream, Encoding.ASCII);

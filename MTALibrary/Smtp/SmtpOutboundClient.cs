@@ -41,16 +41,35 @@ namespace Colony101.MTA.Library.Smtp
 		private SmtpTransportMIME _DataTransportMime = SmtpTransportMIME._7BitASCII;
 
 		/// <summary>
+		/// Timer to use to cause idle timeouts. Need this as connections will be left
+		/// open after message sent. Should self quit after period.
+		/// </summary>
+		private SmtpClientTimeoutTimer _IdleTimeoutTimer { get; set; }
+
+		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
 		/// </summary>
 		/// <param name="outboundEndpoint"></param>
-		public SmtpOutboundClient(IPEndPoint outboundEndpoint) : base(outboundEndpoint) { }
+		public SmtpOutboundClient(IPEndPoint outboundEndpoint) : base(outboundEndpoint) 
+		{
+			base.ReceiveTimeout = MtaParameters.Client.CONNECTION_RECEIVE_TIMEOUT_INTERVAL * 1000;
+			base.SendTimeout = MtaParameters.Client.CONNECTION_SEND_TIMEOUT_INTERVAL * 1000;
+			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private bool _HasHelloed = false;
 
 		/// <summary>
 		/// Finaliser, ensure dispose is always called.
 		/// </summary>
 		~SmtpOutboundClient()
 		{
+			if (base.Connected)
+				ExecQuit();
+
 			if (!IsDisposed)
 				this.Dispose(true);
 		}
@@ -66,12 +85,6 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="disposing"></param>
 		public new void Dispose(bool disposing)
 		{
-			if (IsDisposed || disposing)
-				return;
-			
-			if (base.Connected)
-				base.Close();
-
 			base.Dispose(disposing);
 		}
 
@@ -81,7 +94,7 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="mx"></param>
 		public void Connect(MXRecord mx)
 		{
-			base.Connect(mx.Host, 25);
+			base.Connect(mx.Host, MtaParameters.Client.SMTP_PORT);
 			SmtpStream = new SmtpStreamHandler(this as TcpClient);
 			_MXRecord = mx;
 
@@ -97,6 +110,11 @@ namespace Colony101.MTA.Library.Smtp
 				base.Close();
 				return;
 			}
+
+			// Were connected so setup the idle timeout.
+			// Quits the connection nicely if it isn't being used.
+			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.CONNECTION_IDLE_TIMEOUT_INTERVAL, ExecQuit);
+			_IdleTimeoutTimer.Start();
 		}
 
 		/// <summary>
@@ -106,6 +124,11 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="failedCallback">Action to call if hello fail.</param>
 		public void ExecHelo(Action<string> failedCallback)
 		{
+			if (!base.Connected)
+				return;
+
+			_IdleTimeoutTimer.Stop();
+
 			// Get the hostname of the IP address that we are connecting from.
 			string hostname = System.Net.Dns.GetHostEntry(this.SmtpStream.LocalAddress).HostName;
 
@@ -131,6 +154,9 @@ namespace Colony101.MTA.Library.Smtp
 				if (response.IndexOf("8BITMIME", StringComparison.OrdinalIgnoreCase) > -1)
 					_DataTransportMime = SmtpTransportMIME._8BitUTF;
 			}
+
+			_HasHelloed = true;
+			_IdleTimeoutTimer.Start();
 		}
 
 		/// <summary>
@@ -140,10 +166,16 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="failed">Action to call if command fails.</param>
 		public void ExecMailFrom(MailAddress mailFrom, Action<string> failedCallback)
 		{
+			if (!base.Connected)
+				return;
+
+			_IdleTimeoutTimer.Stop();
+
 			SmtpStream.WriteLine("MAIL FROM: <" +
 										(mailFrom == null ? string.Empty : mailFrom.Address) + ">" +
 										(_DataTransportMime == SmtpTransportMIME._8BitUTF ? " BODY=8BITMIME" : string.Empty));
 			string response = SmtpStream.ReadAllLines();
+			_IdleTimeoutTimer.Start();
 			if (!response.StartsWith("250"))
 				failedCallback(response);
 		}
@@ -155,8 +187,17 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="failedCallback">Action to call if command fails.</param>
 		public void ExecRcptTo(MailAddress rcptTo, Action<string> failedCallback)
 		{
+			if (!base.Connected)
+				return;
+
+			_IdleTimeoutTimer.Stop();
+
 			SmtpStream.WriteLine("RCPT TO: <" + rcptTo.Address + ">");
+			
 			string response = SmtpStream.ReadAllLines();
+			
+			_IdleTimeoutTimer.Start();
+
 			if (!response.StartsWith("250"))
 				failedCallback(response);
 		}
@@ -168,6 +209,11 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="failedCallback">Action to call if fails to send.</param>
 		public void ExecData(string data, Action<string> failedCallback)
 		{
+			if (!base.Connected)
+				return;
+
+			_IdleTimeoutTimer.Stop();
+
 			SmtpStream.WriteLine("DATA");
 			string response = SmtpStream.ReadAllLines();
 			if (!response.StartsWith("354"))
@@ -179,13 +225,16 @@ namespace Colony101.MTA.Library.Smtp
 			// Send the message data using the correct transport MIME
 			SmtpStream.SetSmtpTransportMIME(_DataTransportMime);
 			SmtpStream.Write(data, false);
-			SmtpStream.Write(Environment.NewLine + "." + Environment.NewLine, false);
+			SmtpStream.Write(MtaParameters.NewLine + "." + MtaParameters.NewLine, false);
 
 			// Data done so return to 7-Bit mode.
 			SmtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 
 
 			response = SmtpStream.ReadAllLines();
+			_IdleTimeoutTimer.Start();
+
+
 			if (!response.StartsWith("250"))
 				failedCallback(response);
 		}
@@ -195,7 +244,85 @@ namespace Colony101.MTA.Library.Smtp
 		/// </summary>
 		public void ExecQuit()
 		{
+			if (!base.Connected)
+				return;
+
+			_IdleTimeoutTimer.Stop();
 			SmtpStream.WriteLine("QUIT");
+			// Don't read response as don't care.
+			// Close the TCP connection.
+			base.Close();
+		}
+
+		/// <summary>
+		/// Send the RSET command to the server.
+		/// </summary>
+		public void ExecRset()
+		{
+			if (!base.Connected)
+			{
+				Logging.Debug("Cannot RSET connection has been closed.");
+				throw new Exception();
+			}
+			_IdleTimeoutTimer.Stop();
+			SmtpStream.WriteLine("RSET");
+			SmtpStream.ReadAllLines();
+			_IdleTimeoutTimer.Start();
+		}
+
+		/// <summary>
+		/// HELO or RSET depending on previous commands.
+		/// </summary>
+		/// <param name="failedCallback"></param>
+		public void ExecHeloOrRset(Action<string> failedCallback)
+		{
+			if (!_HasHelloed)
+				ExecHelo(failedCallback);
+			else
+				ExecRset();
+		}
+	}
+
+	/// <summary>
+	/// Class is used to cause idle timeouts.
+	/// </summary>
+	internal class SmtpClientTimeoutTimer
+	{
+		/// <summary>
+		/// Internal timer.
+		/// </summary>
+		private System.Timers.Timer _Timer { get; set; }
+
+		/// <summary>
+		/// Creates a timer that will call the specified action after interval.
+		/// </summary>
+		/// <param name="interval">Seconds idle before timeout (seconds).</param>
+		/// <param name="timeoutAction">Action to call on timeout.</param>
+		public SmtpClientTimeoutTimer(int interval, Action timeoutAction)
+		{
+			_Timer = new System.Timers.Timer(interval * 1000);
+			_Timer.Elapsed += new System.Timers.ElapsedEventHandler(
+				delegate(object sender, System.Timers.ElapsedEventArgs e)
+				{
+					Logging.Debug("TCP Client Timeout");
+					timeoutAction();
+				});
+		}
+
+		/// <summary>
+		/// Start the Timer.
+		/// </summary>
+		public void Start()
+		{
+			_Timer.Start();
+		}
+
+		/// <summary>
+		/// Stop the Timer.
+		/// </summary>
+		public void Stop()
+		{
+			_Timer.Stop();
 		}
 	}
 }
