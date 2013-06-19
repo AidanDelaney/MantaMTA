@@ -37,7 +37,7 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="deferalAction">The action to be called if service is unavalible or we are unable to 
 		/// connect to any of the MX's in the MX records.</param>
 		/// <param name="smtpClient">Will be the SmtpClient of NULL.</param>
-		/// <returns>True if smtpClient was set, false if it is NULL.</returns>
+		/// <returns>True if smtpClient has a connection.</returns>
 		public static bool TryDequeue(IPEndPoint outboundEndpoint, MXRecord[] mxs, Action<string> deferalAction, out SmtpOutboundClient smtpClient)
 		{
 			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(outboundEndpoint.Address.ToString(), new SmtpClientMxRecords());

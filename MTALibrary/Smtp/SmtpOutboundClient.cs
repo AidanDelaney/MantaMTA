@@ -47,9 +47,14 @@ namespace Colony101.MTA.Library.Smtp
 		private SmtpClientTimeoutTimer _IdleTimeoutTimer { get; set; }
 
 		/// <summary>
-		/// Count of the data commands sent by this client.
+		/// Count of the DATA commands sent by this client.
 		/// </summary>
 		private int _DataCommands = 0;
+
+		/// <summary>
+		/// Is false until HELO or EHLO has been sent to the server.
+		/// </summary>
+		private bool _HasHelloed = false;
 
 		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
@@ -62,10 +67,7 @@ namespace Colony101.MTA.Library.Smtp
 			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		private bool _HasHelloed = false;
+		
 
 		/// <summary>
 		/// Finaliser, ensure dispose is always called.
