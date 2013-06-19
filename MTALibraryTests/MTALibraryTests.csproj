@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="ServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SmtpClientTests.cs" />
     <Compile Include="SmtpStreamHandlerTests.cs" />
     <Compile Include="TestFixtureBase.cs" />
   </ItemGroup>
