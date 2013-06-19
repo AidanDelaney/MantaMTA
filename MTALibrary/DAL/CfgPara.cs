@@ -76,6 +76,30 @@ namespace Colony101.MTA.Library.DAL
 		}
 
 		/// <summary>
+		/// Gets the client connection idle timeout in seconds from the database.
+		/// </summary>
+		public static int GetClientIdleTimeout()
+		{
+			return (int)GetColumnValue("cfg_para_clientIdleTimeout");
+		}
+
+		/// <summary>
+		/// Gets the connection receive timeout in seconds from the database.
+		/// </summary>
+		public static int GetReceiveTimeout()
+		{
+			return (int)GetColumnValue("cfg_para_receiveTimeout");
+		}
+
+		/// <summary>
+		/// Gets the connection send timeout in seconds from the database.
+		/// </summary>
+		public static int GetSendTimeout()
+		{
+			return (int)GetColumnValue("cfg_para_sendTimeout");
+		}
+
+		/// <summary>
 		/// ExecuteScalar getting value of colName in c101_cfg_para
 		/// </summary>
 		/// <param name="colName"></param>

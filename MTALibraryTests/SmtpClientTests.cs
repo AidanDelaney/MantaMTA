@@ -86,7 +86,7 @@ namespace MTALibraryTests
 				smtpClient.Connect(mxRecord);
 
 				Assert.IsTrue(smtpClient.Connected);
-				System.Threading.Thread.Sleep((Colony101.MTA.Library.MtaParameters.Client.CONNECTION_IDLE_TIMEOUT_INTERVAL + 5) * 1000);
+				System.Threading.Thread.Sleep((Colony101.MTA.Library.MtaParameters.Client.ConnectionIdleTimeoutInterval + 5) * 1000);
 				Assert.IsFalse(smtpClient.Connected);
 			}
 		}

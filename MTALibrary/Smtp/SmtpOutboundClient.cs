@@ -62,8 +62,8 @@ namespace Colony101.MTA.Library.Smtp
 		/// <param name="outboundEndpoint"></param>
 		public SmtpOutboundClient(IPEndPoint outboundEndpoint) : base(outboundEndpoint) 
 		{
-			base.ReceiveTimeout = MtaParameters.Client.CONNECTION_RECEIVE_TIMEOUT_INTERVAL * 1000;
-			base.SendTimeout = MtaParameters.Client.CONNECTION_SEND_TIMEOUT_INTERVAL * 1000;
+			base.ReceiveTimeout = MtaParameters.Client.ConnectionReceiveTimeoutInterval * 1000;
+			base.SendTimeout = MtaParameters.Client.ConnectionSendTimeoutInterval * 1000;
 			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 		}
 
@@ -120,7 +120,7 @@ namespace Colony101.MTA.Library.Smtp
 
 			// Were connected so setup the idle timeout.
 			// Quits the connection nicely if it isn't being used.
-			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.CONNECTION_IDLE_TIMEOUT_INTERVAL, ExecQuit);
+			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.ConnectionIdleTimeoutInterval, ExecQuit);
 			_IdleTimeoutTimer.Start();
 		}
 

@@ -157,17 +157,48 @@ namespace Colony101.MTA.Library
 			/// The time in seconds after which an active but idle connection should be
 			/// considered timed out.
 			/// </summary>
-			public const int CONNECTION_IDLE_TIMEOUT_INTERVAL = 30;
+			public static int ConnectionIdleTimeoutInterval
+			{
+				get
+				{
+					if (_ConnectionIdleTimeoutInterval == -1)
+						_ConnectionIdleTimeoutInterval = DAL.CfgPara.GetClientIdleTimeout();
+
+					return _ConnectionIdleTimeoutInterval;
+				}
+			}
+			private static int _ConnectionIdleTimeoutInterval = -1;
 
 			/// <summary>
 			/// The time in seconds for connection read timeouts.
 			/// </summary>
-			public const int CONNECTION_RECEIVE_TIMEOUT_INTERVAL = 30;
+			public static int ConnectionReceiveTimeoutInterval
+			{
+				get 
+				{
+					if (_ConnectionReceiveTimeoutInterval == -1)
+						_ConnectionReceiveTimeoutInterval = DAL.CfgPara.GetReceiveTimeout();
+
+					return _ConnectionReceiveTimeoutInterval;
+				}
+			}
+			public static int _ConnectionReceiveTimeoutInterval = -1;
+
 
 			/// <summary>
 			/// The time in seconds for connection send timeouts.
 			/// </summary>
-			public const int CONNECTION_SEND_TIMEOUT_INTERVAL = 30;
+			public static int ConnectionSendTimeoutInterval
+			{
+				get 
+				{
+					if (_connectionSendTimeoutInterval == -1)
+						_connectionSendTimeoutInterval = DAL.CfgPara.GetSendTimeout();
+
+					return _connectionSendTimeoutInterval;
+				}
+			}
+			private static int _connectionSendTimeoutInterval = -1;
 		}
 	}
 }
