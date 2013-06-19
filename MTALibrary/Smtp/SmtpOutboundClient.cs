@@ -47,6 +47,11 @@ namespace Colony101.MTA.Library.Smtp
 		private SmtpClientTimeoutTimer _IdleTimeoutTimer { get; set; }
 
 		/// <summary>
+		/// Count of the data commands sent by this client.
+		/// </summary>
+		private int _DataCommands = 0;
+
+		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
 		/// </summary>
 		/// <param name="outboundEndpoint"></param>
@@ -222,6 +227,9 @@ namespace Colony101.MTA.Library.Smtp
 				return;
 			}
 
+			// Increment the data commands as server has responded positiely.
+			_DataCommands++;
+
 			// Send the message data using the correct transport MIME
 			SmtpStream.SetSmtpTransportMIME(_DataTransportMime);
 			SmtpStream.Write(data, false);
@@ -237,6 +245,11 @@ namespace Colony101.MTA.Library.Smtp
 
 			if (!response.StartsWith("250"))
 				failedCallback(response);
+
+
+			// If max messages have been sent quit the connection.			
+			if (_DataCommands >= 5) // Will use rules in the future, just hardcode now.
+				ExecQuit();
 		}
 
 		/// <summary>
