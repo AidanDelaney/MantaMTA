@@ -256,7 +256,7 @@ namespace Colony101.MTA.Library.Smtp
 
 
 			// If max messages have been sent quit the connection.			
-			if (_DataCommands >= OutboundRules.OutboundRuleManager.GetMaxMessagesPerConnection(MXRecord, new MtaIpAddress.MtaIpAddress() { ID = -1 })) // Will use rules in the future, just hardcode now.
+			if (_DataCommands >= OutboundRules.OutboundRuleManager.GetMaxMessagesPerConnection(MXRecord, MtaIpAddress))
 				ExecQuit();
 		}
 
