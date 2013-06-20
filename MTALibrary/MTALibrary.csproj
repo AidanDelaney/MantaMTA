@@ -75,9 +75,9 @@
     <Compile Include="SendID\SendIDClasses.cs" />
     <Compile Include="SendID\SendIDManager.cs" />
     <Compile Include="Server\SmtpServer.cs" />
-    <Compile Include="Server\SmtpTransaction.cs" />
-    <Compile Include="SmtpStreamHandler.cs" />
-    <Compile Include="SmtpTransactionLogger.cs" />
+    <Compile Include="Server\SmtpServerTransaction.cs" />
+    <Compile Include="Smtp\SmtpStreamHandler.cs" />
+    <Compile Include="Smtp\SmtpTransactionLogger.cs" />
     <Compile Include="Server\MessageHeaderManager.cs" />
     <Compile Include="Smtp\SmtpConnectionPool.cs" />
     <Compile Include="Smtp\SmtpOutboundClient.cs" />

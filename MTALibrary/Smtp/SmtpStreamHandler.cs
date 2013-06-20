@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using Colony101.MTA.Library.Enums;
 
-namespace Colony101.MTA.Library
+namespace Colony101.MTA.Library.Smtp
 {
 	/// <summary>
 	/// Makes it easy to work with TCP SMTP connections.

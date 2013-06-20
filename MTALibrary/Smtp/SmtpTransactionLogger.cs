@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Colony101.MTA.Library
+namespace Colony101.MTA.Library.Smtp
 {
 	internal class SmtpTransactionLogger : IDisposable
 	{

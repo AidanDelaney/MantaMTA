@@ -111,7 +111,7 @@ namespace Colony101.MTA.Library.Server
 
 			try
 			{
-				SmtpStreamHandler smtpStream = new SmtpStreamHandler(client);
+				Smtp.SmtpStreamHandler smtpStream = new Smtp.SmtpStreamHandler(client);
 
 				// Identify our MTA
 				smtpStream.WriteLine("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
@@ -125,7 +125,7 @@ namespace Colony101.MTA.Library.Server
 				// Hostname of the client as it self identified in the HELO.
 				string heloHost = string.Empty;
 
-				SmtpTransaction mailTransaction = null;
+				SmtpServerTransaction mailTransaction = null;
 
 				// As long as the client is connected and hasn't sent the quit command then keep accepting commands.
 				while (client.Connected && !quit)
@@ -216,7 +216,7 @@ namespace Colony101.MTA.Library.Server
 					// Do this by creating new instance of SmtpTransaction class.
 					if (cmd.StartsWith("MAIL FROM:", StringComparison.OrdinalIgnoreCase))
 					{
-						mailTransaction = new SmtpTransaction();
+						mailTransaction = new SmtpServerTransaction();
 
 						// Check for the 8BITMIME body parameter
 						int bodyParaIndex = cmd.IndexOf(" BODY=", StringComparison.OrdinalIgnoreCase);

@@ -1,6 +1,6 @@
 ﻿using System.IO;
-using Colony101.MTA.Library;
 using Colony101.MTA.Library.Enums;
+using Colony101.MTA.Library.Smtp;
 using NUnit.Framework;
 
 namespace MTALibraryTests

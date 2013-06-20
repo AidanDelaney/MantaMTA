@@ -2,8 +2,8 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Transactions;
-using Colony101.MTA.Library;
 using Colony101.MTA.Library.Server;
+using Colony101.MTA.Library.Smtp;
 using NUnit.Framework;
 	
 

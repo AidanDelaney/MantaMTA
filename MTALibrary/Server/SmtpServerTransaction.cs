@@ -8,9 +8,10 @@ using Colony101.MTA.Library.Enums;
 namespace Colony101.MTA.Library.Server
 {
 	/// <summary>
-	/// Represents an SMTP Transaction
+	/// Represents an SMTP Server Transaction.
+	/// That is a Transaction where we are the Server and someone is sending us stuff.
 	/// </summary>
-	internal class SmtpTransaction
+	internal class SmtpServerTransaction
 	{
 		/// <summary>
 		/// The destination for this message.
@@ -56,7 +57,7 @@ namespace Colony101.MTA.Library.Server
 		/// </summary>
 		public SmtpTransportMIME TransportMIME { get; set; }
 
-		public SmtpTransaction()
+		public SmtpServerTransaction()
 		{
 			RcptTo = new List<string>();
 			MessageDestination = Enums.MessageDestination.Unknown;
