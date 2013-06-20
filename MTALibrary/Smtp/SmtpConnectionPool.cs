@@ -38,9 +38,9 @@ namespace Colony101.MTA.Library.Smtp
 		/// connect to any of the MX's in the MX records.</param>
 		/// <param name="smtpClient">Will be the SmtpClient of NULL.</param>
 		/// <returns>True if smtpClient has a connection.</returns>
-		public static bool TryDequeue(IPEndPoint outboundEndpoint, MXRecord[] mxs, Action<string> deferalAction, out SmtpOutboundClient smtpClient)
+		public static bool TryDequeue(MtaIpAddress.MtaIpAddress ipAddress, MXRecord[] mxs, Action<string> deferalAction, out SmtpOutboundClient smtpClient)
 		{
-			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(outboundEndpoint.Address.ToString(), new SmtpClientMxRecords());
+			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(ipAddress.IPAddress.ToString(), new SmtpClientMxRecords());
 			smtpClient = null;
 
 			// Loop through all the MX Records.
@@ -53,7 +53,7 @@ namespace Colony101.MTA.Library.Smtp
 					// At the moment we stop to all MXs for a domain if one of them responds with service unavailable.
 					// This could be improved to allow others to continue, we should however if blocked on all MX's with 
 					// lowest preference  not move on to the others.
-					if (ServiceNotAvailableManager.IsServiceUnavailable(outboundEndpoint.Address.ToString(), mxs[i].Host))
+					if (ServiceNotAvailableManager.IsServiceUnavailable(ipAddress.IPAddress.ToString(), mxs[i].Host))
 					{
 						deferalAction("Service unavailable");
 						smtpClient = null;
@@ -75,7 +75,7 @@ namespace Colony101.MTA.Library.Smtp
 
 					// Nothing was in the queue or all queued items timed out.
 					// Create a new connection.
-					smtpClient = new SmtpOutboundClient(outboundEndpoint);
+					smtpClient = new SmtpOutboundClient(ipAddress);
 					smtpClient.Connect(mxs[i]);
 				}
 				catch (SocketException ex)

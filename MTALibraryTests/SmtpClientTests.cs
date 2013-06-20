@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using Colony101.MTA.Library.MtaIpAddress;
 using Colony101.MTA.Library.Server;
 using Colony101.MTA.Library.Smtp;
 using NUnit.Framework;
@@ -17,13 +18,13 @@ namespace MTALibraryTests
 		{
 			using (SmtpServer s = new SmtpServer(25))
 			{
-				IPEndPoint outboundEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
+				MtaIpAddress ipAddress = new MtaIpAddress() { IPAddress = IPAddress.Parse("127.0.0.1") };
 				Colony101.MTA.Library.DNS.MXRecord mxRecord = new Colony101.MTA.Library.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
-				SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
+				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.Connect(mxRecord);
 				Colony101.MTA.Library.Smtp.SmtpClientPool.Enqueue(smtpClient);
-				Colony101.MTA.Library.Smtp.SmtpClientPool.TryDequeue(outboundEndpoint, new Colony101.MTA.Library.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }), out smtpClient);
+				Colony101.MTA.Library.Smtp.SmtpClientPool.TryDequeue(ipAddress, new Colony101.MTA.Library.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }), out smtpClient);
 
 				Assert.NotNull(smtpClient);
 				Assert.IsTrue(smtpClient.Connected);
@@ -38,10 +39,10 @@ namespace MTALibraryTests
 		{
 			using (SmtpServer s = new SmtpServer(25))
 			{
-				IPEndPoint outboundEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
+				MtaIpAddress ipAddress = new MtaIpAddress() { IPAddress = IPAddress.Parse("127.0.0.1") };
 				Colony101.MTA.Library.DNS.MXRecord mxRecord = new Colony101.MTA.Library.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
-				SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
+				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.Connect(mxRecord);
 				Assert.IsTrue(smtpClient.Connected);
 
@@ -79,7 +80,7 @@ namespace MTALibraryTests
 		{
 			using (SmtpServer s = new SmtpServer(25))
 			{
-				IPEndPoint outboundEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0);
+				MtaIpAddress outboundEndpoint = new MtaIpAddress() { IPAddress = IPAddress.Parse("127.0.0.1") };
 				Colony101.MTA.Library.DNS.MXRecord mxRecord = new Colony101.MTA.Library.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);

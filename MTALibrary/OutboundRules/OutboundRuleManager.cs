@@ -92,5 +92,28 @@ namespace Colony101.MTA.Library.OutboundRules
 			// If we haven't returned rules at this point then we need.
 			throw new Exception("No MX Rules found! Default Deleted?!?!");
 		}
+
+		/// <summary>
+		/// Gets the MAX number of messages allowed to be send through the connection.
+		/// </summary>
+		/// <param name="record">MX Record for the destination.</param>
+		/// <param name="ipAddress">IPAddress that we are sending from.</param>
+		/// <returns>Max number of messages per connection.</returns>
+		public static int GetMaxMessagesPerConnection(MXRecord record, MtaIpAddress.MtaIpAddress ipAddress)
+		{
+			OutboundRuleCollection rules = GetRules(record, ipAddress);
+			for (int i = 0; i < rules.Count; i++)
+			{
+				if (rules[i].Type == OutboundRuleType.MaxMessagesConnection)
+				{
+					int tmp = 0;
+					if (int.TryParse(rules[i].Value, out tmp))
+						return tmp;
+				}
+			}
+
+			Logging.Error("Failed to get max messages per connection for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to 1");
+			return 1;
+		}
 	}
 }

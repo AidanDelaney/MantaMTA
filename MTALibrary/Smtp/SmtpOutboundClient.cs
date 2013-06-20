@@ -57,11 +57,17 @@ namespace Colony101.MTA.Library.Smtp
 		private bool _HasHelloed = false;
 
 		/// <summary>
+		/// Holds the MTA IP Address this client is using.
+		/// </summary>
+		private MtaIpAddress.MtaIpAddress MtaIpAddress { get; set; }
+
+		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
 		/// </summary>
-		/// <param name="outboundEndpoint"></param>
-		public SmtpOutboundClient(IPEndPoint outboundEndpoint) : base(outboundEndpoint) 
+		/// <param name="ipAddress">The local IP address to bind to.</param>
+		public SmtpOutboundClient(MtaIpAddress.MtaIpAddress ipAddress) : base(new IPEndPoint(ipAddress.IPAddress, 0)) 
 		{
+			this.MtaIpAddress = ipAddress;
 			base.ReceiveTimeout = MtaParameters.Client.ConnectionReceiveTimeoutInterval * 1000;
 			base.SendTimeout = MtaParameters.Client.ConnectionSendTimeoutInterval * 1000;
 			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -250,7 +256,7 @@ namespace Colony101.MTA.Library.Smtp
 
 
 			// If max messages have been sent quit the connection.			
-			if (_DataCommands >= 5) // Will use rules in the future, just hardcode now.
+			if (_DataCommands >= OutboundRules.OutboundRuleManager.GetMaxMessagesPerConnection(MXRecord, new MtaIpAddress.MtaIpAddress() { ID = -1 })) // Will use rules in the future, just hardcode now.
 				ExecQuit();
 		}
 

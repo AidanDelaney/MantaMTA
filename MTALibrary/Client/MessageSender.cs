@@ -116,10 +116,10 @@ namespace Colony101.MTA.Library.Client
 
 			// The IP group that will be used to send the queued message.
 			MtaIpAddress.MtaIPGroup messageIpGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(msg.IPGroupID);
-			IPAddress sndIpAddress = messageIpGroup.GetRandomIP().IPAddress;
+			MtaIpAddress.MtaIpAddress sndIpAddress = messageIpGroup.GetRandomIP();
 
 			Colony101.MTA.Library.Smtp.SmtpOutboundClient smtpClient = null;
-			if(SmtpClientPool.TryDequeue(new System.Net.IPEndPoint(sndIpAddress, 0), mxs, 
+			if(SmtpClientPool.TryDequeue(sndIpAddress, mxs, 
 				delegate(string message)
 				{
 					msg.HandleDeliveryDeferral(message);
