@@ -51,17 +51,24 @@ namespace MantaMTA.Core.Client
 							{
 								try
 								{
-									SendMessage(messagesToSend[i]);
+									// Don't try and send the message if stop has been issued.
+									if (!_IsStopping)
+										SendMessage(messagesToSend[i]);
 								}
 								finally
 								{
+									// Always dispose of pciked up messages
 									messagesToSend[i].Dispose();
 								}
 							}
 
-							messagesToSend = DAL.MtaMessageDB.PickupForSending(10);
-							if (messagesToSend.Count == 0)
-								Thread.Sleep(15 * 1000);
+							// If not stopping get another batch of messages.
+							if (!_IsStopping)
+							{
+								messagesToSend = DAL.MtaMessageDB.PickupForSending(10);
+								if (messagesToSend.Count == 0)
+									Thread.Sleep(15 * 1000);
+							}
 						}
 					}));
 				_ClientThread.Start();

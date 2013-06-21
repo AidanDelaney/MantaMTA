@@ -8,7 +8,7 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// Name of the MTA. Used in welcome banner to identify product.
 		/// </summary>
-		public const string MTA_NAME = "BatHawk";
+		public const string MTA_NAME = "MantaMTA";
 
 		/// <summary>
 		/// New line as should be used in emails.
