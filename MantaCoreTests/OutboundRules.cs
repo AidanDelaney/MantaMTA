@@ -1,0 +1,19 @@
+﻿using MantaMTA.Core.OutboundRules;
+using NUnit.Framework;
+
+namespace MantaMTA.Core.Tests
+{
+	[TestFixture]
+	public class OutboundRules
+	{
+		/// <summary>
+		/// Test tomake sure that we can get the default values from the database.
+		/// </summary>
+		[Test]
+		public void TestDefaultRules()
+		{
+			OutboundRuleCollection rules = OutboundRuleManager.GetRules(new MantaMTA.Core.DNS.MXRecord("localhost", 10, 10), new MantaMTA.Core.MtaIpAddress.MtaIpAddress() { ID = 0 });
+			Assert.AreEqual(3, rules.Count);
+		}
+	}
+}
