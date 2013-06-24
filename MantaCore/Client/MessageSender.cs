@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
@@ -125,8 +126,22 @@ namespace MantaMTA.Core.Client
 			MtaIpAddress.MtaIPGroup messageIpGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(msg.IPGroupID);
 			MtaIpAddress.MtaIpAddress sndIpAddress = messageIpGroup.GetRandomIP();
 
+			ArrayList noneThrottledMXs = new ArrayList();
+			for (int i = 0; i < mxs.Length; i++)
+			{
+				// Check not throttled
+				if (OutboundRules.ThrottleManager.TryGetSendAuth(sndIpAddress, mxs[i]))
+					noneThrottledMXs.Add(mxs[i]);
+			}
+			if (noneThrottledMXs.Count == 0)
+			{
+				msg.HandleDeliveryThrottle();
+				return;
+			}
+
+
 			MantaMTA.Core.Smtp.SmtpOutboundClient smtpClient = null;
-			if(SmtpClientPool.TryDequeue(sndIpAddress, mxs, 
+			if (SmtpClientPool.TryDequeue(sndIpAddress, (DNS.MXRecord[])noneThrottledMXs.ToArray(typeof(DNS.MXRecord)), 
 				delegate(string message)
 				{
 					msg.HandleDeliveryDeferral(message);

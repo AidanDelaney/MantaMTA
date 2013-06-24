@@ -137,7 +137,21 @@ namespace MantaMTA.Core.Client.BO
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
-			this._IsPickUpLocked = false;
+			MtaMessageDB.Save(this);
+		}
+
+		/// <summary>
+		/// This method handles message throttle.
+		///	Logs throttle
+		/// Sets the next rety date time 
+		/// </summary>
+		internal void HandleDeliveryThrottle()
+		{
+			// Log deferral
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty);
+
+			// Set next retry time and release the lock.
+			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
 			MtaMessageDB.Save(this);
 		}
 

@@ -22,7 +22,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="mxRecord">MXRecord for the destination MX.</param>
 		/// <param name="mtaIpAddress">Outbound IP Address</param>
 		/// <returns></returns>
-		public static OutboundRuleCollection GetRules(MXRecord mxRecord, MtaIpAddress.MtaIpAddress mtaIpAddress)
+		public static OutboundRuleCollection GetRules(MXRecord mxRecord, MtaIpAddress.MtaIpAddress mtaIpAddress, out int mxPatternID)
 		{
 			// Get the data from the database. This needs to be cleaverer and reload every x minutes.
 			if (_MXPatterns == null)
@@ -60,6 +60,7 @@ namespace MantaMTA.Core.OutboundRules
 						// If they are a match return the rules.
 						if (strings[i].Equals(mxRecord.Host, StringComparison.OrdinalIgnoreCase))
 						{
+							mxPatternID = pattern.ID;
 							return new OutboundRuleCollection(from r
 															  in _Rules
 															  where r.OutboundMxPatternID == pattern.ID
@@ -72,6 +73,7 @@ namespace MantaMTA.Core.OutboundRules
 					// Pattern is Regex so just need to do an IsMatch
 					if (Regex.IsMatch(mxRecord.Host, pattern.Value, RegexOptions.IgnoreCase))
 					{
+						mxPatternID = pattern.ID;
 						// Found pattern match.
 						return new OutboundRuleCollection(from r 
 														  in _Rules 
@@ -101,7 +103,8 @@ namespace MantaMTA.Core.OutboundRules
 		/// <returns>Max number of messages per connection.</returns>
 		public static int GetMaxMessagesPerConnection(MXRecord record, MtaIpAddress.MtaIpAddress ipAddress)
 		{
-			OutboundRuleCollection rules = GetRules(record, ipAddress);
+			int mxPatternID = 0;
+			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);
 			for (int i = 0; i < rules.Count; i++)
 			{
 				if (rules[i].Type == OutboundRuleType.MaxMessagesConnection)
@@ -114,6 +117,30 @@ namespace MantaMTA.Core.OutboundRules
 
 			Logging.Error("Failed to get max messages per connection for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to 1");
 			return 1;
+		}
+
+		/// <summary>
+		/// Gets the maximum amount of messages to send per hour from each ip address to mx.
+		/// </summary>
+		/// <param name="ipAddress">Outbound IP address</param>
+		/// <param name="record">MX Record of destination server.</param>
+		/// <param name="mxPatternID">ID of the pattern used to identify the rule.</param>
+		/// <returns>Maximum number of messages per hour or -1 for unlimited.</returns>
+		public static int GetMaxMessagesDestinationHour(MtaIpAddress.MtaIpAddress ipAddress, MXRecord record, out int mxPatternID)
+		{
+			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);
+			for (int i = 0; i < rules.Count; i++)
+			{
+				if (rules[i].Type == OutboundRuleType.MaxMessagesPerHour)
+				{
+					int tmp = 0;
+					if (int.TryParse(rules[i].Value, out tmp))
+						return tmp;
+				}
+			}
+
+			Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to -1");
+			return -1;
 		}
 	}
 }

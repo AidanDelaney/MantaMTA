@@ -44,6 +44,10 @@ namespace MantaMTA.Core.Enums
 		/// <summary>
 		/// Message was successfully devlivered.
 		/// </summary>
-		Success = 4
+		Success = 4,
+		/// <summary>
+		/// Message was throttled.
+		/// </summary>
+		Throttled = 5
 	}
 }

@@ -12,7 +12,8 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void TestDefaultRules()
 		{
-			OutboundRuleCollection rules = OutboundRuleManager.GetRules(new MantaMTA.Core.DNS.MXRecord("localhost", 10, 10), new MantaMTA.Core.MtaIpAddress.MtaIpAddress() { ID = 0 });
+			int mxPatternID = 0;
+			OutboundRuleCollection rules = OutboundRuleManager.GetRules(new MantaMTA.Core.DNS.MXRecord("localhost", 10, 10), new MantaMTA.Core.MtaIpAddress.MtaIpAddress() { ID = 0 }, out mxPatternID);
 			Assert.AreEqual(3, rules.Count);
 		}
 	}

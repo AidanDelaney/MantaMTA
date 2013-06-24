@@ -71,6 +71,7 @@
     <Compile Include="MtaParameters.cs" />
     <Compile Include="OutboundRules\OutboundRuleClasses.cs" />
     <Compile Include="OutboundRules\OutboundRuleManager.cs" />
+    <Compile Include="OutboundRules\ThrottleManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SendID\SendIDClasses.cs" />
     <Compile Include="SendID\SendIDManager.cs" />
