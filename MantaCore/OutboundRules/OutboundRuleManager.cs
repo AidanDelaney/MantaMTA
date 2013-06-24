@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
 using MantaMTA.Core.DNS;
@@ -17,6 +18,106 @@ namespace MantaMTA.Core.OutboundRules
 		private static OutboundRuleCollection _Rules { get; set; }
 
 		/// <summary>
+		/// Holds a cached collection of matched patterns.
+		/// Key: IP Address tostring()
+		/// </summary>
+		private static ConcurrentDictionary<string, MatchedMxPatternCollection> _matchedPatterns { get; set; }
+
+		/// <summary>
+		/// Class represents a matched MX Pattern
+		/// </summary>
+		private class MatchedMxPattern
+		{
+			/// <summary>
+			/// ID of the pattern that resulted in this match.
+			/// </summary>
+			public int MxPatternID { get; set; }
+			/// <summary>
+			/// IP Address if specific otherwise string.empty.
+			/// </summary>
+			public string IPAddress { get; set; }
+			/// <summary>
+			/// DateTime of the match.
+			/// </summary>
+			public DateTime Matched { get; set; }
+
+			public MatchedMxPattern()
+			{
+				MxPatternID = -1;
+				IPAddress = null;
+			}
+		}
+
+		/// <summary>
+		/// Holds a collection of matched MX patterns
+		/// Key: MX Record hostname.
+		/// </summary>
+		private class MatchedMxPatternCollection : ConcurrentDictionary<string, MatchedMxPattern>
+		{
+			/// <summary>
+			/// Adds or updates.
+			/// </summary>
+			/// <param name="mxPatternID">The matching pattern ID</param>
+			/// <param name="ipAddress">IP Address if specific or NULL</param>
+			public void Add(int mxPatternID, MtaIpAddress.MtaIpAddress ipAddress)
+			{
+				MatchedMxPattern newMxPattern = new MatchedMxPattern();
+				newMxPattern.Matched = DateTime.Now;
+				newMxPattern.MxPatternID = mxPatternID;
+
+				 Func<string, MatchedMxPattern, MatchedMxPattern> updateAction = new Func<string, MatchedMxPattern, MatchedMxPattern>(delegate(string key, MatchedMxPattern existing)
+									{
+										if (existing.Matched > newMxPattern.Matched)
+											return existing;
+										return newMxPattern;
+									});
+
+				if (ipAddress != null)
+				{
+					newMxPattern.IPAddress = ipAddress.IPAddress.ToString();
+					this.AddOrUpdate(newMxPattern.IPAddress,
+									 new MatchedMxPattern()
+									 {
+										 Matched = DateTime.Now,
+										 MxPatternID = mxPatternID
+									 }, updateAction);
+				}
+				else
+					this.AddOrUpdate(string.Empty,
+									 new MatchedMxPattern()
+									 {
+										 Matched = DateTime.Now,
+										 MxPatternID = mxPatternID
+									 }, updateAction);
+			}
+
+			/// <summary>
+			/// Gets the matched MX Record. Null if not found.
+			/// </summary>
+			/// <param name="ipAddress"></param>
+			/// <returns></returns>
+			public MatchedMxPattern GetMatchedMxPattern(MtaIpAddress.MtaIpAddress ipAddress)
+			{
+				MatchedMxPattern tmp;
+				if (this.TryGetValue(ipAddress.IPAddress.ToString(), out tmp))
+				{
+					if(tmp.Matched.AddMinutes(5) < DateTime.Now)
+						return tmp;
+				}
+				else
+				{
+					if (this.TryGetValue(string.Empty, out tmp))
+					{
+						if (tmp.Matched.AddMinutes(5) > DateTime.Now)
+							return tmp;
+					}
+				}
+
+				return null;
+			}
+		}
+
+		/// <summary>
 		/// Gets the Outbound Rules for the specified destination MX / and IP Address.
 		/// </summary>
 		/// <param name="mxRecord">MXRecord for the destination MX.</param>
@@ -30,10 +131,33 @@ namespace MantaMTA.Core.OutboundRules
 			if (_Rules == null)
 				_Rules = DAL.OutboundRuleDB.GetOutboundRules();
 
-			/*
-			 *	NEED SOME MAGIC HERE
-			 *	Magic code should prevent us from having to do the below pattern matching everytime.
-			 */
+			int patternID = GetMxPatternID(mxRecord, mtaIpAddress);
+			mxPatternID = patternID;
+			
+			return new OutboundRuleCollection(from r
+											  in _Rules
+											  where r.OutboundMxPatternID == patternID
+											  select r);
+		}
+
+		/// <summary>
+		/// Gets the MxPatternID that matches the MX Record, Outbound IP Address combo.
+		/// </summary>
+		/// <param name="record"></param>
+		/// <param name="ipAddress"></param>
+		/// <returns></returns>
+		private static int GetMxPatternID(MXRecord record, MtaIpAddress.MtaIpAddress ipAddress)
+		{
+			if (_matchedPatterns == null)
+				_matchedPatterns = new ConcurrentDictionary<string,MatchedMxPatternCollection>();
+
+			MatchedMxPatternCollection matchedPatterns = _matchedPatterns.GetOrAdd(record.Host, new MatchedMxPatternCollection());
+			MatchedMxPattern matchedPattern = matchedPatterns.GetMatchedMxPattern(ipAddress);
+
+			if (matchedPattern != null &&
+				matchedPattern.Matched.AddMinutes(5) > DateTime.Now)
+				// Found a valid cached pattern ID so return it.
+				return matchedPattern.MxPatternID;
 
 			// Loop through all of the patterns
 			for (int i = 0; i < _MXPatterns.Count; i++)
@@ -45,7 +169,7 @@ namespace MantaMTA.Core.OutboundRules
 				// only check for a match if getting rules for that IP.
 				if (pattern.OutboundIpAddressID.HasValue)
 				{
-					if (pattern.OutboundIpAddressID.Value != mtaIpAddress.ID)
+					if (pattern.OutboundIpAddressID.Value != ipAddress.ID)
 						continue;
 				}
 
@@ -53,32 +177,34 @@ namespace MantaMTA.Core.OutboundRules
 				{
 					// Pattern is a comma delimited list, so split the values
 					string[] strings = pattern.Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-					
+
 					// Loop though the values in the split string array.
 					for (int c = 0; c < strings.Length; c++)
 					{
 						// If they are a match return the rules.
-						if (strings[i].Equals(mxRecord.Host, StringComparison.OrdinalIgnoreCase))
+						if (strings[i].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
 						{
-							mxPatternID = pattern.ID;
-							return new OutboundRuleCollection(from r
-															  in _Rules
-															  where r.OutboundMxPatternID == pattern.ID
-															  select r);
+							if (pattern.OutboundIpAddressID.HasValue)
+								matchedPatterns.Add(pattern.ID, ipAddress);
+							else
+								matchedPatterns.Add(pattern.ID, null);
+							
+							return pattern.ID;
 						}
 					}
 				}
 				else if (pattern.Type == OutboundMxPatternType.Regex)
 				{
 					// Pattern is Regex so just need to do an IsMatch
-					if (Regex.IsMatch(mxRecord.Host, pattern.Value, RegexOptions.IgnoreCase))
+					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase))
 					{
-						mxPatternID = pattern.ID;
 						// Found pattern match.
-						return new OutboundRuleCollection(from r 
-														  in _Rules 
-														  where r.OutboundMxPatternID == pattern.ID
-														  select r);
+						if (pattern.OutboundIpAddressID.HasValue)
+							matchedPatterns.Add(pattern.ID, ipAddress);
+						else
+							matchedPatterns.Add(pattern.ID, null);
+
+						return pattern.ID;
 					}
 					else
 						continue;
@@ -91,8 +217,9 @@ namespace MantaMTA.Core.OutboundRules
 				}
 			}
 
-			// If we haven't returned rules at this point then we need.
-			throw new Exception("No MX Rules found! Default Deleted?!?!");
+			Logging.Fatal("No MX Pattern Rules! Default Deleted?");
+			Environment.Exit(0);
+			return -1;
 		}
 
 		/// <summary>
