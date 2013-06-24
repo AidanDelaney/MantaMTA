@@ -130,7 +130,7 @@ namespace MantaMTA.Core.Client
 			for (int i = 0; i < mxs.Length; i++)
 			{
 				// Check not throttled
-				if (OutboundRules.ThrottleManager.TryGetSendAuth(sndIpAddress, mxs[i]))
+				if (OutboundRules.ThrottleManager.Instance.TryGetSendAuth(sndIpAddress, mxs[i]))
 					noneThrottledMXs.Add(mxs[i]);
 			}
 			if (noneThrottledMXs.Count == 0)
