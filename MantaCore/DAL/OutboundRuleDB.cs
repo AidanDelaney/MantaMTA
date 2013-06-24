@@ -55,7 +55,7 @@ FROM c101_rle_rule";
 			mxPattern.ID = record.GetInt32("rle_mxPattern_id");
 			mxPattern.Name = record.GetString("rle_mxPattern_name");
 			if (!record.IsDBNull("ip_ipAddress_id"))
-				mxPattern.OutboundIpAddressID = record.GetInt32("ip_ipAddress_id");
+				mxPattern.LimitedToOutboundIpAddressID = record.GetInt32("ip_ipAddress_id");
 			mxPattern.Type = (OutboundMxPatternType)record.GetInt32("rle_patternType_id");
 			mxPattern.Value = record.GetString("rle_mxPattern_value");
 			return mxPattern;

@@ -118,32 +118,32 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// The time in minutes between send retries.
 		/// </summary>
-		internal static int MTA_RETRY_INTERVAL 
+		internal static int MtaRetryInterval 
 		{
 			get
 			{
-				if(_MTA_RETRY_INTERVAL == -1)
-					_MTA_RETRY_INTERVAL = DAL.CfgPara.GetRetryIntervalMinutes();
+				if(_MtaRetryInterval == -1)
+					_MtaRetryInterval = DAL.CfgPara.GetRetryIntervalMinutes();
 
-				return _MTA_RETRY_INTERVAL;
+				return _MtaRetryInterval;
 			}
 		}
-		private static int _MTA_RETRY_INTERVAL = -1;
+		private static int _MtaRetryInterval = -1;
 
 		/// <summary>
 		/// The maximum time in minutes that a message can be in the queue.
 		/// </summary>
-		internal static int MTA_MAX_TIME_IN_QUEUE
+		internal static int MtaMaxTimeInQueue
 		{
 			get
 			{
-				if (_MTA_MAX_TIME_IN_QUEUE == -1)
-					_MTA_MAX_TIME_IN_QUEUE = DAL.CfgPara.GetMaxTimeInQueueMinutes();
+				if (_MtaMaxTimeInQueue == -1)
+					_MtaMaxTimeInQueue = DAL.CfgPara.GetMaxTimeInQueueMinutes();
 
-				return _MTA_MAX_TIME_IN_QUEUE;
+				return _MtaMaxTimeInQueue;
 			}
 		}
-		private static int _MTA_MAX_TIME_IN_QUEUE = -1;
+		private static int _MtaMaxTimeInQueue = -1;
 
 		internal static class Client
 		{

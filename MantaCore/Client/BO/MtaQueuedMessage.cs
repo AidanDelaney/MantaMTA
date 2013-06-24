@@ -136,7 +136,7 @@ namespace MantaMTA.Core.Client.BO
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
+			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);
 			MtaMessageDB.Save(this);
 		}
 
@@ -151,7 +151,7 @@ namespace MantaMTA.Core.Client.BO
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MTA_RETRY_INTERVAL);
+			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);
 			MtaMessageDB.Save(this);
 		}
 

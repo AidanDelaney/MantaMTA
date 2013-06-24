@@ -118,14 +118,15 @@ namespace MantaMTA.Core.OutboundRules
 		}
 
 		/// <summary>
-		/// Gets the Outbound Rules for the specified destination MX / and IP Address.
+		/// Gets the Outbound Rules for the specified destination MX and optionally IP Address.
 		/// </summary>
 		/// <param name="mxRecord">MXRecord for the destination MX.</param>
 		/// <param name="mtaIpAddress">Outbound IP Address</param>
+		/// <param name="mxPatternID">OUT: the ID of MxPattern that caused match.</param>
 		/// <returns></returns>
 		public static OutboundRuleCollection GetRules(MXRecord mxRecord, MtaIpAddress.MtaIpAddress mtaIpAddress, out int mxPatternID)
 		{
-			// Get the data from the database. This needs to be cleaverer and reload every x minutes.
+			// Get the data from the database. This needs to be cleverer and reload every x minutes.
 			if (_MXPatterns == null)
 				_MXPatterns = DAL.OutboundRuleDB.GetOutboundRulePatterns();
 			if (_Rules == null)
@@ -162,14 +163,14 @@ namespace MantaMTA.Core.OutboundRules
 			// Loop through all of the patterns
 			for (int i = 0; i < _MXPatterns.Count; i++)
 			{
-				// The current pattern were working with.
+				// The current pattern we're working with.
 				OutboundMxPattern pattern = _MXPatterns[i];
 
-				// If the patern applies only to a specified IP address then
+				// If the pattern applies only to a specified IP address then
 				// only check for a match if getting rules for that IP.
-				if (pattern.OutboundIpAddressID.HasValue)
+				if (pattern.LimitedToOutboundIpAddressID.HasValue)
 				{
-					if (pattern.OutboundIpAddressID.Value != ipAddress.ID)
+					if (pattern.LimitedToOutboundIpAddressID.Value != ipAddress.ID)
 						continue;
 				}
 
@@ -184,7 +185,7 @@ namespace MantaMTA.Core.OutboundRules
 						// If they are a match return the rules.
 						if (strings[i].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
 						{
-							if (pattern.OutboundIpAddressID.HasValue)
+							if (pattern.LimitedToOutboundIpAddressID.HasValue)
 								matchedPatterns.Add(pattern.ID, ipAddress);
 							else
 								matchedPatterns.Add(pattern.ID, null);
@@ -192,6 +193,8 @@ namespace MantaMTA.Core.OutboundRules
 							return pattern.ID;
 						}
 					}
+
+					continue;
 				}
 				else if (pattern.Type == OutboundMxPatternType.Regex)
 				{
@@ -199,7 +202,7 @@ namespace MantaMTA.Core.OutboundRules
 					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase))
 					{
 						// Found pattern match.
-						if (pattern.OutboundIpAddressID.HasValue)
+						if (pattern.LimitedToOutboundIpAddressID.HasValue)
 							matchedPatterns.Add(pattern.ID, ipAddress);
 						else
 							matchedPatterns.Add(pattern.ID, null);
@@ -217,13 +220,14 @@ namespace MantaMTA.Core.OutboundRules
 				}
 			}
 
+			// Should have been found by default at least, but hasn't.
 			Logging.Fatal("No MX Pattern Rules! Default Deleted?");
 			Environment.Exit(0);
 			return -1;
 		}
 
 		/// <summary>
-		/// Gets the MAX number of messages allowed to be send through the connection.
+		/// Gets the MAX number of messages allowed to be sent through the connection.
 		/// </summary>
 		/// <param name="record">MX Record for the destination.</param>
 		/// <param name="ipAddress">IPAddress that we are sending from.</param>
@@ -239,6 +243,11 @@ namespace MantaMTA.Core.OutboundRules
 					int tmp = 0;
 					if (int.TryParse(rules[i].Value, out tmp))
 						return tmp;
+					else
+					{
+						Logging.Error("Failed to get max messages per connection for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " value wasn't valid [" + rules[i].Value + "], defaulting to 1");
+						return 1;
+					}
 				}
 			}
 
@@ -263,10 +272,15 @@ namespace MantaMTA.Core.OutboundRules
 					int tmp = 0;
 					if (int.TryParse(rules[i].Value, out tmp))
 						return tmp;
+					else
+					{
+						Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " value wasn't valid [" + rules[i].Value + "], defaulting to unlimited");
+						return 1;
+					}
 				}
 			}
 
-			Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to -1");
+			Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to unlimited");
 			return -1;
 		}
 	}

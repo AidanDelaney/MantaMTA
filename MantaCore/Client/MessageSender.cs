@@ -90,7 +90,7 @@ namespace MantaMTA.Core.Client
 			// Need to do this here as there may be a massive backlog on the server
 			// causing messages to be waiting for ages after there AttemptSendAfter
 			// before picking up. The MAX_TIME_IN_QUEUE should always be enforced.
-			if ((msg.AttemptSendAfter - msg.QueuedTimestamp) > new TimeSpan(0, MtaParameters.MTA_MAX_TIME_IN_QUEUE, 0))
+			if ((msg.AttemptSendAfter - msg.QueuedTimestamp) > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
 				msg.HandleDeliveryFail("Timed out in queue.");
 				return;

@@ -108,7 +108,7 @@ namespace MantaMTA.Core.OutboundRules
 							}
 
 							// Remove send history that is no longer required.
-							for (int z = 0; z < toRemove.Count; z++)
+							for (int z = toRemove.Count; z >= 0; z--)
 								mxPatternHistory.Value.RemoveAt((int)toRemove[z]);
 						}
 					}

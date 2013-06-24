@@ -71,7 +71,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// If has value, only apply this pattern against sending from
 		/// specified IP address.
 		/// </summary>
-		public int? OutboundIpAddressID { get; set; }
+		public int? LimitedToOutboundIpAddressID { get; set; }
 	}
 
 	/// <summary>
