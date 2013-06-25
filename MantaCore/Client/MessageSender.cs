@@ -3,8 +3,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
+using System.Threading.Tasks;
 using MantaMTA.Core.Client.BO;
-using MantaMTA.Core.Enums;
 using MantaMTA.Core.Smtp;
 
 namespace MantaMTA.Core.Client
@@ -48,20 +48,15 @@ namespace MantaMTA.Core.Client
 						MtaQueuedMessageCollection messagesToSend = DAL.MtaMessageDB.PickupForSending(10);
 						while (!_IsStopping)
 						{
-							for (int i = 0; i < messagesToSend.Count; i++)
+							Parallel.For(0, messagesToSend.Count, new Action<int>(delegate(int i)
 							{
-								try
+								// Don't try and send the message if stop has been issued.
+								if (!_IsStopping)
 								{
-									// Don't try and send the message if stop has been issued.
-									if (!_IsStopping)
-										SendMessage(messagesToSend[i]);
-								}
-								finally
-								{
-									// Always dispose of pciked up messages
+									Task.Run(() => SendMessage(messagesToSend[i])).Wait();
 									messagesToSend[i].Dispose();
 								}
-							}
+							}));
 
 							// If not stopping get another batch of messages.
 							if (!_IsStopping)
@@ -84,7 +79,7 @@ namespace MantaMTA.Core.Client
 			_IsStopping = true;
 		}
 
-		private static void SendMessage(MtaQueuedMessage msg)
+		private static async Task<bool> SendMessage(MtaQueuedMessage msg)
 		{
 			// Check the message hasn't timed out. If it has don't attempt to send it.
 			// Need to do this here as there may be a massive backlog on the server
@@ -93,7 +88,7 @@ namespace MantaMTA.Core.Client
 			if ((msg.AttemptSendAfter - msg.QueuedTimestamp) > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
 				msg.HandleDeliveryFail("Timed out in queue.");
-				return;
+				return false;
 			}
 
 			MailAddress rcptTo = msg.RcptTo[0];
@@ -119,7 +114,7 @@ namespace MantaMTA.Core.Client
 			if (mxs == null)
 			{
 				msg.HandleDeliveryFail("Domain doesn't exist.");
-				return;
+				return false;
 			}
 
 			// The IP group that will be used to send the queued message.
@@ -136,7 +131,7 @@ namespace MantaMTA.Core.Client
 			if (noneThrottledMXs.Count == 0)
 			{
 				msg.HandleDeliveryThrottle();
-				return;
+				return false;
 			}
 
 
@@ -167,28 +162,29 @@ namespace MantaMTA.Core.Client
 
 						throw new SmtpTransactionFailedException();
 					});
+
+					// Run each SMTP command after the last.
+					await Task.Run(() => smtpClient.ExecHeloOrRset(handleSmtpError))
+						.ContinueWith(task => smtpClient.ExecMailFrom(mailFrom, handleSmtpError), TaskContinuationOptions.OnlyOnRanToCompletion)
+						.ContinueWith(task => smtpClient.ExecRcptTo(rcptTo, handleSmtpError), TaskContinuationOptions.OnlyOnRanToCompletion)
+						.ContinueWith(task => smtpClient.ExecData(msg.Data, handleSmtpError), TaskContinuationOptions.OnlyOnRanToCompletion)
+						.ContinueWith(task => SmtpClientPool.Enqueue(smtpClient), TaskContinuationOptions.OnlyOnRanToCompletion)
+						.ContinueWith(task => msg.HandleDeliverySuccess(), TaskContinuationOptions.OnlyOnRanToCompletion);
 					
-					smtpClient.ExecHeloOrRset(handleSmtpError);
-					smtpClient.ExecMailFrom(mailFrom, handleSmtpError);
-					smtpClient.ExecRcptTo(rcptTo, handleSmtpError);
-					smtpClient.ExecData(msg.Data, handleSmtpError);
-
-					// The connection worked so queue it in the pool.
-					SmtpClientPool.Enqueue(smtpClient);
-
-					msg.HandleDeliverySuccess();
-					return;
+					return true;
 				}
 				catch (SmtpTransactionFailedException)
 				{
 					// Exception is thrown to exit transaction, logging of deferrals/failers already handled.
-					return;
+					return false;
 				}
 				catch (Exception)
 				{
-					return;
+					return false;
 				}
 			}
+
+			return false;
 		}
 
 		/// <summary>

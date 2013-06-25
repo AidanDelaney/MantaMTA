@@ -3,6 +3,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Smtp
@@ -85,15 +87,15 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		/// <param name="client"></param>
 		/// <returns></returns>
-		public string ReadLine(bool log = true)
+		public async Task<string> ReadLine(bool log = true)
 		{
 			string response = string.Empty;
 
 			// Read the underlying stream using the correct encoding.
 			if (_CurrentTransportMIME == SmtpTransportMIME._7BitASCII)
-				response = ClientStreamReaderASCII.ReadLine();
+				response = await ClientStreamReaderASCII.ReadLineAsync();
 			else if (_CurrentTransportMIME == SmtpTransportMIME._8BitUTF)
-				response = ClientStreamReaderUTF8.ReadLine();
+				response = await ClientStreamReaderUTF8.ReadLineAsync();
 			else
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
@@ -115,12 +117,12 @@ namespace MantaMTA.Core.Smtp
 		{
 			StringBuilder sb = new StringBuilder();
 
-			string line = ReadLine(false);
+			string line = ReadLine(false).Result;
 
 			while (line[3] == '-')
 			{
 				sb.AppendLine(line);
-				line = ReadLine(false);
+				line = ReadLine(false).Result;
 			}
 			sb.AppendLine(line);
 
@@ -132,47 +134,63 @@ namespace MantaMTA.Core.Smtp
 			return result;
 		}
 
+		public void WriteLine(string message, bool log = true)
+		{
+			Task.Run(() => WriteLineAsync(message, log)).Wait();
+		}
+
+		private Guid _StreamId = Guid.NewGuid();
+
 		/// <summary>
 		/// Send an SMTP line to the client
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="message"></param>
-		public void WriteLine(string message, bool log = true)
+		public async Task<bool> WriteLineAsync(string message, bool log = true)
 		{
 			if (_CurrentTransportMIME == SmtpTransportMIME._7BitASCII)
 			{
-				ClientStreamWriterASCII.WriteLine(message);
-				ClientStreamWriterASCII.Flush();
+				await ClientStreamWriterASCII.WriteLineAsync(message);
+				await ClientStreamWriterASCII.FlushAsync();
 			}
 			else if (_CurrentTransportMIME == SmtpTransportMIME._8BitUTF)
 			{
-				ClientStreamWriterUTF8.WriteLine(message);
-				ClientStreamWriterUTF8.Flush();
+				await ClientStreamWriterUTF8.WriteLineAsync(message);
+				await ClientStreamWriterUTF8.FlushAsync();
 			}
 			else
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + message);
+
+			return true;
 		}
 
 		internal void Write(string message, bool log = true)
 		{
+			Task.Run(() => WriteAsync(message, log)).Wait();
+		}
+
+		internal async Task<bool> WriteAsync(string message, bool log = true)
+		{
 			if (_CurrentTransportMIME == SmtpTransportMIME._7BitASCII)
 			{
-				ClientStreamWriterASCII.Write(message);
-				ClientStreamWriterASCII.Flush();
+				await ClientStreamWriterASCII.WriteAsync(message);
+				await ClientStreamWriterASCII.FlushAsync();
 			}
 			else if (_CurrentTransportMIME == SmtpTransportMIME._8BitUTF)
 			{
-				ClientStreamWriterUTF8.Write(message);
-				ClientStreamWriterUTF8.Flush();
+				await ClientStreamWriterUTF8.WriteAsync(message);
+				await ClientStreamWriterUTF8.FlushAsync();
 			}
 			else
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
 				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + message);
+
+			return true;
 		}
 	}
 }

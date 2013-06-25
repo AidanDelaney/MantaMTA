@@ -43,7 +43,7 @@ namespace MantaMTA.Core.Tests
 					Action<string, string> sendLine = new Action<string,string>(delegate(string cmd, string expectedResponse)
 					{
 						smtp.WriteLine(cmd, false);
-						string response = smtp.ReadLine(false);
+						string response = smtp.ReadLine(false).Result;
 						Console.WriteLine(cmd + " " + expectedResponse + " " + response);
 						Assert.AreEqual(expectedResponse, response.Substring(0, 3));
 					});
@@ -77,7 +77,7 @@ namespace MantaMTA.Core.Tests
 					Action<string, string> sendLine = new Action<string, string>(delegate(string cmd, string expectedResponse)
 					{
 						smtp.WriteLine(cmd, false);
-						string response = smtp.ReadLine(false);
+						string response = smtp.ReadLine(false).Result;
 						Console.WriteLine(cmd + " " + expectedResponse + " " + response);
 						Assert.AreEqual(expectedResponse, response.Substring(0, 3));
 					});
