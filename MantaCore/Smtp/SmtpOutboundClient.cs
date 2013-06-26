@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.DNS;
 using MantaMTA.Core.Enums;
@@ -81,7 +82,7 @@ namespace MantaMTA.Core.Smtp
 		~SmtpOutboundClient()
 		{
 			if (base.Connected)
-				ExecQuit();
+				Task.Run(()=>ExecQuitAsync()).Wait();
 
 			if (!IsDisposed)
 				this.Dispose(true);
@@ -104,7 +105,7 @@ namespace MantaMTA.Core.Smtp
 		/// <summary>
 		/// Attempt to connect to the specified MX server.
 		/// </summary>
-		/// <param name="mx"></param>
+		/// <param name="mx">MX Record of the server to connect to.</param>
 		public void Connect(MXRecord mx)
 		{
 			base.Connect(mx.Host, MtaParameters.Client.SMTP_PORT);
@@ -126,7 +127,7 @@ namespace MantaMTA.Core.Smtp
 
 			// Were connected so setup the idle timeout.
 			// Quits the connection nicely if it isn't being used.
-			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.ConnectionIdleTimeoutInterval, ExecQuit);
+			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.ConnectionIdleTimeoutInterval, delegate() { Task.Run(() => ExecQuitAsync()).Wait(); });
 			_IdleTimeoutTimer.Start();
 		}
 
@@ -135,10 +136,10 @@ namespace MantaMTA.Core.Smtp
 		/// Will also check to see if 8BITMIME is supported.
 		/// </summary>
 		/// <param name="failedCallback">Action to call if hello fail.</param>
-		public void ExecHelo(Action<string> failedCallback)
+		public async Task<bool> ExecHeloAsync(Action<string> failedCallback)
 		{
 			if (!base.Connected)
-				return;
+				return false;
 
 			_IdleTimeoutTimer.Stop();
 
@@ -146,14 +147,14 @@ namespace MantaMTA.Core.Smtp
 			string hostname = System.Net.Dns.GetHostEntry(this.SmtpStream.LocalAddress).HostName;
 
 			// We have connected to the MX, Say EHLO.
-			SmtpStream.WriteLine("EHLO " + hostname);
-			string response = SmtpStream.ReadAllLines();
+			await SmtpStream.WriteLineAsync("EHLO " + hostname);
+			string response = await SmtpStream.ReadAllLinesAsync();
 
 			if (!response.StartsWith("2"))
 			{
 				// If server didn't respond with a success code on hello then we should retry with HELO
-				SmtpStream.WriteLine("HELO " + hostname);
-				response = SmtpStream.ReadAllLines();
+				await SmtpStream.WriteLineAsync("HELO " + hostname);
+				response = await SmtpStream.ReadAllLinesAsync();
 				if (!response.StartsWith("250"))
 				{
 					failedCallback(response);
@@ -170,6 +171,8 @@ namespace MantaMTA.Core.Smtp
 
 			_HasHelloed = true;
 			_IdleTimeoutTimer.Start();
+
+			return true;
 		}
 
 		/// <summary>
@@ -177,20 +180,22 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		/// <param name="mailFrom">Email address to use as parameter.</param>
 		/// <param name="failed">Action to call if command fails.</param>
-		public void ExecMailFrom(MailAddress mailFrom, Action<string> failedCallback)
+		public async Task<bool> ExecMailFromAsync(MailAddress mailFrom, Action<string> failedCallback)
 		{
 			if (!base.Connected)
-				return;
+				return false;
 
 			_IdleTimeoutTimer.Stop();
 
-			SmtpStream.WriteLine("MAIL FROM: <" +
+			await SmtpStream.WriteLineAsync("MAIL FROM: <" +
 										(mailFrom == null ? string.Empty : mailFrom.Address) + ">" +
 										(_DataTransportMime == SmtpTransportMIME._8BitUTF ? " BODY=8BITMIME" : string.Empty));
-			string response = SmtpStream.ReadAllLines();
+			string response = await SmtpStream.ReadAllLinesAsync();
 			_IdleTimeoutTimer.Start();
 			if (!response.StartsWith("250"))
 				failedCallback(response);
+
+			return true;
 		}
 
 		/// <summary>
@@ -198,21 +203,23 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		/// <param name="rcptTo">Email address to use as parameter.</param>
 		/// <param name="failedCallback">Action to call if command fails.</param>
-		public void ExecRcptTo(MailAddress rcptTo, Action<string> failedCallback)
+		public async Task<bool> ExecRcptToAsync(MailAddress rcptTo, Action<string> failedCallback)
 		{
 			if (!base.Connected)
-				return;
+				return false;
 
 			_IdleTimeoutTimer.Stop();
 
-			SmtpStream.WriteLine("RCPT TO: <" + rcptTo.Address + ">");
+			await SmtpStream.WriteLineAsync("RCPT TO: <" + rcptTo.Address + ">");
 			
-			string response = SmtpStream.ReadAllLines();
+			string response = await SmtpStream.ReadAllLinesAsync();
 			
 			_IdleTimeoutTimer.Start();
 
 			if (!response.StartsWith("250"))
 				failedCallback(response);
+
+			return true;
 		}
 
 		/// <summary>
@@ -220,19 +227,19 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		/// <param name="data">Data to send to the server</param>
 		/// <param name="failedCallback">Action to call if fails to send.</param>
-		public void ExecData(string data, Action<string> failedCallback)
+		public async Task<bool> ExecDataAsync(string data, Action<string> failedCallback)
 		{
 			if (!base.Connected)
-				return;
+				return false;
 
 			_IdleTimeoutTimer.Stop();
 
-			SmtpStream.WriteLine("DATA");
-			string response = SmtpStream.ReadAllLines();
+			await SmtpStream.WriteLineAsync("DATA");
+			string response = await SmtpStream.ReadAllLinesAsync();
 			if (!response.StartsWith("354"))
 			{
 				failedCallback(response);
-				return;
+				return false;
 			}
 
 			// Increment the data commands as server has responded positiely.
@@ -240,14 +247,14 @@ namespace MantaMTA.Core.Smtp
 
 			// Send the message data using the correct transport MIME
 			SmtpStream.SetSmtpTransportMIME(_DataTransportMime);
-			SmtpStream.Write(data, false);
-			SmtpStream.Write(MtaParameters.NewLine + "." + MtaParameters.NewLine, false);
+			await SmtpStream.WriteAsync(data, false);
+			await SmtpStream.WriteAsync(MtaParameters.NewLine + "." + MtaParameters.NewLine, false);
 
 			// Data done so return to 7-Bit mode.
 			SmtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 
 
-			response = SmtpStream.ReadAllLines();
+			response = await SmtpStream.ReadAllLinesAsync();
 			_IdleTimeoutTimer.Start();
 
 
@@ -257,28 +264,31 @@ namespace MantaMTA.Core.Smtp
 
 			// If max messages have been sent quit the connection.			
 			if (_DataCommands >= OutboundRules.OutboundRuleManager.GetMaxMessagesPerConnection(MXRecord, MtaIpAddress))
-				ExecQuit();
+				Task.Run(() => ExecQuitAsync()).Wait();
+
+			return true;
 		}
 
 		/// <summary>
 		/// Send the SMTP Quit command to the Server.
 		/// </summary>
-		public void ExecQuit()
+		public async Task<bool> ExecQuitAsync()
 		{
 			if (!base.Connected)
-				return;
+				return false;
 
 			_IdleTimeoutTimer.Stop();
-			SmtpStream.WriteLine("QUIT");
+			await SmtpStream.WriteLineAsync("QUIT");
 			// Don't read response as don't care.
 			// Close the TCP connection.
 			base.Close();
+			return true;
 		}
 
 		/// <summary>
 		/// Send the RSET command to the server.
 		/// </summary>
-		public void ExecRset()
+		public async Task<bool> ExecRsetAsync()
 		{
 			if (!base.Connected)
 			{
@@ -286,21 +296,25 @@ namespace MantaMTA.Core.Smtp
 				throw new Exception();
 			}
 			_IdleTimeoutTimer.Stop();
-			SmtpStream.WriteLine("RSET");
-			SmtpStream.ReadAllLines();
+			await SmtpStream.WriteLineAsync("RSET");
+			await SmtpStream.ReadAllLinesAsync();
 			_IdleTimeoutTimer.Start();
+
+			return true;
 		}
 
 		/// <summary>
 		/// HELO or RSET depending on previous commands.
 		/// </summary>
 		/// <param name="failedCallback"></param>
-		public void ExecHeloOrRset(Action<string> failedCallback)
+		public async Task<bool> ExecHeloOrRsetAsync(Action<string> failedCallback)
 		{
 			if (!_HasHelloed)
-				ExecHelo(failedCallback);
+				await ExecHeloAsync(failedCallback);
 			else
-				ExecRset();
+				await ExecRsetAsync();
+
+			return true;
 		}
 	}
 

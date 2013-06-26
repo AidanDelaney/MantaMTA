@@ -131,7 +131,7 @@ namespace MantaMTA.Core.Server
 				while (client.Connected && !quit)
 				{
 					// Read the next command. If no line then this will wait for one.
-					string cmd = smtpStream.ReadLine().Result;
+					string cmd = smtpStream.ReadLineAsync().Result;
 
 					// Client Disconnected.
 					if (cmd == null)
@@ -347,7 +347,7 @@ namespace MantaMTA.Core.Server
 						smtpStream.SetSmtpTransportMIME(mailTransaction.TransportMIME);
 
 						// Wait for the first data line. Don't log data in SMTP log file.
-						string dataline = smtpStream.ReadLine(false).Result;
+						string dataline = smtpStream.ReadLineAsync(false).Result;
 						// Loop until data client stops sending us data.
 						while (!dataline.Equals("."))
 						{
@@ -355,7 +355,7 @@ namespace MantaMTA.Core.Server
 							mailTransaction.Data += dataline + Environment.NewLine;
 
 							// Wait for the next data line. Don't log data in SMTP log file.
-							dataline = smtpStream.ReadLine(false).Result;
+							dataline = smtpStream.ReadLineAsync(false).Result;
 						}
 
 						// Data has been received, return to 7 bit ascii.

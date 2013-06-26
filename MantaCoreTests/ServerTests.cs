@@ -43,12 +43,12 @@ namespace MantaMTA.Core.Tests
 					Action<string, string> sendLine = new Action<string,string>(delegate(string cmd, string expectedResponse)
 					{
 						smtp.WriteLine(cmd, false);
-						string response = smtp.ReadLine(false).Result;
+						string response = smtp.ReadLineAsync(false).Result;
 						Console.WriteLine(cmd + " " + expectedResponse + " " + response);
 						Assert.AreEqual(expectedResponse, response.Substring(0, 3));
 					});
 
-					smtp.ReadLine();
+					string result = smtp.ReadLineAsync().Result;
 					sendLine("HELO localhost", "250");
 					sendLine("MAIL FROM: <local@localhost>", "250");
 					sendLine("RCPT TO: <local@localhost>", "250");
@@ -77,12 +77,12 @@ namespace MantaMTA.Core.Tests
 					Action<string, string> sendLine = new Action<string, string>(delegate(string cmd, string expectedResponse)
 					{
 						smtp.WriteLine(cmd, false);
-						string response = smtp.ReadLine(false).Result;
+						string response = smtp.ReadLineAsync(false).Result;
 						Console.WriteLine(cmd + " " + expectedResponse + " " + response);
 						Assert.AreEqual(expectedResponse, response.Substring(0, 3));
 					});
 
-					smtp.ReadLine();
+					smtp.ReadLineAsync();
 					sendLine("HELO localhost", "250");
 					sendLine("MAIL FROM: <local@localhost>", "250");
 					sendLine("RCPT TO: <daniel.longworth@colony101.co.uk>", "250");

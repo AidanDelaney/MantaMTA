@@ -21,7 +21,7 @@ namespace MantaMTA.Core.Tests
 				stream.SetSmtpTransportMIME(SmtpTransportMIME._8BitUTF);
 				stream.WriteLine(unicodeStr, false);
 				ms.Position = 0;
-				string result = stream.ReadLine(false).Result;
+				string result = stream.ReadLineAsync(false).Result;
 				Assert.AreEqual(unicodeStr, result);
 			}
 
@@ -31,7 +31,7 @@ namespace MantaMTA.Core.Tests
 				stream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 				stream.WriteLine(unicodeStr, false);
 				ms.Position = 0;
-				string result = stream.ReadLine(false).Result;
+				string result = stream.ReadLineAsync(false).Result;
 				Assert.AreNotEqual(unicodeStr, result);
 			}
 		}

@@ -3,7 +3,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using MantaMTA.Core.Enums;
 
@@ -85,9 +84,9 @@ namespace MantaMTA.Core.Smtp
 		/// <summary>
 		/// Read an SMTP line from the client.
 		/// </summary>
-		/// <param name="client"></param>
-		/// <returns></returns>
-		public async Task<string> ReadLine(bool log = true)
+		/// <param name="log">If true will log.</param>
+		/// <returns>Line read from the stream.</returns>
+		public async Task<string> ReadLineAsync(bool log = true)
 		{
 			string response = string.Empty;
 
@@ -109,20 +108,30 @@ namespace MantaMTA.Core.Smtp
 		}
 
 		/// <summary>
-		/// Read SMTP response until last line is returned.
+		/// Reads all lines from the stream.
 		/// </summary>
-		/// <param name="log"></param>
-		/// <returns></returns>
+		/// <param name="log">If true will log.</param>
+		/// <returns>All lines from the stream that are considered part of one message by SMTP.</returns>
 		public string ReadAllLines(bool log = true)
+		{
+			return ReadAllLinesAsync(log).Result;
+		}
+
+		/// <summary>
+		/// Reads all lines from the stream.
+		/// </summary>
+		/// <param name="log">If true will log.</param>
+		/// <returns>All lines from the stream that are considered part of one message by SMTP.</returns>
+		public async Task<string> ReadAllLinesAsync(bool log = true)
 		{
 			StringBuilder sb = new StringBuilder();
 
-			string line = ReadLine(false).Result;
+			string line = await ReadLineAsync(false);
 
 			while (line[3] == '-')
 			{
 				sb.AppendLine(line);
-				line = ReadLine(false).Result;
+				line = await ReadLineAsync(false);
 			}
 			sb.AppendLine(line);
 
@@ -134,18 +143,21 @@ namespace MantaMTA.Core.Smtp
 			return result;
 		}
 
+		/// <summary>
+		/// Write a line to the Stream. Using the current transport MIME.
+		/// </summary>
+		/// <param name="message">Message to send.</param>
+		/// <param name="log">If true will log.</param>
 		public void WriteLine(string message, bool log = true)
 		{
 			Task.Run(() => WriteLineAsync(message, log)).Wait();
 		}
 
-		private Guid _StreamId = Guid.NewGuid();
-
 		/// <summary>
-		/// Send an SMTP line to the client
+		/// Write a line to the Stream. Using the current transport MIME.
 		/// </summary>
-		/// <param name="client"></param>
-		/// <param name="message"></param>
+		/// <param name="message">Message to send.</param>
+		/// <param name="log">If true will log.</param>
 		public async Task<bool> WriteLineAsync(string message, bool log = true)
 		{
 			if (_CurrentTransportMIME == SmtpTransportMIME._7BitASCII)
@@ -167,11 +179,11 @@ namespace MantaMTA.Core.Smtp
 			return true;
 		}
 
-		internal void Write(string message, bool log = true)
-		{
-			Task.Run(() => WriteAsync(message, log)).Wait();
-		}
-
+		/// <summary>
+		/// Write to the Stream. Using the current transport MIME.
+		/// </summary>
+		/// <param name="message">Message to send.</param>
+		/// <param name="log">If true will log.</param>
 		internal async Task<bool> WriteAsync(string message, bool log = true)
 		{
 			if (_CurrentTransportMIME == SmtpTransportMIME._7BitASCII)

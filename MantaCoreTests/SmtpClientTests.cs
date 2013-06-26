@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 using MantaMTA.Core.Server;
 using MantaMTA.Core.Smtp;
 using NUnit.Framework;
@@ -23,7 +24,7 @@ namespace MantaMTA.Core.Tests
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.Connect(mxRecord);
 				MantaMTA.Core.Smtp.SmtpClientPool.Enqueue(smtpClient);
-				MantaMTA.Core.Smtp.SmtpClientPool.TryDequeue(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }), out smtpClient);
+				smtpClient = MantaMTA.Core.Smtp.SmtpClientPool.Dequeue(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }));
 
 				Assert.NotNull(smtpClient);
 				Assert.IsTrue(smtpClient.Connected);
@@ -48,10 +49,10 @@ namespace MantaMTA.Core.Tests
 				Action sendMessage = new Action(delegate()
 				{
 					Action<string> callback = new Action<string>(delegate(string str) { });
-					smtpClient.ExecHeloOrRset(callback);
-					smtpClient.ExecMailFrom(new System.Net.Mail.MailAddress("testing@localhost"), callback);
-					smtpClient.ExecRcptTo(new System.Net.Mail.MailAddress("testing@localhost"), callback);
-					smtpClient.ExecData("hello", callback);
+					smtpClient.ExecHeloOrRsetAsync(callback);
+					smtpClient.ExecMailFromAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
+					smtpClient.ExecRcptToAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
+					smtpClient.ExecDataAsync("hello", callback);
 				});
 
 				sendMessage();

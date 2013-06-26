@@ -275,13 +275,42 @@ namespace MantaMTA.Core.OutboundRules
 					else
 					{
 						Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " value wasn't valid [" + rules[i].Value + "], defaulting to unlimited");
-						return 1;
+						return -1;
 					}
 				}
 			}
 
 			Logging.Error("Failed to get max messages per hour for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to unlimited");
 			return -1;
+		}
+
+		/// <summary>
+		/// Gets the maximum amount of simultaneous connections to specified host.
+		/// </summary>
+		/// <param name="ipAddress">IP Address connecting from.</param>
+		/// <param name="record">MXRecord of the destination.</param>
+		/// <returns>Max number of connections.</returns>
+		internal static int GetMaxConnectionsToDestination(MtaIpAddress.MtaIpAddress ipAddress, MXRecord record)
+		{
+			int mxPatternID = -1;
+			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);
+			for (int i = 0; i < rules.Count; i++)
+			{
+				if (rules[i].Type == OutboundRuleType.MaxConnections)
+				{
+					int tmp = 0;
+					if (int.TryParse(rules[i].Value, out tmp))
+						return tmp;
+					else
+					{
+						Logging.Error("Failed to get max connections for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " value wasn't valid [" + rules[i].Value + "], defaulting to 1");
+						return 1;
+					}
+				}
+			}
+
+			Logging.Error("Failed to get max connections for " + record.Host + " using " + ipAddress.IPAddress.ToString() + " defaulting to 1");
+			return 1;
 		}
 	}
 }

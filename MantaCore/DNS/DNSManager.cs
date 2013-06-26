@@ -20,31 +20,45 @@ namespace MantaMTA.Core.DNS
 		/// <returns></returns>
 		public static MXRecord[] GetMXRecords(string domain)
 		{
+			// Make sure the domain is all lower.
+			domain = domain.ToLower();
+
 			// This is what we'll be returning.
 			MXRecord[] mxRecords = null;
 
+			// Try and get DNS from internal cache.
+			if (_Records.TryGetValue(domain, out mxRecords))
+			{
+				// Found cached records.
+				// Make sure they haven't expired.
+				if (mxRecords.Count(mx => mx.Dead) < 1)
+					return mxRecords;
+			}
+
+			string[] records = null;
+
 			try
 			{
-				// Try and get cached records
-				mxRecords = _Records[domain.ToLower()];
-				
-				// Look for cached records
-				if (mxRecords != null)
-				{
-					// Make sure they haven't expired.
-					if (mxRecords.Count(mx => mx.Dead) < 1)
-						return mxRecords;
-				}
+				// Get the records from DNS
+				records = dnsapi.GetMXRecords(domain);
 			}
-			catch (Exception) { /* Key doesn't exist in dictionary. */ }
-
-			
-			// Get the records from DNS
-			string[] records = dnsapi.GetMXRecords(domain);
+			catch (DNS.DNSDomainNotFoundException)
+			{
+				// Ensure records is null.
+				records = null;
+			}
 			
 			// No MX records for domain.
 			if (records == null)
-				return null;
+			{
+				// If there are no MX records use the hostname as per SMTP RFC.
+				MXRecord[] mxs = new MXRecord[] { new MXRecord(domain, 10, 300) };
+				_Records.AddOrUpdate(domain, mxs, new Func<string, MXRecord[], MXRecord[]>(delegate(string key, MXRecord[] existing)
+				{
+					return mxs;
+				}));
+				return mxs;
+			}
 			else
 				// Order by preferance
 				records = records.OrderBy(s => s).ToArray();
@@ -56,7 +70,7 @@ namespace MantaMTA.Core.DNS
 				mxRecords[i] = new MXRecord(split[1], uint.Parse(split[0]), uint.Parse(split[2]));
 			}
 
-			_Records[domain.ToLower()] = mxRecords;
+			_Records.TryAdd(domain, mxRecords);
 			return mxRecords;
 		}
 	}

@@ -101,18 +101,16 @@ ELSE
 
 		/// <summary>
 		/// Gets messages that are due to be sent.
+		/// Not Threadsafe. If multiple calls are made to this method then messages could be picked up twice.
 		/// </summary>
-		/// <param name="maxMessages">The maximum amount of messages get</param>
-		/// <returns></returns>
+		/// <param name="maxMessages">The maximum amount of messages get.</param>
+		/// <returns>Collection of messages queued for sending.</returns>
 		internal static MtaQueuedMessageCollection PickupForSending(int maxMessages)
 		{
 			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
---// No other transactions can modify data that has been read by the current transaction until the current transaction completes.
---// Needed to prevent a queued message being picked up more than once.
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
 BEGIN TRANSACTION
 
 DECLARE @msgIdTbl table(msgID uniqueidentifier)

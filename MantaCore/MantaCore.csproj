@@ -80,7 +80,7 @@
     <Compile Include="Smtp\SmtpStreamHandler.cs" />
     <Compile Include="Smtp\SmtpTransactionLogger.cs" />
     <Compile Include="Server\MessageHeaderManager.cs" />
-    <Compile Include="Smtp\SmtpConnectionPool.cs" />
+    <Compile Include="Smtp\SmtpClientPool.cs" />
     <Compile Include="Smtp\SmtpOutboundClient.cs" />
   </ItemGroup>
   <ItemGroup>
