@@ -24,8 +24,8 @@ MERGE c101_mta_send WITH (HOLDLOCK) AS target
 USING (SELECT @sndID) AS source(mta_send_id)
 ON (target.mta_send_id = source.mta_send_id)
 WHEN NOT MATCHED THEN
-	INSERT (mta_send_id, mta_send_internalId)
-	VALUES (@sndID, ISNULL((SELECT MAX(mta_send_internalID) + 1 FROM c101_mta_send), 1));
+	INSERT (mta_send_id, mta_send_internalId, mta_send_createdTimestamp)
+	VALUES (@sndID, ISNULL((SELECT MAX(mta_send_internalID) + 1 FROM c101_mta_send), 1, GETDATE()));
 
 COMMIT TRANSACTION
 
