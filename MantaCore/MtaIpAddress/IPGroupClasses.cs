@@ -25,6 +25,10 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// Collection of the IP Addresses that make up this group.
 		/// </summary>
 		public MtaIpAddressCollection IpAddresses { get; set; }
+		/// <summary>
+		/// Timestamp of when this MtaIPGroup instance was created; used for caching.
+		/// </summary>
+		public DateTime CreatedTimestamp = DateTime.Now;
 
 		/// <summary>
 		/// Gets a random IP from the collection.
