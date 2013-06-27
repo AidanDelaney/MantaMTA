@@ -23,6 +23,19 @@ namespace MantaMTA.Core.Smtp
 		public ArrayList InUseConnections = new ArrayList();
 
 		/// <summary>
+		/// Holds the amount of client.connect's currently in progress. We don't want to many of these going
+		/// at once or theres a massive wait before they connect.
+		/// If static so limit is across all instances of SmtpClientQueue.
+		/// </summary>
+		private static int _ConnectionAttemptsInProgress = 0;
+		/// <summary>
+		/// Lock for changing _ConnectionAttemptsInProgress. Is static so same lock across all class instances.
+		/// </summary>
+		private static object _ConnectionAttemptsInProgressLock = new object();
+
+		private const int MAX_SIMALTATIUS_CLIENT_CONNECT_ATTEMPTS = 3;
+
+		/// <summary>
 		/// Create an SmtpClientQueue instance.
 		/// </summary>
 		public SmtpClientQueue() : base()
@@ -68,6 +81,68 @@ namespace MantaMTA.Core.Smtp
 				RunInUseCleaner();
 			}
 		}
+
+		/// <summary>
+		/// Attempt to create a new connection using the specified ip address and mx record.
+		/// </summary>
+		/// <returns>A connected outbound client or NULL</returns>
+		public SmtpOutboundClient CreateNewConnection(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		{
+			SmtpOutboundClient smtpClient = null;
+
+			// Get the maximum connections to the destination.
+			int maximumConnections = OutboundRules.OutboundRuleManager.GetMaxConnectionsToDestination(ipAddress, mxRecord);
+
+			lock (this.SyncRoot)
+			{
+				// Get the currently active connections count.
+				int currentConnections = this.InUseConnections.Count;
+
+				lock (_ConnectionAttemptsInProgressLock)
+				{
+					// If the current connections count + current connection is less than
+					// the maximum connections then we can create a new connection otherwise
+					// we are maxed out so return null.
+					if (maximumConnections <= (currentConnections + _ConnectionAttemptsInProgress))
+						return null;
+
+				
+					// Limit the amount of connection attempts or experiance massive delays 30s+ for client.connect()
+					if (_ConnectionAttemptsInProgress >= SmtpClientQueue.MAX_SIMALTATIUS_CLIENT_CONNECT_ATTEMPTS)
+					{
+						Logging.Debug("Cannot attempt to create new connection.");
+						return null;
+					}
+
+					Logging.Debug("Attempting to create new connection.");
+					_ConnectionAttemptsInProgress++;
+				}
+			}
+			
+			// Do the actual creating and connecting of the client outside of the lock
+			// so we don't block other threads.
+
+			try
+			{
+				// Create the new client and make the connection
+				smtpClient = new SmtpOutboundClient(ipAddress);
+				smtpClient.Connect(mxRecord);
+				this.InUseConnections.Add(smtpClient);
+			}
+			catch (Exception)
+			{
+				// If something went wrong clear the client so we don't return something odd.
+				smtpClient = null;
+			}
+			finally
+			{
+				// Reduce the current attempts as were done.
+				_ConnectionAttemptsInProgress--;
+			}
+
+			// Return connected client or null.
+			return smtpClient;
+		}
 	}
 
 	/// <summary>
@@ -82,15 +157,7 @@ namespace MantaMTA.Core.Smtp
 
 	internal class SmtpClientPool 
 	{
-		/// <summary>
-		/// Holds the amount of client.connect's currently in progress. We don't want to many of these going
-		/// at once or theres a massive wait before they connect.
-		/// </summary>
-		private static int _ConnectionAttemptsInProgress = 0;
-		/// <summary>
-		/// Lock for changing _ConnectionAttemptsInProgress
-		/// </summary>
-		private static object _ConnectionAttemptsInProgressLock = new object();
+		
 		/// <summary>
 		/// Holds the free and active connections from this SMTP client to other SMTP servers.
 		/// </summary>
@@ -142,53 +209,7 @@ namespace MantaMTA.Core.Smtp
 					}
 
 					// Nothing was in the queue or all queued items timed out.
-					
-					// Get the maximum connections to the destination.
-					int maximumConnections = OutboundRules.OutboundRuleManager.GetMaxConnectionsToDestination(ipAddress, mxs[i]);
-					
-					lock (clientQueue.SyncRoot)
-					{
-						// Get the currently active connections count.
-						int currentConnections = clientQueue.InUseConnections.Count;
-
-						// If the current connections count + current connection is less than
-						// the maximum connections then we can create a new connection otherwise
-						// we are maxed out so return null.
-						if (maximumConnections < currentConnections + _ConnectionAttemptsInProgress)
-							return null;
-					}
-					
-					// Create a new connection.
-					lock (_ConnectionAttemptsInProgressLock)
-					{
-						// Limit the amount of connection attempts or experiance massive delays 30s+ for client.connect()
-						if (_ConnectionAttemptsInProgress > 5)
-							return null;
-
-						_ConnectionAttemptsInProgress++;
-					}
-
-
-					try
-					{
-						// Create the new client and make the connection
-						smtpClient = new SmtpOutboundClient(ipAddress);
-						smtpClient.Connect(mxs[i]);
-						clientQueue.InUseConnections.Add(smtpClient);
-					}
-					catch (Exception)
-					{
-						// If something went wrong clear the client so we don't return something odd.
-						smtpClient = null;
-					}
-					finally
-					{
-						// Reduce the current attempts as were done.
-						_ConnectionAttemptsInProgress--;
-					}
-
-					// Return connected client or null.
-					return smtpClient;
+					return clientQueue.CreateNewConnection(ipAddress, mxs[i]);					
 				}
 				catch (SocketException ex)
 				{
