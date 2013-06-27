@@ -33,7 +33,7 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		private static object _ConnectionAttemptsInProgressLock = new object();
 
-		private const int MAX_SIMALTATIUS_CLIENT_CONNECT_ATTEMPTS = 3;
+		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 5;
 
 		/// <summary>
 		/// Create an SmtpClientQueue instance.
@@ -108,7 +108,7 @@ namespace MantaMTA.Core.Smtp
 
 				
 					// Limit the amount of connection attempts or experiance massive delays 30s+ for client.connect()
-					if (_ConnectionAttemptsInProgress >= SmtpClientQueue.MAX_SIMALTATIUS_CLIENT_CONNECT_ATTEMPTS)
+					if (_ConnectionAttemptsInProgress >= SmtpClientQueue.MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS)
 					{
 						Logging.Debug("Cannot attempt to create new connection.");
 						return null;
