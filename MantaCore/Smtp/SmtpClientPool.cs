@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.DNS;
 
@@ -20,37 +21,51 @@ namespace MantaMTA.Core.Smtp
 		/// Holds a list of currently active and inuse connections.
 		/// </summary>
 		public ArrayList InUseConnections = new ArrayList();
-		/// <summary>
-		/// Holds a timestamp of when InUseConnections should next be perged.
-		/// </summary>
-		private DateTime _NextPergeTimestamp = DateTime.Now;
 
 		/// <summary>
-		/// If required perges InUseConnections of no longer valid connections. 
+		/// Create an SmtpClientQueue instance.
 		/// </summary>
-		public void IfRequiredPergeInuse()
+		public SmtpClientQueue() : base()
 		{
-			if (_NextPergeTimestamp < DateTime.Now)
+			Task.Run(new Action(RunInUseCleaner));
+		}
+
+		/// <summary>
+		/// Removes dead & orphaned connections from InUseConnections.
+		/// </summary>
+		private async void RunInUseCleaner()
+		{
+			try
 			{
-				// Look the collection, so it doesn't change under us.
-				lock (InUseConnections.SyncRoot)
-				{
-					ArrayList toRemove = new ArrayList();
-
-					// Loop through all connections and check they still exist and are connected, if there not then we should remove them.
-					for (int i = 0; i < InUseConnections.Count; i++)
+				await Task.Run(new Action(async delegate()
 					{
-						if (InUseConnections[i] == null || !((SmtpOutboundClient)InUseConnections[i]).Connected)
-							toRemove.Add(i);
-					}
+						while (true) // Run forever
+						{
+							// Look the collection, so it doesn't change under us.
+							lock (InUseConnections.SyncRoot)
+							{
+								ArrayList toRemove = new ArrayList();
+								
+								// Loop through all connections and check they still exist and are connected, if there not then we should remove them.
+								for (int i = 0; i < InUseConnections.Count; i++)
+								{
+									if (InUseConnections[i] == null || !((SmtpOutboundClient)InUseConnections[i]).Connected)
+										toRemove.Add(i);
+								}
 
-					// Remove dead connections.
-					for (int z = toRemove.Count - 1; z >= 0; z--)
-						InUseConnections.RemoveAt((int)toRemove[z]);
+								// Remove dead connections.
+								for (int z = toRemove.Count - 1; z >= 0; z--)
+									InUseConnections.RemoveAt((int)toRemove[z]);
+							}
 
-					// Don't perge to often.
-					_NextPergeTimestamp = DateTime.Now.AddSeconds(30);
-				}
+							// Don't want to loop to often so wait 30 seconds before next iteration.
+							await Task.Delay(30 * 1000);
+						}
+					}));
+			}
+			catch (Exception)
+			{
+				RunInUseCleaner();
 			}
 		}
 	}
@@ -133,9 +148,6 @@ namespace MantaMTA.Core.Smtp
 					
 					lock (clientQueue.SyncRoot)
 					{
-						// Perge dead connections
-						clientQueue.IfRequiredPergeInuse();
-
 						// Get the currently active connections count.
 						int currentConnections = clientQueue.InUseConnections.Count;
 
