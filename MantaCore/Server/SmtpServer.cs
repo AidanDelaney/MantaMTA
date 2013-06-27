@@ -3,7 +3,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Server
@@ -81,10 +83,8 @@ namespace MantaMTA.Core.Server
 						}
 
 
-						// When client connects create new thread and call handler.
-						// DanL : This should use a threadpool or server could easily get overloaded.
-						Thread clientThread = new Thread(new ParameterizedThreadStart(HandleSmtpConnection));
-						clientThread.Start(client);
+						// Create a Task and run it to handle client connection.
+						Task.Run(() => HandleSmtpConnection(client));
 					}
 				}));
 			_ServerThread.Start();
@@ -103,7 +103,7 @@ namespace MantaMTA.Core.Server
 		/// Method handles a single connection from a client.
 		/// </summary>
 		/// <param name="obj">Connection with the client.</param>
-		private void HandleSmtpConnection(object obj)
+		private async Task<bool> HandleSmtpConnection(object obj)
 		{
 			TcpClient client = (TcpClient)obj;
 			client.ReceiveTimeout = MtaParameters.Client.ConnectionReceiveTimeoutInterval * 1000;
@@ -114,7 +114,7 @@ namespace MantaMTA.Core.Server
 				Smtp.SmtpStreamHandler smtpStream = new Smtp.SmtpStreamHandler(client);
 
 				// Identify our MTA
-				smtpStream.WriteLine("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
+				await smtpStream.WriteLineAsync("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
 
 				// Set to true when the client has sent quit command.
 				bool quit = false;
@@ -131,7 +131,7 @@ namespace MantaMTA.Core.Server
 				while (client.Connected && !quit)
 				{
 					// Read the next command. If no line then this will wait for one.
-					string cmd = smtpStream.ReadLineAsync().Result;
+					string cmd = await smtpStream.ReadLineAsync();
 
 					// Client Disconnected.
 					if (cmd == null)
@@ -143,7 +143,7 @@ namespace MantaMTA.Core.Server
 					if (cmd.Equals("QUIT", StringComparison.OrdinalIgnoreCase))
 					{
 						quit = true;
-						smtpStream.WriteLine("221 Goodbye");
+						await smtpStream.WriteLineAsync("221 Goodbye");
 						continue;
 					}
 
@@ -151,14 +151,14 @@ namespace MantaMTA.Core.Server
 					if (cmd.Equals("RSET", StringComparison.OrdinalIgnoreCase))
 					{
 						mailTransaction = null;
-						smtpStream.WriteLine("250 Ok");
+						await smtpStream.WriteLineAsync("250 Ok");
 						continue;
 					}
 
 					// Do nothing except return 250. Do nothing just return success (250).
 					if (cmd.Equals("NOOP", StringComparison.OrdinalIgnoreCase))
 					{
-						smtpStream.WriteLine("250 Ok");
+						await smtpStream.WriteLineAsync("250 Ok");
 						continue;
 					}
 
@@ -171,7 +171,7 @@ namespace MantaMTA.Core.Server
 						// Helo should be followed by a hostname, if not syntax error.
 						if (cmd.IndexOf(" ") < 0)
 						{
-							smtpStream.WriteLine("501 Syntax error");
+							await smtpStream.WriteLineAsync("501 Syntax error");
 							continue;
 						}
 
@@ -181,7 +181,7 @@ namespace MantaMTA.Core.Server
 						// There should not be any spaces in the hostname if it is sytax error.
 						if (heloHost.IndexOf(" ") >= 0)
 						{
-							smtpStream.WriteLine("501 Syntax error");
+							await smtpStream.WriteLineAsync("501 Syntax error");
 							heloHost = string.Empty;
 							continue;
 						}
@@ -190,14 +190,14 @@ namespace MantaMTA.Core.Server
 						hasHello = true;
 						if (cmd.StartsWith("HELO", StringComparison.OrdinalIgnoreCase))
 						{
-							smtpStream.WriteLine("250 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+							await smtpStream.WriteLineAsync("250 Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 						}
 						else
 						{
 							// EHLO was sent, let the client know what extensions we support.
-							smtpStream.WriteLine("250-Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
-							smtpStream.WriteLine("250-8BITMIME");
-							smtpStream.WriteLine("250 Ok");
+							await smtpStream.WriteLineAsync("250-Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
+							await smtpStream.WriteLineAsync("250-8BITMIME");
+							await smtpStream.WriteLineAsync("250 Ok");
 						}
 						continue;
 					}
@@ -207,7 +207,7 @@ namespace MantaMTA.Core.Server
 					// Client MUST helo before being allowed to do any of these commands.
 					if (!hasHello)
 					{
-						smtpStream.WriteLine("503 HELO first");
+						await smtpStream.WriteLineAsync("503 HELO first");
 						continue;
 					}
 
@@ -239,7 +239,7 @@ namespace MantaMTA.Core.Server
 							}
 							else
 							{
-								smtpStream.WriteLine("501 Syntax error");
+								await smtpStream.WriteLineAsync("501 Syntax error");
 								continue;
 							}
 						}
@@ -263,7 +263,7 @@ namespace MantaMTA.Core.Server
 						// If we got this far mail from has an valid email address parameter so set it in the transaction
 						// and return success to the client.
 						mailTransaction.MailFrom = mailFrom;
-						smtpStream.WriteLine("250 Ok");
+						await smtpStream.WriteLineAsync("250 Ok");
 						continue;
 					}
 
@@ -275,7 +275,7 @@ namespace MantaMTA.Core.Server
 						if (mailTransaction == null ||
 							!mailTransaction.HasMailFrom)
 						{
-							smtpStream.WriteLine("503 Bad sequence of commands");
+							await smtpStream.WriteLineAsync("503 Bad sequence of commands");
 							continue;
 						}
 
@@ -302,7 +302,7 @@ namespace MantaMTA.Core.Server
 							{
 								// This server cannot deliver or relay message for the MAIL FROM + RCPT TO addresses.
 								// This should be treated as a permament failer, tell client not to retry.
-								smtpStream.WriteLine("554 Cannot relay");
+								await smtpStream.WriteLineAsync("554 Cannot relay");
 								continue;
 							}
 
@@ -318,7 +318,7 @@ namespace MantaMTA.Core.Server
 
 						// Add the recipient.
 						mailTransaction.RcptTo.Add(rcptTo.ToString());
-						smtpStream.WriteLine("250 Ok");
+						await smtpStream.WriteLineAsync("250 Ok");
 						continue;
 					}
 
@@ -330,33 +330,35 @@ namespace MantaMTA.Core.Server
 						if (mailTransaction == null ||
 							!mailTransaction.HasMailFrom)
 						{
-							smtpStream.WriteLine("503 Bad sequence of commands");
+							await smtpStream.WriteLineAsync("503 Bad sequence of commands");
 							continue;
 						}
 						// Must have RCPT's before data.
 						else if (mailTransaction.RcptTo.Count < 1)
 						{
-							smtpStream.WriteLine("554 No valid recipients");
+							await smtpStream.WriteLineAsync("554 No valid recipients");
 							continue;
 						}
 
 						// Tell the client we are now accepting there data.
-						smtpStream.WriteLine("354 Go ahead");
+						await smtpStream.WriteLineAsync("354 Go ahead");
 
 						// Set the transport MIME to default or as specified by mail from body
 						smtpStream.SetSmtpTransportMIME(mailTransaction.TransportMIME);
 
 						// Wait for the first data line. Don't log data in SMTP log file.
-						string dataline = smtpStream.ReadLineAsync(false).Result;
+						string dataline = await smtpStream.ReadLineAsync(false);
+						StringBuilder dataBuilder = new StringBuilder();
 						// Loop until data client stops sending us data.
 						while (!dataline.Equals("."))
 						{
 							// Add the line to existing data.
-							mailTransaction.Data += dataline + Environment.NewLine;
+							dataBuilder.AppendLine(dataline);
 
 							// Wait for the next data line. Don't log data in SMTP log file.
-							dataline = smtpStream.ReadLineAsync(false).Result;
+							dataline = await smtpStream.ReadLineAsync(false);
 						}
+						mailTransaction.Data = dataBuilder.ToString();
 
 						// Data has been received, return to 7 bit ascii.
 						smtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
@@ -375,7 +377,7 @@ namespace MantaMTA.Core.Server
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;
-						smtpStream.WriteLine("250 Message queued for delivery");
+						await smtpStream.WriteLineAsync("250 Message queued for delivery");
 						continue;
 					}
 
@@ -383,7 +385,7 @@ namespace MantaMTA.Core.Server
 
 
 					// If got this far then we don't known the command.
-					smtpStream.WriteLine("500 Unknown command");
+					await smtpStream.WriteLineAsync("500 Unknown command");
 				}
 			}
 			catch (System.IO.IOException) { /* Connection timeout */ }
@@ -392,6 +394,8 @@ namespace MantaMTA.Core.Server
 				// Client has issued QUIT command or connecion lost.
 				client.Close();
 			}
+
+			return true;
 		}
 		
 		/// <summary>
