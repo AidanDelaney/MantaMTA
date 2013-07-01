@@ -129,10 +129,12 @@ namespace MantaMTA.Core.Smtp
 				smtpClient.Connect(mxRecord);
 				this.InUseConnections.Add(smtpClient);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				// If something went wrong clear the client so we don't return something odd.
 				smtpClient = null;
+				if (ex is SocketException)
+					throw ex;
 			}
 			finally
 			{

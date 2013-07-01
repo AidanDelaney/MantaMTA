@@ -143,7 +143,7 @@ namespace MantaMTA.Core.Client
 			// before picking up. The MAX_TIME_IN_QUEUE should always be enforced.
 			if ((msg.AttemptSendAfter - msg.QueuedTimestamp) > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
-				msg.HandleDeliveryFail("Timed out in queue.", null);
+				msg.HandleDeliveryFail("Timed out in queue.", null, null);
 				return false;
 			}
 
@@ -155,7 +155,7 @@ namespace MantaMTA.Core.Client
 			// If mxs is null then there are no MX records.
 			if (mxs == null)
 			{
-				msg.HandleDeliveryFail("Domain doesn't exist.", null);
+				msg.HandleDeliveryFail("Domain doesn't exist.", null, null);
 				return false;
 			}
 
@@ -174,7 +174,7 @@ namespace MantaMTA.Core.Client
 			// If there are no MXs to send to then we are currently being throttled.
 			if (noneThrottledMXs.Count == 0)
 			{
-				msg.HandleDeliveryThrottle(sndIpAddress);
+				msg.HandleDeliveryThrottle(sndIpAddress, null);
 				return false;
 			}
 
@@ -182,7 +182,7 @@ namespace MantaMTA.Core.Client
 			SmtpOutboundClient smtpClient = SmtpClientPool.Dequeue(sndIpAddress, (DNS.MXRecord[])noneThrottledMXs.ToArray(typeof(DNS.MXRecord)), 
 				delegate(string message)
 				{
-					msg.HandleDeliveryDeferral(message, sndIpAddress);
+					msg.HandleDeliveryDeferral(message, sndIpAddress, null);
 				});
 
 			// If no client was dequeued then we can't currently send.
@@ -197,7 +197,7 @@ namespace MantaMTA.Core.Client
 				{
 					// If smtpRespose starts with 5 then perm error should cause fail
 					if (smtpResponse.StartsWith("5"))
-						msg.HandleDeliveryFail(smtpResponse, sndIpAddress);
+						msg.HandleDeliveryFail(smtpResponse, sndIpAddress, smtpClient.MXRecord);
 					else
 					{
 						// If the MX is actively denying use service access, SMTP code 421 then we should inform
@@ -206,7 +206,7 @@ namespace MantaMTA.Core.Client
 							ServiceNotAvailableManager.Add(smtpClient.SmtpStream.LocalAddress.ToString(), smtpClient.MXRecord.Host, DateTime.Now);
 
 						// Otherwise message is deferred
-						msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress);
+						msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord);
 					}
 
 					throw new SmtpTransactionFailedException();
@@ -218,7 +218,7 @@ namespace MantaMTA.Core.Client
 				await smtpClient.ExecRcptToAsync(rcptTo, handleSmtpError);
 				await smtpClient.ExecDataAsync(msg.Data, handleSmtpError);
 				SmtpClientPool.Enqueue(smtpClient);
-				msg.HandleDeliverySuccess(sndIpAddress);
+				msg.HandleDeliverySuccess(sndIpAddress, smtpClient.MXRecord);
 					
 				return true;
 			}

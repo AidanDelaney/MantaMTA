@@ -103,9 +103,9 @@ namespace MantaMTA.Core.Client.BO
 		/// Deletes queued data
 		/// </summary>
 		/// <param name="failMsg"></param>
-		public void HandleDeliveryFail(string failMsg, MtaIpAddress.MtaIpAddress ipAddress)
+		public void HandleDeliveryFail(string failMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress);
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
 			MtaMessageDB.Delete(this);
 			DeleteMessageData();
 		}
@@ -115,9 +115,9 @@ namespace MantaMTA.Core.Client.BO
 		/// Logs success
 		/// Deletes queued data
 		/// </summary>
-		public void HandleDeliverySuccess(MtaIpAddress.MtaIpAddress ipAddress)
+		public void HandleDeliverySuccess(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Success, string.Empty, ipAddress);
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
 			MtaMessageDB.Delete(this);
 			DeleteMessageData();
 		}
@@ -130,10 +130,10 @@ namespace MantaMTA.Core.Client.BO
 		/// Sets the next rety date time
 		/// </summary>
 		/// <param name="defMsg"></param>
-		public void HandleDeliveryDeferral(string defMsg, MtaIpAddress.MtaIpAddress ipAddress)
+		public void HandleDeliveryDeferral(string defMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log deferral
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress);
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);
@@ -145,10 +145,10 @@ namespace MantaMTA.Core.Client.BO
 		///	Logs throttle
 		/// Sets the next rety date time 
 		/// </summary>
-		internal void HandleDeliveryThrottle(MtaIpAddress.MtaIpAddress ipAddress)
+		internal void HandleDeliveryThrottle(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log deferral
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress);
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);

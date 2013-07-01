@@ -155,8 +155,8 @@ namespace MantaMTA.Core.Server
 				{
 					// Generate a unique return path for this message.
 					returnPath = string.Format("return-{0}-{1}@{2}", 
-						System.Web.HttpUtility.UrlEncode(RcptTo[0]), 
-						internalSendId, 
+						RcptTo[0].Replace("@","-"), 
+						internalSendId.ToString("X"), 
 						new System.Net.Mail.MailAddress(MailFrom).Host);
 					headers.Insert(0, new MessageHeader("Return-Path", returnPath));
 				}
