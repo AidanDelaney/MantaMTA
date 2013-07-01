@@ -1,6 +1,7 @@
 CREATE TABLE [dbo].[c101_mta_send](
 	[mta_send_internalId] [int] NOT NULL,
-	[mta_send_id] [nvarchar](20) COLLATE Latin1_General_CI_AS NULL
+	[mta_send_id] [nvarchar](20) COLLATE Latin1_General_CI_AS NOT NULL,
+	[mta_send_createdTimestamp] [datetime] NOT NULL
 ) ON [PRIMARY]
 
 GO
