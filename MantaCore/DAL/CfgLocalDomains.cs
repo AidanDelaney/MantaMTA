@@ -18,7 +18,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT cfg_localDomain_domain
-FROM c101_cfg_localDomain";
+FROM man_cfg_localDomain";
 				conn.Open();
 				ArrayList results = new ArrayList();
 				SqlDataReader reader = cmd.ExecuteReader();

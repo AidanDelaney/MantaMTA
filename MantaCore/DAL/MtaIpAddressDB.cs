@@ -18,7 +18,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT *
-FROM c101_ip_ipAddress";
+FROM man_ip_ipAddress";
 				return new MtaIpAddressCollection(DataRetrieval.GetCollectionFromDatabase<MtaIpAddress.MtaIpAddress>(cmd, CreateAndFillMtaIpAddressFromRecord));
 			}
 		}
@@ -34,8 +34,8 @@ FROM c101_ip_ipAddress";
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT *
-FROM c101_ip_ipAddress as [ip]
-WHERE [ip].ip_ipAddress_id IN (SELECT [grp].ip_ipAddress_id FROM c101_ip_groupMembership as [grp] WHERE [grp].ip_group_id = @groupID) ";
+FROM man_ip_ipAddress as [ip]
+WHERE [ip].ip_ipAddress_id IN (SELECT [grp].ip_ipAddress_id FROM man_ip_groupMembership as [grp] WHERE [grp].ip_group_id = @groupID) ";
 				cmd.Parameters.AddWithValue("@groupID", id);
 				return new MtaIpAddressCollection(DataRetrieval.GetCollectionFromDatabase<MtaIpAddress.MtaIpAddress>(cmd, CreateAndFillMtaIpAddressFromRecord));
 			}

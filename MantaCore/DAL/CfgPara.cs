@@ -100,7 +100,7 @@ namespace MantaMTA.Core.DAL
 		}
 
 		/// <summary>
-		/// ExecuteScalar getting value of colName in c101_cfg_para
+		/// ExecuteScalar getting value of colName in man_cfg_para
 		/// </summary>
 		/// <param name="colName"></param>
 		/// <returns></returns>
@@ -111,7 +111,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT " + colName + @"
-FROM c101_cfg_para";
+FROM man_cfg_para";
 				conn.Open();
 				return cmd.ExecuteScalar();
 			}

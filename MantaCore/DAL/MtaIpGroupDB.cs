@@ -18,7 +18,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT *
-FROM c101_ip_group as [grp]
+FROM man_ip_group as [grp]
 WHERE [grp].ip_group_id = @groupID";
 				cmd.Parameters.AddWithValue("@groupID", id);
 				return DataRetrieval.GetSingleObjectFromDatabase<MtaIpAddress.MtaIPGroup>(cmd, CreateAndFillMtaIpGroup);

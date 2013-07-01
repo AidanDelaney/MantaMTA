@@ -16,7 +16,7 @@ namespace MantaMTA.Core.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-INSERT INTO c101_mta_transaction (mta_msg_id, ip_ipAddress_id, mta_transaction_timestamp, mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname)
+INSERT INTO man_mta_transaction (mta_msg_id, ip_ipAddress_id, mta_transaction_timestamp, mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname)
 VALUES(@msgID, @ipAddressID, GETDATE(), @status, @serverResponse, @serverHostname)";
 				cmd.Parameters.AddWithValue("@msgID", msgID);
 				if (ipAddress != null)

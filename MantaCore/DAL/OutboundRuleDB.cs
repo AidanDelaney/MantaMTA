@@ -18,7 +18,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT *
-FROM c101_rle_mxPattern
+FROM man_rle_mxPattern
 ORDER BY rle_mxPattern_id DESC"; // Order descending so default -1 is always at the bottom!
 
 				return new OutboundMxPatternCollection(DataRetrieval.GetCollectionFromDatabase<OutboundMxPattern>(cmd, CreateAndFillOutboundMxPattern));
@@ -36,7 +36,7 @@ ORDER BY rle_mxPattern_id DESC"; // Order descending so default -1 is always at 
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT *
-FROM c101_rle_rule";
+FROM man_rle_rule";
 
 				return new OutboundRuleCollection(DataRetrieval.GetCollectionFromDatabase<OutboundRule>(cmd, CreateAndFillOutboundRule));
 			}

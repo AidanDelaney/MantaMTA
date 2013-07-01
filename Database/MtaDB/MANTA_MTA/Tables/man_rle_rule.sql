@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[c101_rle_rule](
+CREATE TABLE [dbo].[man_rle_rule](
 	[rle_mxPattern_id] [int] NOT NULL,
 	[rle_ruleType_id] [int] NOT NULL,
 	[rle_rule_value] [nvarchar](250) COLLATE Latin1_General_CI_AS NOT NULL
@@ -6,7 +6,7 @@ CREATE TABLE [dbo].[c101_rle_rule](
 
 GO
 
-ALTER TABLE [dbo].[c101_rle_rule] ADD  CONSTRAINT [PK_sm_rle_rule] PRIMARY KEY CLUSTERED 
+ALTER TABLE [dbo].[man_rle_rule] ADD  CONSTRAINT [PK_sm_rle_rule] PRIMARY KEY CLUSTERED 
 (
 	[rle_mxPattern_id] ASC,
 	[rle_ruleType_id] ASC

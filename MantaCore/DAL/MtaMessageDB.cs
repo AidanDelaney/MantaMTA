@@ -26,14 +26,14 @@ namespace MantaMTA.Core.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-IF EXISTS(SELECT 1 FROM c101_mta_msg WHERE mta_msg_id = @msgID)
-	UPDATE c101_mta_msg
+IF EXISTS(SELECT 1 FROM man_mta_msg WHERE mta_msg_id = @msgID)
+	UPDATE man_mta_msg
 	SET mta_send_internalId = @internalSendID,
 	mta_msg_rcptTo = @rcptTo,
 	mta_msg_mailFrom = @mailFrom
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO c101_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
+	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
 	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@internalSendID", message.InternalSendID);
@@ -58,15 +58,15 @@ ELSE
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-IF EXISTS(SELECT 1 FROM c101_mta_queue WHERE mta_msg_id = @msgID)
-	UPDATE c101_mta_queue
+IF EXISTS(SELECT 1 FROM man_mta_queue WHERE mta_msg_id = @msgID)
+	UPDATE man_mta_queue
 	SET mta_queue_attemptSendAfter = @sendAfter,
 	mta_queue_isPickupLocked = @isPickupLocked,
 	mta_queue_dataPath = @dataPath,
 	ip_group_id = @groupID
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO c101_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id)
+	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id)
 	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestamp);
@@ -90,7 +90,7 @@ ELSE
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-	UPDATE c101_mta_queue
+	UPDATE man_mta_queue
 	SET mta_queue_isPickupLocked = 0
 	WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", messageID);
@@ -117,18 +117,18 @@ DECLARE @msgIdTbl table(msgID uniqueidentifier)
 
 INSERT INTO @msgIdTbl
 SELECT TOP " + maxMessages + @" mta_msg_id
-FROM c101_mta_queue
+FROM man_mta_queue
 WHERE mta_queue_attemptSendAfter < GETDATE()
 AND mta_queue_isPickupLocked = 0
 ORDER BY mta_queue_attemptSendAfter ASC
 
-UPDATE c101_mta_queue
+UPDATE man_mta_queue
 SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
-FROM c101_mta_queue as [que]
-JOIN c101_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
+FROM man_mta_queue as [que]
+JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
@@ -147,7 +147,7 @@ COMMIT TRANSACTION";
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-	DELETE FROM c101_mta_queue
+	DELETE FROM man_mta_queue
 	WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", mtaQueuedMessage.ID);
 				conn.Open();

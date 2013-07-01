@@ -17,7 +17,7 @@ namespace MantaMTA.Core.DAL
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT cfg_relayingPermittedIp_ip
-FROM c101_cfg_relayingPermittedIp";
+FROM man_cfg_relayingPermittedIp";
 				conn.Open();
 				ArrayList results = new ArrayList();
 				SqlDataReader reader = cmd.ExecuteReader();

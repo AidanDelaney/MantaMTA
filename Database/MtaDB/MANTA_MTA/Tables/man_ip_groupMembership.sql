@@ -1,11 +1,11 @@
-CREATE TABLE [dbo].[c101_ip_groupMembership](
+CREATE TABLE [dbo].[man_ip_groupMembership](
 	[ip_group_id] [int] NOT NULL,
 	[ip_ipAddress_id] [int] NOT NULL
 ) ON [PRIMARY]
 
 GO
 
-ALTER TABLE [dbo].[c101_ip_groupMembership] ADD  CONSTRAINT [PK_c101_ip_groupMembership] PRIMARY KEY CLUSTERED 
+ALTER TABLE [dbo].[man_ip_groupMembership] ADD  CONSTRAINT [PK_man_ip_groupMembership] PRIMARY KEY CLUSTERED 
 (
 	[ip_group_id] ASC,
 	[ip_ipAddress_id] ASC
