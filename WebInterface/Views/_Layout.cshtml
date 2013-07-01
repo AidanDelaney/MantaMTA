@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+	<link rel="stylesheet" type="text/css" href="/resources/bootstrap/css/bootstrap.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/bootstrap/css/bootstrap-responsive.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/css/flat-ui.css">
+	<link rel="stylesheet" type="text/css" href="/resources/css/app.css">
+	<script type="text/javascript" src="/resources/jquery-1.10.1.min.js"></script>
+	<script type="text/javascript" src="/resources/Chart-min.js"></script>
+	<script type="text/javascript" src="/resources/bootstrap/js/bootstrap.min.js"></script>
+	<style type="text/css">
+body {
+	padding-top: 60px;
+}
+ @@media (max-width: 980px) {
+/* Enable use of floated navbar text */
+.navbar-text.pull-right {
+	float: none;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+}
+html, body {
+	height: 100%;/* The html and body elements cannot have any padding or margin. */
+}
+/* Wrapper for page content to push down footer */
+#wrap {
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	/* Negative indent footer by it's height */
+	margin: 0 auto -60px;
+}
+/* Set the fixed height of the footer here */
+#push, #footer {
+	height: 60px;
+}
+#footer {
+	background-color: #34495e;
+}
+
+      /* Lastly, apply responsive CSS fixes as necessary */
+      @@media (max-width: 767px) {
+#footer {
+	margin-left: -20px;
+	margin-right: -20px;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+}
+</style>
+</head>
+<body>
+	<div id="wrap">
+		<div class="container-fluid">
+			<div id="masthead" class="row-fluid">
+				<div id="logo-area" class="span2"><img src="/resources/manta-logo.png" alt="MantaMTA" /></div>
+			</div>
+			<div class="navbar">
+				<div class="navbar-inner navbar-manta">
+					<div class="container">
+						<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target="#nav-collapse-01"></button>
+						<div class="nav-collapse collapse" id="nav-collapse-01">
+							<ul class="nav">
+								<li><a href="/sends/active">Queue</a></li>
+								<li><a href="/sends">Reports</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div id="app-canvas">
+				<div class="row-fluid">
+					<div class="span12">
+						@RenderBody()
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="push"></div>
+	</div>
+	<div id="footer">
+		<div class="container">
+			<p>Stuff.</p>
+		</div>
+	</div>
+</body>
+</html>

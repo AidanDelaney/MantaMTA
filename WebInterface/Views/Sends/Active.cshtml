@@ -1,0 +1,50 @@
+﻿@{
+    ViewBag.Title = "Active";
+    Layout = "~/Views/_Layout.cshtml";
+}
+<script type="text/javascript">
+	$('.nav a[href="/sends/active"]').parent().addClass('active')
+</script>
+@if(Model.Tables[0].Rows.Count > 0){
+<table class="table table-striped table-hover">
+	<thead>
+		<tr>
+			<th>Send</th>
+			<th>Started</th>
+			<th>Messages</th>
+			<th>Waiting</th>
+			<th>Deferred</th>
+			<th>Failed</th>
+			<th>Throttled</th>
+			<th>Delivered</th>
+			<td></td>
+		</tr>
+	</thead>
+	<tbody>
+@foreach(System.Data.DataRow row in Model.Tables[0].Rows)
+{
+	<tr>
+		<td><a href="/sends/report?sendid=@row[0]">@row[0]</a></td>
+		<td>@row[1]</td>
+		<td>@(((int)row[2]).ToString("N0"))</td>
+		<td class="text-warning">@(((int)row[3]).ToString("N0"))</td>
+		<td class="text-info">@(((int)row[4]).ToString("N0"))</td>
+		<td class="text-error">@(((int)row[5] + (int)row[6]).ToString("N0"))</td>
+		<td class="muted">@(((int)row[7]).ToString("N0"))</td>
+		<td class="text-success">@(((int)row[8]).ToString("N0"))</td>
+		<td>
+			<a href="javascript:void(0);" class="btn btn-warning">Pause</a>
+			<a href="javascript:void(0);" class="btn btn-success">Resume</a>
+			<a href="javascript:void(0);" class="btn btn-danger">Dump</a>
+		</td>
+	</tr>
+			
+}
+	</tbody>
+</table>
+}
+else
+{
+	<h2>No sends in progress.</h2>
+	<a href="/sends/">View Completed Sends</a>
+}
