@@ -46,24 +46,23 @@ namespace MantaEventsConsole
 
 
 
-			// Process anything that's currently in the directories.
+			// Process anything that's currently waiting in the directories.
 			ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
 			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 
 
 
 
-			// Create a FileWatcher that checks for any email files being created so we should leap into action.
+			// Create FileSystemWatchers that check for any email files being created so we should leap into action.
+
 			FileSystemWatcher bounceWatcher = new FileSystemWatcher(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
 			bounceWatcher.Created += new FileSystemEventHandler(bounceWatcher_Created);
 			bounceWatcher.EnableRaisingEvents = true;
 
-
 			FileSystemWatcher feedbackLoopWatcher = new FileSystemWatcher(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 			feedbackLoopWatcher.Created += new FileSystemEventHandler(feedbackLoopWatcher_Created);
 			feedbackLoopWatcher.EnableRaisingEvents = true;
-
-
+			
 
 			Console.WriteLine("FileSystemWatchers running.");
 
@@ -98,7 +97,11 @@ namespace MantaEventsConsole
 		/// Indicates whether the bounceWatcher_Created method has been called so shouldn't be called again until it completes.
 		/// </summary>
 		private static bool _BounceFileWatcherCalled = false;
-		///
+		/// <summary>
+		/// Method to handle the BounceWatcher being told by the o/s that a file has been created.
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		static void bounceWatcher_Created(object sender, FileSystemEventArgs e)
 		{
 			lock (_BounceFileWatcherLock)
@@ -143,7 +146,7 @@ namespace MantaEventsConsole
 		/// </summary>
 		private static bool _FeedbackLoopFileWatcherCalled = false;
 		/// <summary>
-		/// 
+		/// Method to handle the FeedbackLoopWatcher being told by the o/s that a file has been created.
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
@@ -182,7 +185,10 @@ namespace MantaEventsConsole
 		}
 
 
-
+		/// <summary>
+		/// Processes emails that have been received as bounces.
+		/// </summary>
+		/// <param name="path">The path to email files to process.</param>
 		static void ProcessBounceFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
@@ -196,8 +202,7 @@ namespace MantaEventsConsole
 		/// <summary>
 		/// Processes emails that have come in from Feedback Loops, indicating spam complaints.
 		/// </summary>
-		/// <param name="path"></param>
-		/// <param name="eventType"></param>
+		/// <param name="path">The path to email files to process.</param>
 		static void ProcessFeedbackLoopFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("FeedbackLoop: {0}", msg); };
@@ -207,13 +212,16 @@ namespace MantaEventsConsole
 		}
 
 
-
 		/// <summary>
 		/// DirectoryHandler provides a standard way of processing a directory of email files.
 		/// </summary>
+		/// <param name="path">The filepath to operate on.</param>
+		/// <param name="fileProcessor">A delegate method that will be used to process each file found in <paramref name="path"/>.</param>
+		/// <param name="logger">A delegate method that will be used to return information to an interface, e.g. to
+		/// display messages to a user.</param>
 		internal static void DirectoryHandler(string path, Func<string, EmailProcessingResult> fileProcessor, Action<string> logger)
 		{
-			int loopCount = 0;
+			// A filter to use when pulling out files to process; likely to be "*.eml".
 			string fileSearchPattern = "*.eml";
 
 
@@ -225,11 +233,6 @@ namespace MantaEventsConsole
 			// back into life again.
 			do
 			{
-				loopCount++;
-
-				logger(String.Format("Loop Count: {0:N0}", loopCount));
-
-
 				// Loop through and process all the files we've picked up.
 				Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => FileHandler(f, fileProcessor, logger)));
 
@@ -264,16 +267,14 @@ namespace MantaEventsConsole
 
 			// If a file's not accessible, skip it so we'll pick it up the next time.
 			if (IsFileLocked(f))
-			{
-				logger("File locked: " + f.FullName);
 				return;
-			}
 
 
 
 
 			content = File.ReadAllText(f.FullName);
 
+			// Send the content to the delegate method that'll process its contents.
 			result = processor(content);
 
 

@@ -40,6 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\MantaCore\MtaParameters.cs">
+      <Link>MtaParameters.cs</Link>
+    </Compile>
+    <Compile Include="..\MantaCore\Server\MessageHeaderManager.cs">
+      <Link>MessageHeaderManager.cs</Link>
+    </Compile>
     <Compile Include="Enums\EventEnums.cs" />
     <Compile Include="EventClasses.cs" />
     <Compile Include="EventsManager.cs" />

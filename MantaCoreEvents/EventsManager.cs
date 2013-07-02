@@ -10,7 +10,7 @@ namespace MantaMTA.Core.Events
 	/// <summary>
 	/// Handles events such as Abuse and Bounces as a result of emails being sent.
 	/// </summary>
-	public class EventsManager
+	internal class EventsManager
 	{
 		/// <summary>
 		/// Holds a singleton instance of the EventsManager.
