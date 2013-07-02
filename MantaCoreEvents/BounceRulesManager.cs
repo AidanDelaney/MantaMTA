@@ -24,25 +24,11 @@ namespace MantaMTA.Core.Events
 				if (_bounceRules == null || _bounceRules.LoadedTimestampUtc.AddMinutes(5) < DateTime.UtcNow)
 				{
 					// Would be nice to write to a log that we're updating.
-					NastyLoadRules();
+					_bounceRules = DAL.CfgBounceRules.GetBounceRules();
 				}
 
 				return _bounceRules;
 			}
-		}
-
-		/// <summary>
-		/// Temporary way of loading some Rules.  Will be DAL.
-		/// </summary>
-		private static void NastyLoadRules()
-		{
-			_bounceRules.LoadedTimestampUtc = DateTime.UtcNow;
-
-			// Load BounceRules.
-			_bounceRules.Add(new BounceRule { RuleID = 1, Type = BounceRuleType.StringMatch, Criteria = "undeliverable" });
-			_bounceRules.Add(new BounceRule { RuleID = 1, Type = BounceRuleType.StringMatch, Criteria = "bounced" });
-			_bounceRules.Add(new BounceRule { RuleID = 1, Type = BounceRuleType.StringMatch, Criteria = "non-deliverable" });
-			_bounceRules.Add(new BounceRule { RuleID = 1, Type = BounceRuleType.StringMatch, Criteria = "delivery failed" });
 		}
 	}
 

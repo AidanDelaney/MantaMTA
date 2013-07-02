@@ -46,9 +46,12 @@
     <Compile Include="..\MantaCore\Server\MessageHeaderManager.cs">
       <Link>MessageHeaderManager.cs</Link>
     </Compile>
+    <Compile Include="BounceRulesManager.cs" />
+    <Compile Include="Enums\BounceRuleEnums.cs" />
     <Compile Include="Enums\EventEnums.cs" />
     <Compile Include="EventClasses.cs" />
     <Compile Include="EventsManager.cs" />
+    <Compile Include="FakeDAL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />
