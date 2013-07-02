@@ -39,7 +39,7 @@ namespace MantaMTA.Core.OutboundRules
 			/// <summary>
 			/// DateTime of the match.
 			/// </summary>
-			public DateTime Matched { get; set; }
+			public DateTime MatchedUtc { get; set; }
 
 			public MatchedMxPattern()
 			{
@@ -62,12 +62,12 @@ namespace MantaMTA.Core.OutboundRules
 			public void Add(int mxPatternID, MtaIpAddress.MtaIpAddress ipAddress)
 			{
 				MatchedMxPattern newMxPattern = new MatchedMxPattern();
-				newMxPattern.Matched = DateTime.Now;
+				newMxPattern.MatchedUtc = DateTime.UtcNow;
 				newMxPattern.MxPatternID = mxPatternID;
 
 				 Func<string, MatchedMxPattern, MatchedMxPattern> updateAction = new Func<string, MatchedMxPattern, MatchedMxPattern>(delegate(string key, MatchedMxPattern existing)
 									{
-										if (existing.Matched > newMxPattern.Matched)
+										if (existing.MatchedUtc > newMxPattern.MatchedUtc)
 											return existing;
 										return newMxPattern;
 									});
@@ -78,7 +78,7 @@ namespace MantaMTA.Core.OutboundRules
 					this.AddOrUpdate(newMxPattern.IPAddress,
 									 new MatchedMxPattern()
 									 {
-										 Matched = DateTime.Now,
+										 MatchedUtc = DateTime.UtcNow,
 										 MxPatternID = mxPatternID
 									 }, updateAction);
 				}
@@ -86,7 +86,7 @@ namespace MantaMTA.Core.OutboundRules
 					this.AddOrUpdate(string.Empty,
 									 new MatchedMxPattern()
 									 {
-										 Matched = DateTime.Now,
+										 MatchedUtc = DateTime.UtcNow,
 										 MxPatternID = mxPatternID
 									 }, updateAction);
 			}
@@ -101,14 +101,14 @@ namespace MantaMTA.Core.OutboundRules
 				MatchedMxPattern tmp;
 				if (this.TryGetValue(ipAddress.IPAddress.ToString(), out tmp))
 				{
-					if(tmp.Matched.AddMinutes(5) < DateTime.Now)
+					if(tmp.MatchedUtc.AddMinutes(5) < DateTime.UtcNow)
 						return tmp;
 				}
 				else
 				{
 					if (this.TryGetValue(string.Empty, out tmp))
 					{
-						if (tmp.Matched.AddMinutes(5) > DateTime.Now)
+						if (tmp.MatchedUtc.AddMinutes(5) > DateTime.UtcNow)
 							return tmp;
 					}
 				}
@@ -156,7 +156,7 @@ namespace MantaMTA.Core.OutboundRules
 			MatchedMxPattern matchedPattern = matchedPatterns.GetMatchedMxPattern(ipAddress);
 
 			if (matchedPattern != null &&
-				matchedPattern.Matched.AddMinutes(5) > DateTime.Now)
+				matchedPattern.MatchedUtc.AddMinutes(5) > DateTime.UtcNow)
 				// Found a valid cached pattern ID so return it.
 				return matchedPattern.MxPatternID;
 

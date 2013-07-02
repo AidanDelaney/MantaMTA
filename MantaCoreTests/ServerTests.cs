@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Transactions;
 using MantaMTA.Core.Server;
 using MantaMTA.Core.Smtp;
@@ -74,22 +75,26 @@ namespace MantaMTA.Core.Tests
 					client.Connect(IPAddress.Parse("127.0.0.1"), 8000);
 					SmtpStreamHandler smtp = new SmtpStreamHandler(client);
 
-					Action<string, string> sendLine = new Action<string, string>(delegate(string cmd, string expectedResponse)
+					Func<string, string, Task<bool>> sendLine = new Func<string, string, Task<bool>>(async delegate(string cmd, string expectedResponse)
 					{
-						smtp.WriteLine(cmd, false);
-						string response = smtp.ReadLineAsync(false).Result;
+						await smtp.WriteLineAsync(cmd, false);
+						string response = await smtp.ReadLineAsync(false);
 						Console.WriteLine(cmd + " " + expectedResponse + " " + response);
 						Assert.AreEqual(expectedResponse, response.Substring(0, 3));
+						return true;
 					});
 
-					smtp.ReadLineAsync();
-					sendLine("HELO localhost", "250");
-					sendLine("MAIL FROM: <local@localhost>", "250");
-					sendLine("RCPT TO: <daniel.longworth@colony101.co.uk>", "250");
-					sendLine("DATA", "354");
-					smtp.WriteLine("Hello", false);
-					sendLine(".", "250");
-					smtp.WriteLine("QUIT");
+					Task.Run(new Action(async delegate()
+					{
+						await smtp.ReadLineAsync();
+						await sendLine("HELO localhost", "250");
+						await sendLine("MAIL FROM: <local@localhost>", "250");
+						await sendLine("RCPT TO: <daniel.longworth@colony101.co.uk>", "250");
+						await sendLine("DATA", "354");
+						await smtp.WriteLineAsync("Hello", false);
+						await sendLine(".", "250");
+						await smtp.WriteLineAsync("QUIT");
+					})).Wait();
 				}
 			}
 		}

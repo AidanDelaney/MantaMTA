@@ -14,7 +14,7 @@ namespace MantaMTA.Core.SendID
 		/// <summary>
 		/// Timestamp of when _SendIDs was last cleared. 
 		/// </summary>
-		private static DateTime _SendIdsLastCleared = DateTime.Now;
+		private static DateTime _SendIdsLastCleared = DateTime.UtcNow;
 
 		/// <summary>
 		/// Gets the internal send ID to be used for the specified sendID.
@@ -25,12 +25,12 @@ namespace MantaMTA.Core.SendID
 		public static int GetInternalSendId(string sendId)
 		{
 			// Don't want send IDs sitting in memory for to long so clear every so often.
-			if (_SendIdsLastCleared.AddHours(1) < DateTime.Now)
+			if (_SendIdsLastCleared.AddHours(1) < DateTime.UtcNow)
 			{
 				lock (_SendIDs)
 				{
 					_SendIDs.Clear();
-					_SendIdsLastCleared = DateTime.Now;
+					_SendIdsLastCleared = DateTime.UtcNow;
 				}
 			}
 
@@ -60,7 +60,7 @@ namespace MantaMTA.Core.SendID
 		/// <returns></returns>
 		internal static int GetDefaultInternalSendId()
 		{
-			string sendID = DateTime.Now.ToString("yyyyMMdd");
+			string sendID = DateTime.UtcNow.ToString("yyyyMMdd");
 			return GetInternalSendId(sendID);
 		}
 	}

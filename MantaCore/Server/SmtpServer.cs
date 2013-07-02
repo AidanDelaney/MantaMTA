@@ -370,7 +370,7 @@ namespace MantaMTA.Core.Server
 							smtpStream.RemoteAddress.ToString(),
 							GetServerHostname(client),
 							smtpStream.LocalAddress.ToString(),
-							DateTime.Now.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
+							DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
 
 						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
 						mailTransaction.Save();

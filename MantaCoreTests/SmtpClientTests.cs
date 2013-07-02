@@ -49,10 +49,14 @@ namespace MantaMTA.Core.Tests
 				Action sendMessage = new Action(delegate()
 				{
 					Action<string> callback = new Action<string>(delegate(string str) { });
-					smtpClient.ExecHeloOrRsetAsync(callback);
-					smtpClient.ExecMailFromAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
-					smtpClient.ExecRcptToAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
-					smtpClient.ExecDataAsync("hello", callback);
+					Task.Run(async delegate()
+					{
+						await smtpClient.ExecHeloOrRsetAsync(callback);
+						await smtpClient.ExecMailFromAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
+						await smtpClient.ExecRcptToAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
+						await smtpClient.ExecDataAsync("hello", callback);
+						return true;
+					}).Wait();
 				});
 
 				sendMessage();

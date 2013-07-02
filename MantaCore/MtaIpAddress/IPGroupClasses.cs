@@ -28,7 +28,7 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// <summary>
 		/// Timestamp of when this MtaIPGroup instance was created; used for caching.
 		/// </summary>
-		public DateTime CreatedTimestamp = DateTime.Now;
+		public DateTime CreatedTimestamp = DateTime.UtcNow;
 
 		/// <summary>
 		/// Gets a random IP from the collection.

@@ -35,7 +35,7 @@ namespace MantaMTA.Core.DNS
 			get
 			{
 				// If the TTL added to the lookup date is over specified date time then return true.
-				return (LookupTimestamp.AddSeconds(this.TTL) < DateTime.Now);
+				return (LookupTimestamp.AddSeconds(this.TTL) < DateTime.UtcNow);
 			}
 		}
 
@@ -44,7 +44,7 @@ namespace MantaMTA.Core.DNS
 			this.Host = host;
 			this.Preference = preference;
 			this.TTL = ttl;
-			this.LookupTimestamp = DateTime.Now;
+			this.LookupTimestamp = DateTime.UtcNow;
 		}
 	}
 
