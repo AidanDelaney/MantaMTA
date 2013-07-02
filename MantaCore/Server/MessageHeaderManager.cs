@@ -265,7 +265,7 @@ namespace MantaMTA.Core.Server
 		/// <summary>
 		/// First bit of control/command headers.
 		/// </summary>
-		public const string HeaderNamePrefix = "X-BatHawk-";
+		public const string HeaderNamePrefix = "X-" + MtaParameters.MTA_NAME + "-";
 		
 		/// <summary>
 		/// The send group ID header name.
