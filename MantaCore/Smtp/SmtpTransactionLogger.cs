@@ -67,7 +67,7 @@ namespace MantaMTA.Core.Smtp
 			lock (writeLock)
 			{
 				// Ensure logging by hour
-				if (DateTime.Now.Hour != _CurrentLogHour && _Writer != null)
+				if (DateTime.UtcNow.Hour != _CurrentLogHour && _Writer != null)
 				{
 					_Writer.Flush();
 					_Writer.Close();
@@ -91,7 +91,7 @@ namespace MantaMTA.Core.Smtp
 		/// <returns></returns>
 		private string GetCurrentTimestamp()
 		{
-			return DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.ff");
+			return DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss.ff");
 		}
 
 		/// <summary>
@@ -100,8 +100,8 @@ namespace MantaMTA.Core.Smtp
 		/// <returns></returns>
 		private string GetCurrentLogPath()
 		{
-			_CurrentLogHour = DateTime.Now.Hour;
-			return Path.Combine(MtaParameters.MTA_LOGFOLDER , DateTime.Now.ToString("yyyyMMddhh") + ".txt");
+			_CurrentLogHour = DateTime.UtcNow.Hour;
+			return Path.Combine(MtaParameters.MTA_LOGFOLDER , DateTime.UtcNow.ToString("yyyyMMddhh") + ".txt");
 		}
 
 	}

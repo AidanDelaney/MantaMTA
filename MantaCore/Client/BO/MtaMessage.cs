@@ -72,7 +72,7 @@ namespace MantaMTA.Core.Client.BO
 		public virtual MtaQueuedMessage Queue(string data, int ipGroupID)
 		{
 			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml"); 
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.Now, DateTime.Now, false, dataPath, ipGroupID);
+			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.UtcNow, DateTime.UtcNow, false, dataPath, ipGroupID);
 
 			using (StreamWriter writer = new StreamWriter(dataPath))
 			{

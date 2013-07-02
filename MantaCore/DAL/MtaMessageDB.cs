@@ -69,8 +69,8 @@ ELSE
 	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id)
 	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
-				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestamp);
-				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfter);
+				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestampUtc);
+				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfterUtc);
 				cmd.Parameters.AddWithValue("@isPickupLocked", message.IsPickUpLocked);
 				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
 				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
@@ -118,7 +118,7 @@ DECLARE @msgIdTbl table(msgID uniqueidentifier)
 INSERT INTO @msgIdTbl
 SELECT TOP " + maxMessages + @" mta_msg_id
 FROM man_mta_queue
-WHERE mta_queue_attemptSendAfter < GETDATE()
+WHERE mta_queue_attemptSendAfter < GETUTCDATE()
 AND mta_queue_isPickupLocked = 0
 ORDER BY mta_queue_attemptSendAfter ASC
 

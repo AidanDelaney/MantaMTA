@@ -52,7 +52,7 @@ namespace MantaMTA.Core.Client
 
 				if (ipServices.TryGetValue(mxHostname, out lastFail))
 				{
-					if ((DateTime.Now - lastFail) < new TimeSpan(0, 1, 0))
+					if ((DateTime.UtcNow - lastFail) < new TimeSpan(0, 1, 0))
 						return true;
 				}
 			}

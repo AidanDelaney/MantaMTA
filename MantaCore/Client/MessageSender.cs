@@ -141,7 +141,7 @@ namespace MantaMTA.Core.Client
 			// Need to do this here as there may be a massive backlog on the server
 			// causing messages to be waiting for ages after there AttemptSendAfter
 			// before picking up. The MAX_TIME_IN_QUEUE should always be enforced.
-			if ((msg.AttemptSendAfter - msg.QueuedTimestamp) > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
+			if ((msg.AttemptSendAfterUtc - msg.QueuedTimestampUtc) > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
 				msg.HandleDeliveryFail("Timed out in queue.", null, null);
 				return false;
@@ -203,7 +203,7 @@ namespace MantaMTA.Core.Client
 						// If the MX is actively denying use service access, SMTP code 421 then we should inform
 						// the ServiceNotAvailableManager manager so it limits our attepts to this MX to 1/minute.
 						if (smtpResponse.StartsWith("421"))
-							ServiceNotAvailableManager.Add(smtpClient.SmtpStream.LocalAddress.ToString(), smtpClient.MXRecord.Host, DateTime.Now);
+							ServiceNotAvailableManager.Add(smtpClient.SmtpStream.LocalAddress.ToString(), smtpClient.MXRecord.Host, DateTime.UtcNow);
 
 						// Otherwise message is deferred
 						msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord);

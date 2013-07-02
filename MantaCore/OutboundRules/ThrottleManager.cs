@@ -44,7 +44,7 @@ namespace MantaMTA.Core.OutboundRules
 			{
 				this.IntervalMinutes = -1;
 				this.IntervalMaxMessages = -1;
-				this.IntervalValuesNeedRecalcTimestamp = DateTime.Now;
+				this.IntervalValuesNeedRecalcTimestamp = DateTime.UtcNow;
 			}
 		}
 
@@ -103,7 +103,7 @@ namespace MantaMTA.Core.OutboundRules
 							// Go through every log send and check that it hasn't expired.
 							for (int i = 0; i < mxPatternHistory.Value.Count; i++)
 							{
-								if (((DateTime)mxPatternHistory.Value[i]).AddMinutes(ipMxPtnHistory.IntervalMinutes) < DateTime.Now)
+								if (((DateTime)mxPatternHistory.Value[i]).AddMinutes(ipMxPtnHistory.IntervalMinutes) < DateTime.UtcNow)
 									toRemove.Add(i);
 							}
 
@@ -148,7 +148,7 @@ namespace MantaMTA.Core.OutboundRules
 			ArrayList sndHistory = mxSndHist.GetOrAdd(mxPatternID, new ArrayList());
 
 			// Only calculate if needed.
-			if (mxSndHist.IntervalValuesNeedRecalcTimestamp <= DateTime.Now)
+			if (mxSndHist.IntervalValuesNeedRecalcTimestamp <= DateTime.UtcNow)
 			{
 				int maxMessages = 0;
 				int maxMessagesIntervalMinute = 0;
@@ -160,7 +160,7 @@ namespace MantaMTA.Core.OutboundRules
 
 				mxSndHist.IntervalMaxMessages = maxMessages;
 				mxSndHist.IntervalMinutes = maxMessagesIntervalMinute;
-				mxSndHist.IntervalValuesNeedRecalcTimestamp = DateTime.Now.AddMinutes(5);
+				mxSndHist.IntervalValuesNeedRecalcTimestamp = DateTime.UtcNow.AddMinutes(5);
 			}
 
 			if (sndHistory.Count < mxSndHist.IntervalMaxMessages)
@@ -168,7 +168,7 @@ namespace MantaMTA.Core.OutboundRules
 				// Not hit throttle limit yet.
 
 				// Log send and return true.
-				sndHistory.Add(DateTime.Now);
+				sndHistory.Add(DateTime.UtcNow);
 				return true;
 			}
 			else

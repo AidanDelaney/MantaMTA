@@ -14,11 +14,11 @@ namespace MantaMTA.Core.Client.BO
 		/// <summary>
 		/// Timestamp of when the message was originally queued.
 		/// </summary>
-		public DateTime QueuedTimestamp { get; set; }
+		public DateTime QueuedTimestampUtc { get; set; }
 		/// <summary>
 		/// Timestamp of the earliest the first/next attempt to send the message should be made.
 		/// </summary>
-		public DateTime AttemptSendAfter { get; set; }
+		public DateTime AttemptSendAfterUtc { get; set; }
 		/// <summary>
 		/// This should replicate the database value. It should never directly be messed with.
 		/// </summary>
@@ -67,14 +67,14 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="queuedTimestamp">The original queued timestamp.</param>
 		/// <param name="attemptSendAfter">The date time before which to no attempts should be made to send.</param>
 		/// <param name="isPickUpLocked">TRUE only if the field in database is also true.</param>
-		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestamp, DateTime attemptSendAfter, bool isPickUpLocked, string dataPath, int ipGroupID)
+		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestampUtc, DateTime attemptSendAfterUtc, bool isPickUpLocked, string dataPath, int ipGroupID)
 		{
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
 			base.RcptTo = message.RcptTo;
 
-			QueuedTimestamp = queuedTimestamp;
-			AttemptSendAfter = attemptSendAfter;
+			QueuedTimestampUtc = queuedTimestampUtc;
+			AttemptSendAfterUtc = AttemptSendAfterUtc;
 			_IsPickUpLocked = isPickUpLocked;
 			DataPath = dataPath;
 			IPGroupID = ipGroupID;
@@ -136,7 +136,7 @@ namespace MantaMTA.Core.Client.BO
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(MtaParameters.MtaRetryInterval);
 			MtaMessageDB.Save(this);
 		}
 
@@ -151,7 +151,7 @@ namespace MantaMTA.Core.Client.BO
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfter = DateTime.Now.AddMinutes(MtaParameters.MtaRetryInterval);
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(MtaParameters.MtaRetryInterval);
 			MtaMessageDB.Save(this);
 		}
 
