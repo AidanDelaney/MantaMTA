@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net">
@@ -65,6 +67,8 @@
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="Message\MimeMessage.cs" />
+    <Compile Include="Message\MimeMessageBodyPart.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
@@ -79,7 +83,7 @@
     <Compile Include="Server\SmtpServerTransaction.cs" />
     <Compile Include="Smtp\SmtpStreamHandler.cs" />
     <Compile Include="Smtp\SmtpTransactionLogger.cs" />
-    <Compile Include="Server\MessageHeaderManager.cs" />
+    <Compile Include="Message\MessageManager.cs" />
     <Compile Include="Smtp\SmtpClientPool.cs" />
     <Compile Include="Smtp\SmtpOutboundClient.cs" />
   </ItemGroup>
