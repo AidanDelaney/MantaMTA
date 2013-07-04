@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
 
 namespace MantaMTA.Core
@@ -43,16 +43,18 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if(string.IsNullOrEmpty(_MtaDropFolder))
+				if (_MtaDropFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaDropFolder = DAL.CfgPara.GetDropFolder();
 					Directory.CreateDirectory(_MtaDropFolder);
+					_MtaDropFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaDropFolder;
 			}
 		}
 		private static string _MtaDropFolder { get; set; }
+		private static DateTime _MtaDropFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Queue folder, for messages to be sent.
@@ -61,16 +63,18 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(_MtaQueueFolder))
+				if (_MtaQueueFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaQueueFolder = DAL.CfgPara.GetQueueFolder();
 					Directory.CreateDirectory(_MtaQueueFolder);
+					_MtaQueueFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaQueueFolder;
 			}
 		}
 		private static string _MtaQueueFolder { get; set; }
+		private static DateTime _MtaQueueFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Log foler, where SMTP Transaction logs will go.
@@ -80,16 +84,18 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(_MtaDropFolder))
+				if (_MtaLogFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaLogFolder = DAL.CfgPara.GetLogFolder();
 					Directory.CreateDirectory(_MtaLogFolder);
+					_MtaLogFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaLogFolder;
 			}
 		}
 		private static string _MtaLogFolder { get; set; }
+		private static DateTime _MtaLogFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// List of domains to accept messages for drop folder.
@@ -99,12 +105,16 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_LocalDomains == null)
+				if (_LocalDomainsLoadTime < DateTime.UtcNow)
+				{
 					_LocalDomains = DAL.CfgLocalDomains.GetLocalDomainsArray();
+					_LocalDomainsLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 				return _LocalDomains;
 			}
 		}
 		private static string[] _LocalDomains { get; set; }
+		private static DateTime _LocalDomainsLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// The domain that return paths should use.
@@ -113,12 +123,16 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(_ReturnPathDomain))
+				if (_ReturnPathDomainLoadTime < DateTime.UtcNow)
+				{
 					_ReturnPathDomain = DAL.CfgPara.GetReturnPathDomain();
+					_ReturnPathDomainLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+				}
 				return _ReturnPathDomain;
 			}
 		}
 		private static string _ReturnPathDomain = string.Empty;
+		private static DateTime _ReturnPathDomainLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// List of IP addresses to allow relaying for.
@@ -127,12 +141,16 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_IPsToAllowRelaying == null)
+				if (_IPsToAllowRelayingLoadTime < DateTime.UtcNow)
+				{
 					_IPsToAllowRelaying = DAL.CfgRelayingPermittedIP.GetRelayingPermittedIPAddresses();
+					_IPsToAllowRelayingLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+				}
 				return _IPsToAllowRelaying;
 			}
 		}
 		private static string[] _IPsToAllowRelaying { get; set; }
+		private static DateTime _IPsToAllowRelayingLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// The time in minutes between send retries.
@@ -141,13 +159,17 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if(_MtaRetryInterval == -1)
+				if (_MtaRetryIntervalLoadTime < DateTime.UtcNow)
+				{
 					_MtaRetryInterval = DAL.CfgPara.GetRetryIntervalMinutes();
+					_MtaRetryIntervalLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 
 				return _MtaRetryInterval;
 			}
 		}
 		private static int _MtaRetryInterval = -1;
+		private static DateTime _MtaRetryIntervalLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// The maximum time in minutes that a message can be in the queue.
@@ -156,13 +178,17 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_MtaMaxTimeInQueue == -1)
+				if (_MtaMaxTimeInQueueLoadTime < DateTime.UtcNow)
+				{
 					_MtaMaxTimeInQueue = DAL.CfgPara.GetMaxTimeInQueueMinutes();
+					_MtaMaxTimeInQueueLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 
 				return _MtaMaxTimeInQueue;
 			}
 		}
 		private static int _MtaMaxTimeInQueue = -1;
+		private static DateTime _MtaMaxTimeInQueueLoadTime = DateTime.MinValue;
 
 		internal static class Client
 		{
@@ -180,13 +206,17 @@ namespace MantaMTA.Core
 			{
 				get
 				{
-					if (_ConnectionIdleTimeoutInterval == -1)
+					if (_ConnectionIdleTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_ConnectionIdleTimeoutInterval = DAL.CfgPara.GetClientIdleTimeout();
+						_ConnectionIdleTimeoutIntervalLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _ConnectionIdleTimeoutInterval;
 				}
 			}
 			private static int _ConnectionIdleTimeoutInterval = -1;
+			private static DateTime _ConnectionIdleTimeoutIntervalLoadTime = DateTime.MinValue;
 
 			/// <summary>
 			/// The time in seconds for connection read timeouts.
@@ -195,13 +225,17 @@ namespace MantaMTA.Core
 			{
 				get 
 				{
-					if (_ConnectionReceiveTimeoutInterval == -1)
+					if (_ConnectionReceiveTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_ConnectionReceiveTimeoutInterval = DAL.CfgPara.GetReceiveTimeout();
+						_ConnectionReceiveTimeoutIntervalLoadTime = _ConnectionReceiveTimeoutIntervalLoadTime.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _ConnectionReceiveTimeoutInterval;
 				}
 			}
 			public static int _ConnectionReceiveTimeoutInterval = -1;
+			private static DateTime _ConnectionReceiveTimeoutIntervalLoadTime = DateTime.MinValue;
 
 
 			/// <summary>
@@ -211,13 +245,17 @@ namespace MantaMTA.Core
 			{
 				get 
 				{
-					if (_connectionSendTimeoutInterval == -1)
+					if (_connectionSendTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_connectionSendTimeoutInterval = DAL.CfgPara.GetSendTimeout();
+						_connectionSendTimeoutIntervalLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _connectionSendTimeoutInterval;
 				}
 			}
 			private static int _connectionSendTimeoutInterval = -1;
+			private static DateTime _connectionSendTimeoutIntervalLoadTime = DateTime.MinValue;
 		}
 	}
 }
