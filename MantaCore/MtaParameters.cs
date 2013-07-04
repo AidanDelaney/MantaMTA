@@ -57,6 +57,28 @@ namespace MantaMTA.Core
 		private static DateTime _MtaDropFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
+		/// Drop folder for abuse@
+		/// </summary>
+		internal static string AbuseDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "abuse");
+			}
+		}
+
+		/// <summary>
+		/// Drop folder for postmaster@
+		/// </summary>
+		internal static string PostmasterDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "postmaster");
+			}
+		}
+
+		/// <summary>
 		/// Queue folder, for messages to be sent.
 		/// </summary>
 		internal static string MTA_QUEUEFOLDER

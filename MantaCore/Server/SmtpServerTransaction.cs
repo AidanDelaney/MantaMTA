@@ -107,8 +107,12 @@ namespace MantaMTA.Core.Server
 					// Put the messages in a subfolder for each recipient.
 					// Unless the rcpt to is a return path message in which case put them all in a return-path folder
 					string mailDirPath = string.Empty;
-					if(RcptTo[i].StartsWith("return-", StringComparison.OrdinalIgnoreCase))
+					if (RcptTo[i].StartsWith("return-", StringComparison.OrdinalIgnoreCase))
 						mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, "return-path");
+					else if (RcptTo[i].StartsWith("abuse@", StringComparison.OrdinalIgnoreCase))
+						mailDirPath = MtaParameters.AbuseDropFolder;
+					else if (RcptTo[i].StartsWith("postmaster@", StringComparison.OrdinalIgnoreCase))
+						mailDirPath = MtaParameters.PostmasterDropFolder;
 					else
 						mailDirPath = Path.Combine(MtaParameters.MTA_DROPFOLDER, RcptTo[i]);
 						
