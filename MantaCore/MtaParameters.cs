@@ -6,7 +6,7 @@ namespace MantaMTA.Core
 	public class MtaParameters
 	{
 		/// <summary>
-		/// Name of the MTA. Used in welcome banner to identify product.
+		/// Name of the MTA. Used in welcome banner to identify product as well as email headers.  Don't use spaces or interesting characters.
 		/// </summary>
 		public const string MTA_NAME = "MantaMTA";
 

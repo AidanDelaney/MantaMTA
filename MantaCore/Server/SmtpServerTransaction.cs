@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.Enums;
+using MantaMTA.Core.Message;
 
 namespace MantaMTA.Core.Server
 {
@@ -75,9 +76,9 @@ namespace MantaMTA.Core.Server
 		/// <param name="value">Value for the header.</param>
 		public void AddHeader(string name, string value)
 		{
-			MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+			MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
 			headers.Insert(0, new MessageHeader(name, value));
-			Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
+			Data = MessageManager.ReplaceHeaders(Data, headers);
 		}
 
 		/// <summary>
@@ -92,13 +93,13 @@ namespace MantaMTA.Core.Server
 				// The message is for local delivery
 
 				// Add the MAIL FROM & RCPT TO headers.
-				MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+				MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
 				headers.Insert(0, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
 				if (HasMailFrom && string.IsNullOrWhiteSpace(MailFrom))
 					headers.Insert(0, new MessageHeader("X-Sender", "<>"));
 				else
 					headers.Insert(0, new MessageHeader("X-Sender", MailFrom));
-				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
+				Data = MessageManager.ReplaceHeaders(Data, headers);
 				
 				// Need to drop a copy of the message for each recipient.
 				for (int i = 0; i < RcptTo.Count; i++)
@@ -127,7 +128,7 @@ namespace MantaMTA.Core.Server
 				// The email is for relaying.
 
 				// Look for any MTA control headers.
-				MessageHeaderCollection headers = MessageHeaderManager.GetMessageHeaders(Data);
+				MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
 
 				// Will not be null if the SendGroupID header was present.
 				MessageHeader ipGroupHeader = headers.SingleOrDefault(m => m.Name.Equals(MessageHeaderNames.SendGroupID, StringComparison.OrdinalIgnoreCase));
@@ -168,7 +169,7 @@ namespace MantaMTA.Core.Server
 
 				// Remove any control headers.
 				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
-				Data = MessageHeaderManager.ReplaceHeaders(Data, headers);
+				Data = MessageManager.ReplaceHeaders(Data, headers);
 
 				// If the MTA group doesn't exist or it's not got any IPs, use the default.
 				if (mtaGroup == null || 

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace MantaMTA.Core.Server
+namespace MantaMTA.Core.Message
 {
 	/// <summary>
 	/// Manager provides methods for working with Email Message Headers.
 	/// </summary>
-	internal static class MessageHeaderManager
+	public static class MessageManager
 	{
 		/// <summary>
 		/// Replaces the headers in the messageData with the new ones.
@@ -206,7 +206,7 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		/// <param name="messageData">Raw message DATA</param>
 		/// <returns></returns>
-		private static string GetMessageBodySection(string messageData)
+		internal static string GetMessageBodySection(string messageData)
 		{
 			int endOfHeadersIndex = messageData.IndexOf(MtaParameters.NewLine + MtaParameters.NewLine);
 
@@ -225,7 +225,7 @@ namespace MantaMTA.Core.Server
 	/// <summary>
 	/// Class represents an Email message header.
 	/// </summary>
-	internal class MessageHeader
+	public class MessageHeader
 	{
 		/// <summary>
 		/// Name of the message header.
@@ -251,7 +251,7 @@ namespace MantaMTA.Core.Server
 	/// <summary>
 	/// Holds a collection of Email message headers.
 	/// </summary>
-	internal class MessageHeaderCollection : List<MessageHeader>
+	public class MessageHeaderCollection : List<MessageHeader>
 	{
 		public MessageHeaderCollection() { }
 		public MessageHeaderCollection(IEnumerable<MessageHeader> collection) : base(collection) { }
@@ -265,7 +265,7 @@ namespace MantaMTA.Core.Server
 		/// <summary>
 		/// First bit of control/command headers.
 		/// </summary>
-		public const string HeaderNamePrefix = "X-BatHawk-";
+		public const string HeaderNamePrefix = "X-" + MtaParameters.MTA_NAME + "-";
 		
 		/// <summary>
 		/// The send group ID header name.
