@@ -142,21 +142,36 @@ namespace MantaMTA.Core.Server
 					if(int.TryParse(ipGroupHeader.Value, out ipGroupID))
 						mtaGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(ipGroupID);
 				}
-
-
-				// Look for a send id, if one doesn't exist create it.
+				
+				#region Look for a send id, if one doesn't exist create it.
 				MessageHeader sendIdHeader = headers.SingleOrDefault(h => h.Name.Equals(MessageHeaderNames.SendID, StringComparison.OrdinalIgnoreCase));
 				int internalSendId = -1;
 				if (sendIdHeader != null)
 					internalSendId = SendID.SendIDManager.GetInternalSendId(sendIdHeader.Value);
 				else
 					internalSendId = SendID.SendIDManager.GetDefaultInternalSendId();
+				#endregion
 
+				#region Generate Return Path
 				string returnPath = string.Empty;
+				
+				// Can only return path to messages with one rcpt to
 				if(RcptTo.Count == 1)
 				{
-					// Generate a unique return path for this message.
-					returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId);
+					// Need to check to see if the message contains a return path overide domain.
+					MessageHeader returnPathDomainOverrideHeader = headers.SingleOrDefault(h => h.Name.Equals(MessageHeaderNames.ReturnPathDomain, StringComparison.OrdinalIgnoreCase));
+
+					if (returnPathDomainOverrideHeader != null &&
+						MtaParameters.LocalDomains.Count(d=>d.Equals(returnPathDomainOverrideHeader.Value, StringComparison.OrdinalIgnoreCase)) > 0)
+						// The message contained a local domain in the returnpathdomain 
+						// header so use it instead of the default.
+						returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId, returnPathDomainOverrideHeader.Value);
+					else
+						// The message didn't specify a return path overide or it didn't
+						// contain a localdomain so use the default.
+						returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId);
+					
+					// Insert the return path header.
 					headers.Insert(0, new MessageHeader("Return-Path", returnPath));
 				}
 				else
@@ -164,8 +179,9 @@ namespace MantaMTA.Core.Server
 					// multiple rcpt's so can't have unique return paths, use generic mail from.
 					returnPath = MailFrom;
 				}
+				#endregion
 
-				// Generate a message ID header
+				#region Generate a message ID header
 				string msgIDHeaderVal = "<" + messageID.ToString("N") + MailFrom.Substring(MailFrom.LastIndexOf("@")) + ">";
 				
 				// If there is not message header, add it.
@@ -174,6 +190,7 @@ namespace MantaMTA.Core.Server
 				// Otherwise replace existing message id header with out own.
 				else
 					headers.Single(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)).Value = msgIDHeaderVal;
+				#endregion
 
 				// Remove any control headers.
 				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));

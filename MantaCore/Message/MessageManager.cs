@@ -285,5 +285,10 @@ namespace MantaMTA.Core.Message
 		/// The SendID is used by external systems to identify the send.
 		/// </summary>
 		public const string SendID = HeaderNamePrefix + "SendID";
+
+		/// <summary>
+		/// The return path domain is used to pass in the return path.
+		/// </summary>
+		public const string ReturnPathDomain = HeaderNamePrefix + "ReturnPathDomain";
 	}
 }
