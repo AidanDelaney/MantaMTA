@@ -43,7 +43,7 @@ namespace MantaMTA.Core.MtaIpAddress
 		private static void LoadIpAddresses()
 		{
 			if (_ipAddresses != null &&
-				_lastGotIpAddresses.AddMinutes(5) > DateTime.UtcNow)
+				_lastGotIpAddresses.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 				return;
 
 			_outboundIpAddresses = null;
@@ -108,7 +108,7 @@ namespace MantaMTA.Core.MtaIpAddress
 			if (_ipGroups.TryGetValue(id, out group))
 			{
 				// Only cache IP Groups for 5 minutes.
-				if(group.CreatedTimestamp.AddMinutes(5) > DateTime.UtcNow)
+				if (group.CreatedTimestamp.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 					return group;
 			}
 

@@ -16,6 +16,11 @@ namespace MantaMTA.Core
 		internal const string NewLine = "\r\n";
 
 		/// <summary>
+		/// The time in minutes of how long stuff should be cached in memory for.
+		/// </summary>
+		internal const int MTA_CACHE_MINUTES = 5;
+
+		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.
 		/// This will almost always be 25 & 587.
 		/// </summary>
