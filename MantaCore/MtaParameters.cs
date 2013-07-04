@@ -102,6 +102,20 @@ namespace MantaMTA.Core
 		private static string[] _LocalDomains { get; set; }
 
 		/// <summary>
+		/// The domain that return paths should use.
+		/// </summary>
+		public static string ReturnPathDomain
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(_ReturnPathDomain))
+					_ReturnPathDomain = DAL.CfgPara.GetReturnPathDomain();
+				return _ReturnPathDomain;
+			}
+		}
+		private static string _ReturnPathDomain = string.Empty;
+
+		/// <summary>
 		/// List of IP addresses to allow relaying for.
 		/// </summary>
 		internal static string[] IPsToAllowRelaying

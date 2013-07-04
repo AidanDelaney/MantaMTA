@@ -33,7 +33,12 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// Error processing email - no reason given.
 		/// </summary>
-		ErrorNoReason = 5
+		ErrorNoReason = 5,
+		/// <summary>
+		/// No return path was found as such we identify
+		/// email address or send.
+		/// </summary>
+		ErrorNoReturnPath = 6
 	}
 
 

@@ -74,7 +74,7 @@ namespace MantaMTA.Core.Client.BO
 			base.RcptTo = message.RcptTo;
 
 			QueuedTimestampUtc = queuedTimestampUtc;
-			AttemptSendAfterUtc = AttemptSendAfterUtc;
+			AttemptSendAfterUtc = attemptSendAfterUtc;
 			_IsPickUpLocked = isPickUpLocked;
 			DataPath = dataPath;
 			IPGroupID = ipGroupID;

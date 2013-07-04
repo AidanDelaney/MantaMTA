@@ -126,6 +126,7 @@ namespace MantaMTA.Core.Server
 			else if (MessageDestination == Enums.MessageDestination.Relay)
 			{
 				// The email is for relaying.
+				Guid messageID = Guid.NewGuid();
 
 				// Look for any MTA control headers.
 				MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
@@ -155,10 +156,7 @@ namespace MantaMTA.Core.Server
 				if(RcptTo.Count == 1)
 				{
 					// Generate a unique return path for this message.
-					returnPath = string.Format("return-{0}-{1}@{2}", 
-						RcptTo[0].Replace("@","-"), 
-						internalSendId.ToString("X"), 
-						new System.Net.Mail.MailAddress(MailFrom).Host);
+					returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId);
 					headers.Insert(0, new MessageHeader("Return-Path", returnPath));
 				}
 				else
@@ -166,6 +164,16 @@ namespace MantaMTA.Core.Server
 					// multiple rcpt's so can't have unique return paths, use generic mail from.
 					returnPath = MailFrom;
 				}
+
+				// Generate a message ID header
+				string msgIDHeaderVal = "<" + messageID.ToString("N") + MailFrom.Substring(MailFrom.LastIndexOf("@")) + ">";
+				
+				// If there is not message header, add it.
+				if (headers.Count(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)) < 1)
+					headers.Add(new MessageHeader("Message-ID", msgIDHeaderVal));
+				// Otherwise replace existing message id header with out own.
+				else
+					headers.Single(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)).Value = msgIDHeaderVal;
 
 				// Remove any control headers.
 				headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
@@ -177,7 +185,7 @@ namespace MantaMTA.Core.Server
 					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
 
 				// Need to put this message in the database for relaying to pickup
-				MessageSender.Enqueue(ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+				MessageSender.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");

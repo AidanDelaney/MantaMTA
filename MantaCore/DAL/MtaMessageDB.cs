@@ -26,13 +26,13 @@ namespace MantaMTA.Core.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-IF EXISTS(SELECT 1 FROM man_mta_msg WHERE mta_msg_id = @msgID)
-	UPDATE man_mta_msg
-	SET mta_send_internalId = @internalSendID,
-	mta_msg_rcptTo = @rcptTo,
-	mta_msg_mailFrom = @mailFrom
-	WHERE mta_msg_id = @msgID
-ELSE
+--//IF EXISTS(SELECT 1 FROM man_mta_msg WHERE mta_msg_id = @msgID)
+--//	UPDATE man_mta_msg
+--//	SET mta_send_internalId = @internalSendID,
+--//	mta_msg_rcptTo = @rcptTo,
+--//	mta_msg_mailFrom = @mailFrom
+--//	WHERE mta_msg_id = @msgID
+--//ELSE
 	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
 	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
@@ -152,6 +152,25 @@ COMMIT TRANSACTION";
 				cmd.Parameters.AddWithValue("@msgID", mtaQueuedMessage.ID);
 				conn.Open();
 				cmd.ExecuteNonQuery();
+			}
+		}
+
+		/// <summary>
+		/// Gets a MtaMessage from the database with the specified ID.
+		/// </summary>
+		/// <param name="messageID">ID of the message to get.</param>
+		/// <returns>The MtaMessage if it exists otherwise null.</returns>
+		internal static MtaMessage GetMtaMessage(Guid messageID)
+		{
+			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT *
+FROM man_mta_msg
+WHERE mta_msg_id = @msgID";
+				cmd.Parameters.AddWithValue("@msgID", messageID);
+				return DataRetrieval.GetSingleObjectFromDatabase<MtaMessage>(cmd, CreateAndFillMessage);
 			}
 		}
 

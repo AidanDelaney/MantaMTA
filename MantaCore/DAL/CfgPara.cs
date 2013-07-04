@@ -92,6 +92,23 @@ namespace MantaMTA.Core.DAL
 		}
 
 		/// <summary>
+		/// Gets the return path domain.
+		/// </summary>
+		public static string GetReturnPathDomain()
+		{
+			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT [dmn].cfg_localDomain_domain
+FROM man_cfg_localDomain as [dmn]
+WHERE [dmn].cfg_localDomain_id = (SELECT TOP 1 [para].cfg_para_returnPathDomain_id FROM man_cfg_para as [para])";
+				conn.Open();
+				return cmd.ExecuteScalar().ToString();
+			}
+		}
+
+		/// <summary>
 		/// Gets the connection send timeout in seconds from the database.
 		/// </summary>
 		public static int GetSendTimeout()

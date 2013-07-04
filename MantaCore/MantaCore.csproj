@@ -69,6 +69,7 @@
     <Compile Include="Logging.cs" />
     <Compile Include="Message\MimeMessage.cs" />
     <Compile Include="Message\MimeMessageBodyPart.cs" />
+    <Compile Include="Message\ReturnPathManager.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />

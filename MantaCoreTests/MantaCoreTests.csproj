@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ReturnPath.cs" />
+    <Compile Include="FeedbackLoopTests.cs" />
     <Compile Include="MimeMessageTests.cs" />
     <Compile Include="OutboundRules.cs" />
     <Compile Include="ServerTests.cs" />
@@ -59,6 +61,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MantaCoreEvents\MantaCoreEvents.csproj">
+      <Project>{61b74d22-8e87-4e45-90a4-35a78164bde3}</Project>
+      <Name>MantaCoreEvents</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MantaCore\MantaCore.csproj">
       <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
       <Name>MantaCore</Name>

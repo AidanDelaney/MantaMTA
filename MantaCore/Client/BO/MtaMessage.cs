@@ -45,10 +45,10 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="mailFrom">Mail From used in SMTP.</param>
 		/// <param name="rcptTo">Rcpt To's used in SMTP.</param>
 		/// <returns></returns>
-		public static MtaMessage Create(int internalSendID, string mailFrom, string[] rcptTo)
+		public static MtaMessage Create(Guid messageID, int internalSendID, string mailFrom, string[] rcptTo)
 		{
 			MtaMessage mtaMessage = new MtaMessage();
-			mtaMessage.ID = Guid.NewGuid();
+			mtaMessage.ID = messageID;
 			mtaMessage.InternalSendID = internalSendID;
 			
 			if (mailFrom != null)
@@ -71,7 +71,11 @@ namespace MantaMTA.Core.Client.BO
 		/// <returns></returns>
 		public virtual MtaQueuedMessage Queue(string data, int ipGroupID)
 		{
-			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml"); 
+			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml");
+
+			if (File.Exists(dataPath))
+				throw new IOException();
+
 			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.UtcNow, DateTime.UtcNow, false, dataPath, ipGroupID);
 
 			using (StreamWriter writer = new StreamWriter(dataPath))
