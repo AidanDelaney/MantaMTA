@@ -8,7 +8,7 @@ namespace MantaMTA.Core.Events.Enums
 	/// <summary>
 	/// Used to identify how to use a Bounce Rule's Criteria property.
 	/// </summary>
-	internal enum BounceRuleType
+	internal enum BounceRuleCriteriaType
 	{
 		/// <summary>
 		/// Default value.

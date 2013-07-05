@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Collections.Concurrent;
 using MantaMTA.Core.Events.Enums;
+using System.Text.RegularExpressions;
 
 namespace MantaMTA.Core.Events
 {
-	internal class BounceRulesManager
+	internal partial class BounceRulesManager
 	{
 		/// <summary>
 		/// Holds a singleton instance of the BounceRulesManager.
@@ -29,32 +30,6 @@ namespace MantaMTA.Core.Events
 
 				return _bounceRules;
 			}
-		}
-	}
-
-	/// <summary>
-	/// Holds details of a Bounce Rule used to interpret a failed delivery message (could be an email or an SMTP response).
-	/// </summary>
-	internal class BounceRule
-	{
-		public int RuleID { get; set; }
-		public BounceRuleType Type { get; set; }
-		public string Criteria { get; set; }
-
-	}
-
-
-	internal class BounceRulesCollection : ConcurrentBag<BounceRule>
-	{
-		/// <summary>
-		/// When the BounceRules were last loaded into this collection.
-		/// If this is "too old", the collection will reload them to ensure configuration changes are used.
-		/// </summary>
-		public DateTime LoadedTimestampUtc { get; set; }
-
-		public BounceRulesCollection()
-		{
-
 		}
 	}
 }

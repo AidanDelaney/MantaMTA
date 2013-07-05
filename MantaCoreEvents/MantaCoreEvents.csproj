@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net">
+      <HintPath>..\log4net\1.2.11\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -40,19 +43,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\MantaCore\Logging.cs">
+      <Link>ExternalIncludes\Logging.cs</Link>
+    </Compile>
+    <Compile Include="..\MantaCore\Message\MessageManager.cs">
+      <Link>ExternalIncludes\MessageManager.cs</Link>
+    </Compile>
+    <Compile Include="..\MantaCore\Message\MimeMessage.cs">
+      <Link>ExternalIncludes\MimeMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\MantaCore\Message\MimeMessageBodyPart.cs">
+      <Link>ExternalIncludes\MimeMessageBodyPart.cs</Link>
+    </Compile>
     <Compile Include="..\MantaCore\MtaParameters.cs">
-      <Link>MtaParameters.cs</Link>
+      <Link>ExternalIncludes\MtaParameters.cs</Link>
     </Compile>
-    <Compile Include="..\MantaCore\Server\MessageHeaderManager.cs">
-      <Link>MessageHeaderManager.cs</Link>
-    </Compile>
+    <Compile Include="BounceRulesClasses.cs" />
     <Compile Include="BounceRulesManager.cs" />
     <Compile Include="Enums\BounceRuleEnums.cs" />
     <Compile Include="Enums\EventEnums.cs" />
     <Compile Include="EventClasses.cs" />
     <Compile Include="EventsManager.cs" />
+    <Compile Include="ExternalIncludes\ReturnPathManagerTEMP.cs" />
     <Compile Include="FakeDAL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SmtpStatusCodes.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -23,17 +23,21 @@ namespace MantaMTA.Core.Events
 		/// </summary>
 		SuccessBounce = 2,
 		/// <summary>
+		/// Email successfully processed - wasn't an abuse or bounce email; likely to be junk.
+		/// </summary>
+		SuccessNoAction = 3,
+		/// <summary>
 		/// Error processing email - problem with content.
 		/// </summary>
-		ErrorContent = 3,
+		ErrorContent = 4,
 		/// <summary>
 		/// Error processing email - file doesn't exist.
 		/// </summary>
-		ErrorNoFile = 4,
+		ErrorNoFile = 5,
 		/// <summary>
 		/// Error processing email - no reason given.
 		/// </summary>
-		ErrorNoReason = 5
+		ErrorNoReason = 6
 	}
 
 
@@ -66,6 +70,10 @@ namespace MantaMTA.Core.Events
 	public enum MantaBounceType : int
 	{
 		/// <summary>
+		/// Default value.
+		/// </summary>
+		Unknown = 0,
+		/// <summary>
 		/// A hard bounce is where the ISP is explicitly saying that this email address is not valid. 
 		/// Typically this is a "user does not exist" error message.
 		/// </summary>
@@ -93,9 +101,14 @@ namespace MantaMTA.Core.Events
 	public enum MantaBounceCode : int
 	{
 		/// <summary>
-		/// 550 User Unknown
+		/// Default value.
 		/// </summary>
-		RejectedBadEmailAddress = 10,
+		Unknown = 0,
+		/// <summary>
+		/// Not actually a bounce.
+		/// </summary>
+		NotABounce = 1,
+		DeferredBadEmailAddress = 11,
 		DeferredGeneral = 20,
 		DeferredDNSFailure = 21,
 		DeferredMailboxFull = 22,
@@ -105,6 +118,10 @@ namespace MantaMTA.Core.Events
 		/// A bounce that we're unable to identify a reason for.
 		/// </summary>
 		BounceUnknown = 40,
+		/// <summary>
+		/// 550 User Unknown
+		/// </summary>
+		RejectedBadEmailAddress = 10,
 		RejectedUnknown = 50,
 		/// <summary>
 		/// 
@@ -116,6 +133,8 @@ namespace MantaMTA.Core.Events
 		RejectedSpamDetected = 52,
 		RejectedAttachmentDetected = 53,
 		RejectedRelayDenied = 54,
-		RejectedUnableToConnect = 59
+		RejectedUnableToConnect = 59,
+		RejectedMailboxFull = 60
+
 	}
 }

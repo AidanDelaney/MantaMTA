@@ -19,7 +19,7 @@ namespace MantaMTA.Core.Events
 		/// </summary>
 		public string EmailAddress { get; set; }
 		/// <summary>
-		/// The internal identifier for the send.
+		/// The identifier for the send.
 		/// </summary>
 		public string SendID { get; set; }
 		/// <summary>
