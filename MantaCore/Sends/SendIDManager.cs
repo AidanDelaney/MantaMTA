@@ -43,7 +43,7 @@ namespace MantaMTA.Core.SendID
 				sndID = new SendID()
 				{
 					ID = sendId,
-					InternalID = DAL.SendIdDB.CreateAndGetInternalSendID(sendId)
+					InternalID = DAL.SendDB.CreateAndGetInternalSendID(sendId)
 				};
 
 				// Add are new item to the cache.

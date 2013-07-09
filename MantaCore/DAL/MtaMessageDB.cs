@@ -6,6 +6,7 @@ using System;
 using System.Data;
 using System.Net.Mail;
 using System.Collections.Generic;
+using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.DAL
 {
@@ -22,7 +23,7 @@ namespace MantaMTA.Core.DAL
 		/// <param name="message"></param>
 		internal static void Save(MtaMessage message)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -54,7 +55,7 @@ namespace MantaMTA.Core.DAL
 		/// <param name="message"></param>
 		internal static void Save(MtaQueuedMessage message)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -86,7 +87,7 @@ ELSE
 		/// <param name="messageID"></param>
 		internal static void ReleasePickupLock(Guid messageID)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -107,7 +108,7 @@ ELSE
 		/// <returns>Collection of messages queued for sending.</returns>
 		internal static MtaQueuedMessageCollection PickupForSending(int maxMessages)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -120,6 +121,7 @@ SELECT TOP " + maxMessages + @" mta_msg_id
 FROM man_mta_queue
 WHERE mta_queue_attemptSendAfter < GETUTCDATE()
 AND mta_queue_isPickupLocked = 0
+AND mta_sendStatus_id = @activeSendStatusID
 ORDER BY mta_queue_attemptSendAfter ASC
 
 UPDATE man_mta_queue
@@ -132,6 +134,7 @@ JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
+				cmd.Parameters.AddWithValue("@activeSendStatusID", (int)SendStatus.Active);
 				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
@@ -143,7 +146,7 @@ COMMIT TRANSACTION";
 		/// <param name="mtaQueuedMessage"></param>
 		internal static void Delete(MtaQueuedMessage mtaQueuedMessage)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -162,7 +165,7 @@ COMMIT TRANSACTION";
 		/// <returns>The MtaMessage if it exists otherwise null.</returns>
 		internal static MtaMessage GetMtaMessage(Guid messageID)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"

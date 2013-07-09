@@ -24,6 +24,28 @@ namespace WebInterface.Controllers
 			return View(GetSendListDataSet(true));
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sendIID">Send Internal ID</param>
+		/// <returns></returns>
+		public ActionResult Pause(string sendIID)
+		{
+			MantaMTA.Core.SendID.SendManager.Pause(Int32.Parse(sendIID));
+			return View();
+		}
+
+		public ActionResult Discard(string sendIID)
+		{
+			MantaMTA.Core.SendID.SendManager.Discard(Int32.Parse(sendIID));
+			return View();
+		}
+
+		public ActionResult Resume(string sendIID)
+		{
+			MantaMTA.Core.SendID.SendManager.Resume(Int32.Parse(sendIID));
+			return View();
+		}
 		
 		public ActionResult Report(string sendID)
 		{
@@ -109,6 +131,8 @@ ORDER BY [Date] ASC
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT [snd].mta_send_id as 'SendID',
+[snd].mta_send_internalId as 'InternalSendID',
+[snd].mta_sendStatus_id as 'SendStatus',
 [snd].mta_send_createdTimestamp as 'Started',
 (SELECT COUNT(*) FROM man_mta_msg as [msg] WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Messages',
 (SELECT COUNT(*) FROM man_mta_queue as [queue] 

@@ -39,7 +39,7 @@ namespace MantaMTA.Core
 		/// Drop folder, for incoming messages.
 		/// This should be in config.
 		/// </summary>
-		internal static string MTA_DROPFOLDER
+		public static string MTA_DROPFOLDER
 		{
 			get
 			{
@@ -81,7 +81,7 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// Queue folder, for messages to be sent.
 		/// </summary>
-		internal static string MTA_QUEUEFOLDER
+		public static string MTA_QUEUEFOLDER
 		{
 			get
 			{
@@ -102,7 +102,7 @@ namespace MantaMTA.Core
 		/// Log foler, where SMTP Transaction logs will go.
 		/// This should be in config.
 		/// </summary>
-		internal static string MTA_LOGFOLDER
+		public static string MTA_LOGFOLDER
 		{
 			get
 			{
