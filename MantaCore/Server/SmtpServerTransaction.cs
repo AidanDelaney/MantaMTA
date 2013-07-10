@@ -154,14 +154,14 @@ namespace MantaMTA.Core.Server
 				{
 					Sends.Send sndID = Sends.SendManager.Instance.GetSend(sendIdHeader.Value);
 					if (sndID.SendStatus == SendStatus.Discard)
-						throw new SendIdIsDiscardingException();
+						throw new SendDiscardingException();
 					internalSendId = sndID.InternalID;
 				}
 				else
 				{
 					Sends.Send sndID = Sends.SendManager.Instance.GetDefaultInternalSendId();
 					if (sndID.SendStatus == SendStatus.Discard)
-						throw new SendIdIsDiscardingException();
+						throw new SendDiscardingException();
 					internalSendId = sndID.InternalID;
 				}
 				#endregion

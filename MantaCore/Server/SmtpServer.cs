@@ -377,7 +377,7 @@ namespace MantaMTA.Core.Server
 						{
 							mailTransaction.Save();
 						}
-						catch (SendIdIsDiscardingException)
+						catch (SendDiscardingException)
 						{
 							smtpStream.WriteLine("554 Send Discarding.");
 							continue;

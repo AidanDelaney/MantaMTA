@@ -284,5 +284,5 @@ namespace MantaMTA.Core
 	/// <summary>
 	/// Should be thrown when a Send is in a discarding state and an attempt is made to queue a message to it.
 	/// </summary>
-	public class SendIdIsDiscardingException : Exception { }
+	public class SendDiscardingException : Exception { }
 }

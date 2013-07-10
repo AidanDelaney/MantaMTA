@@ -100,6 +100,7 @@ namespace MantaMTA.Core.Sends
 		public void Pause(int internalSendID)
 		{
 			SendDB.PauseSend(internalSendID);
+			SendManager.Instance.ClearSendsCache();
 		}
 
 		/// <summary>
@@ -109,8 +110,8 @@ namespace MantaMTA.Core.Sends
 		public void Discard(int internalSendID)
 		{
 			SendDB.DiscardSend(internalSendID);
-			ClearSendsCache();
-			DiscardMessages(internalSendID);
+			SendManager.Instance.ClearSendsCache();
+			SendManager.Instance.DiscardMessages(internalSendID);
 		}
 
 		/// <summary>
@@ -138,6 +139,7 @@ namespace MantaMTA.Core.Sends
 		public void Resume(int internalSendID)
 		{
 			SendDB.ResumeSend(internalSendID);
+			SendManager.Instance.ClearSendsCache();
 		}
 	}
 }
