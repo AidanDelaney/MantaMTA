@@ -151,9 +151,19 @@ namespace MantaMTA.Core.Server
 				MessageHeader sendIdHeader = headers.SingleOrDefault(h => h.Name.Equals(MessageHeaderNames.SendID, StringComparison.OrdinalIgnoreCase));
 				int internalSendId = -1;
 				if (sendIdHeader != null)
-					internalSendId = SendID.SendIDManager.GetInternalSendId(sendIdHeader.Value);
+				{
+					Sends.Send sndID = Sends.SendManager.Instance.GetSend(sendIdHeader.Value);
+					if (sndID.SendStatus == SendStatus.Discard)
+						throw new SendIdIsDiscardingException();
+					internalSendId = sndID.InternalID;
+				}
 				else
-					internalSendId = SendID.SendIDManager.GetDefaultInternalSendId();
+				{
+					Sends.Send sndID = Sends.SendManager.Instance.GetDefaultInternalSendId();
+					if (sndID.SendStatus == SendStatus.Discard)
+						throw new SendIdIsDiscardingException();
+					internalSendId = sndID.InternalID;
+				}
 				#endregion
 
 				#region Generate Return Path

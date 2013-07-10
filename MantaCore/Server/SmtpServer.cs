@@ -377,6 +377,11 @@ namespace MantaMTA.Core.Server
 						{
 							mailTransaction.Save();
 						}
+						catch (SendIdIsDiscardingException)
+						{
+							smtpStream.WriteLine("554 Send Discarding.");
+							continue;
+						}
 						catch (Exception)
 						{
 							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");

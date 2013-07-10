@@ -86,6 +86,9 @@
 					case 5:
 						@:<span class='text-muted'>Throttled</span>
 						break;
+					case 6:
+						@:<span class='text-error'>Discarded</span>
+						break;
 					default:
 						@:unknown
 						break;
@@ -94,7 +97,7 @@
 				<td>
 					<blockquote style="margin:0px;">
 						@row[5]
-						<small>@(string.IsNullOrEmpty(row[6].ToString())?"localhost":row[6])</small>
+						<small>@(string.IsNullOrEmpty(row[6].ToString()) ? "localhost" : row[6])</small>
 					</blockquote>
 				</td>
 				<td><strong>@row[8]</strong><br /><small class="muted">@row[7]</small></td>

@@ -1,8 +1,9 @@
 ﻿using System;
+using MantaMTA.Core.Enums;
 
-namespace MantaMTA.Core.SendID
+namespace MantaMTA.Core.Sends
 {
-	internal class SendID
+	public class Send
 	{
 		/// <summary>
 		/// The textual send ID.
@@ -12,6 +13,10 @@ namespace MantaMTA.Core.SendID
 		/// An Internal ID for the sendID.
 		/// </summary>
 		public int InternalID { get; set; }
+		/// <summary>
+		/// The current Status of this Send.
+		/// </summary>
+		public SendStatus SendStatus { get; set; }
 		/// <summary>
 		/// This is used to record when this instance of this class was accessed. Used by
 		/// the SendIDManager to clean up it's internal cache.

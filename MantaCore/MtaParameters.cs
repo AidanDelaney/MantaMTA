@@ -280,4 +280,9 @@ namespace MantaMTA.Core
 			private static DateTime _connectionSendTimeoutIntervalLoadTime = DateTime.MinValue;
 		}
 	}
+
+	/// <summary>
+	/// Should be thrown when a Send is in a discarding state and an attempt is made to queue a message to it.
+	/// </summary>
+	public class SendIdIsDiscardingException : Exception { }
 }

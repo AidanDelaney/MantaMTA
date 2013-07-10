@@ -1,11 +1,10 @@
-﻿using System.Configuration;
-using System.Data.SqlClient;
-using MantaMTA.Core.Client.BO;
-using System.Linq;
-using System;
-using System.Data;
-using System.Net.Mail;
+﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Net.Mail;
+using MantaMTA.Core.Client.BO;
 using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.DAL
@@ -117,11 +116,13 @@ BEGIN TRANSACTION
 DECLARE @msgIdTbl table(msgID uniqueidentifier)
 
 INSERT INTO @msgIdTbl
-SELECT TOP " + maxMessages + @" mta_msg_id
-FROM man_mta_queue
+SELECT TOP " + maxMessages + @" [queue].mta_msg_id
+FROM man_mta_queue as [queue]
+JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id
+JOIN man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
 WHERE mta_queue_attemptSendAfter < GETUTCDATE()
 AND mta_queue_isPickupLocked = 0
-AND mta_sendStatus_id = @activeSendStatusID
+AND mta_sendStatus_id = @sendStatus
 ORDER BY mta_queue_attemptSendAfter ASC
 
 UPDATE man_mta_queue
@@ -134,12 +135,52 @@ JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
-				cmd.Parameters.AddWithValue("@activeSendStatusID", (int)SendStatus.Active);
+				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Active);
 				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
 		}
 
+		/// <summary>
+		/// Gets messages that should be discarded.
+		/// </summary>
+		/// <param name="maxMessages">The maximum amount of messages get.</param>
+		/// <returns>Messages for discarding.</returns>
+		internal static MtaQueuedMessageCollection PickupForDiscarding(int maxMessages)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+BEGIN TRANSACTION
+
+DECLARE @msgIdTbl table(msgID uniqueidentifier)
+
+INSERT INTO @msgIdTbl
+SELECT TOP " + maxMessages + @" [queue].mta_msg_id
+FROM man_mta_queue as [queue]
+JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id
+JOIN man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
+WHERE mta_queue_isPickupLocked = 0
+AND mta_sendStatus_id = @sendStatus
+ORDER BY mta_queue_attemptSendAfter ASC
+
+UPDATE man_mta_queue
+SET mta_queue_isPickupLocked = 1
+WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
+
+SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
+FROM man_mta_queue as [que]
+JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
+WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
+
+COMMIT TRANSACTION";
+				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Discard);
+				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
+				return new MtaQueuedMessageCollection(results);
+			}
+		}
+		
 		/// <summary>
 		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>

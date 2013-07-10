@@ -19,6 +19,9 @@ namespace MantaMTA.Console
 				Logging.Warn("", e.Exception);
 			};
 
+			// Start the send manager service.
+			MantaMTA.Core.Sends.SendManager.Instance.StartService();
+
 			MtaIpAddressCollection ipAddresses = IpAddressManager.GetIPsForListeningOn();
 
 			// Array will hold all instances of SmtpServer, one for each port we will be listening on.

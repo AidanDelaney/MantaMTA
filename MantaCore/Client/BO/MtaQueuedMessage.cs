@@ -111,6 +111,19 @@ namespace MantaMTA.Core.Client.BO
 		}
 
 		/// <summary>
+		/// This method handles failer of devlivery.
+		/// Logs failer
+		/// Deletes queued data
+		/// </summary>
+		/// <param name="failMsg"></param>
+		public void HandleMessageDiscard()
+		{
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Discarded, string.Empty, null, null);
+			MtaMessageDB.Delete(this);
+			DeleteMessageData();
+		}
+
+		/// <summary>
 		/// This method handle successful delivery.
 		/// Logs success
 		/// Deletes queued data
