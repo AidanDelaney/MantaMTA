@@ -127,10 +127,30 @@ namespace MantaMTA.Core.Events
 		internal bool ParseNdr(string message, out MantaBounceType bounceType, out MantaBounceCode bounceCode, out string bounceMessage)
 		{
 			// Check for the Diagnostic-Code as hopefully contains more information about the error.
-			Match m = Regex.Match(message, @"^Diagnostic\-Code\:\s+(?<Code>.*)$", RegexOptions.Multiline);
-			if (m != null)
+
+			string[] lines = message.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+			string diagnosticCode = string.Empty;
+			string status = string.Empty;
+
+			foreach (string l in lines)
 			{
-				if (ParseBounceMessage(m.Groups["Code"].Value, out bounceType, out bounceCode, out bounceMessage))
+				// Check if the line begins with something we can check.
+				if (l.StartsWith("Diagnostic-Code:") && string.IsNullOrWhiteSpace(diagnosticCode))
+				{
+					diagnosticCode = l;
+				}
+				else if (l.StartsWith("Status:") && string.IsNullOrWhiteSpace(status))
+				{
+					status = l;
+				}
+			}
+
+
+
+
+			if (!string.IsNullOrWhiteSpace(diagnosticCode))
+			{
+				ParseSmtpDiagnosticCode(diagnosticCode, out bounceType, out bounceCode, out bounceMessage))
 				{
 
 				}
@@ -174,15 +194,26 @@ namespace MantaMTA.Core.Events
 			return false;
 		}
 
+		internal void ParseSmtpDiagnosticCode(string message, out MantaBounceType bounceType, out MantaBounceCode bounceCode, out string bounceMessage)
+		{
+			Match match = Regex.Match(message, @"(?<Code>\d{3}[-\s]*(?<Message>.*)");
+
+			if (match.Success)
+			{
+				MantaBounceCode mbc = BounceRulesManager.Instance.ConvertNdrCodeToMantaBounceCode(match.Groups["Code"].Value);
+				// match.Groups["Message"]
+			}
+		}
+
 
 		/// <summary>
 		/// Examines an SMTP response message to identify detailed bounce information from it.
 		/// </summary>
-		/// <param name="message"></param>
-		/// <param name="rcptTo"></param>
-		/// <param name="internalSendID"></param>
+		/// <param name="message">The message that's come back from an external MTA when attempting to send an email.</param>
+		/// <param name="rcptTo">The email address that was being sent to.</param>
+		/// <param name="internalSendID">The internal Manta SendID.</param>
 		/// <returns>A MantaBounceEvent object with details of the bounce.</returns>
-		private MantaBounceEvent ProcessSmtpResponseMessage(string message, string rcptTo, int internalSendID)
+		internal MantaBounceEvent ProcessSmtpResponseMessage(string message, string rcptTo, int internalSendID)
 		{
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EventType = MantaEventType.Unknown;

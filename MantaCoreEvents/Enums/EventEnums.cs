@@ -122,7 +122,7 @@ namespace MantaMTA.Core.Events
 		/// 550 User Unknown
 		/// </summary>
 		RejectedBadEmailAddress = 10,
-		RejectedUnknown = 50,
+		RejectedGeneral = 50,
 		/// <summary>
 		/// 
 		/// </summary>
@@ -134,7 +134,8 @@ namespace MantaMTA.Core.Events
 		RejectedAttachmentDetected = 53,
 		RejectedRelayDenied = 54,
 		RejectedUnableToConnect = 59,
-		RejectedMailboxFull = 60
+		RejectedMailboxFull = 60,
+		RejectedMessageSizeTooLarge = 61
 
 	}
 }

@@ -28,7 +28,7 @@ namespace MantaEventsConsole
 
 
 			Action<string> BounceLogger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Action<string> BounceProcessor = delegate(string content) { EventsManager.Instance.ProcessBounce(content); };
+			Action<string> BounceProcessor = delegate(string content) { EventsManager.Instance.ProcessBounceEmail(content); };
 
 
 			
@@ -192,7 +192,7 @@ namespace MantaEventsConsole
 		static void ProcessBounceFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessBounce(content); });
+			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessBounceEmail(content); });
 
 
 			DirectoryHandler(path, Processor, Logger);
