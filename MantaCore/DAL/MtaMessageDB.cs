@@ -115,15 +115,21 @@ BEGIN TRANSACTION
 
 DECLARE @msgIdTbl table(msgID uniqueidentifier)
 
+;WITH Queue AS (
+	SELECT	[que].mta_msg_id, 
+			[que].mta_queue_attemptSendAfter, 
+			ROW_NUMBER() OVER(	PARTITION BY [snd].mta_send_internalId 
+								ORDER BY [que].mta_queue_attemptSendAfter DESC	) as 'RowNum'
+	FROM man_mta_queue AS [que]
+		JOIN man_mta_msg AS [msg] ON [que].mta_msg_id = [msg].mta_msg_id
+		JOIN man_mta_send AS [snd] ON [msg].mta_send_internalId = [snd].mta_send_internalId 
+	WHERE [que].mta_queue_attemptSendAfter <= GETUTCDATE()
+		AND [snd].mta_sendStatus_id = 1
+)
 INSERT INTO @msgIdTbl
 SELECT TOP " + maxMessages + @" [queue].mta_msg_id
-FROM man_mta_queue as [queue]
-JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id
-JOIN man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-WHERE mta_queue_attemptSendAfter < GETUTCDATE()
-AND mta_queue_isPickupLocked = 0
-AND mta_sendStatus_id = @sendStatus
-ORDER BY mta_queue_attemptSendAfter ASC
+FROM Queue
+ORDER BY [Queue].RowNum, [Queue].mta_queue_attemptSendAfter
 
 UPDATE man_mta_queue
 SET mta_queue_isPickupLocked = 1
