@@ -43,5 +43,37 @@ namespace MantaMTA.Core.MtaIpAddress
 
 			return IpAddresses.OrderBy(x => new Random().Next()).FirstOrDefault();
 		}
+
+		/// <summary>
+		/// Object used for locking in GetIpAddressForSending method.
+		/// </summary>
+		private object _SyncLock = new object();
+
+		/// <summary>
+		/// Gets an IP Address. Uses <paramref name="mxRecord"/> to load balance accross all IPs in group.
+		/// </summary>
+		/// <param name="mxRecord">MXRecord of the host wanting to send to.</param>
+		/// <returns>MtaIpAddress or NULL if none in group.</returns>
+		internal MtaIpAddress GetIpAddressForSending(DNS.MXRecord mxRecord)
+		{
+			lock (_SyncLock)
+			{
+				string key = mxRecord.Host.ToLowerInvariant();
+
+				// Get the IP address that has sent the least to the mx host.
+				MtaIpAddress ipAddress = IpAddresses.OrderBy(ipAddr => ipAddr.SendsCounter.GetOrAdd(key, 0)).FirstOrDefault();
+				
+				// Get the current sends count.
+				int currentSends = 0;
+				if (!ipAddress.SendsCounter.TryGetValue(key, out currentSends))
+					return null;
+
+				// Increment the sends count to include this one.
+				ipAddress.SendsCounter.AddOrUpdate(key, currentSends + 1, new Func<string, int, int>(delegate(string k, int value) { return value + 1; }));
+
+				// Return the IP Address.
+				return ipAddress;
+			}
+		}
 	}
 }

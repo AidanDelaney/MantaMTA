@@ -161,7 +161,7 @@ namespace MantaMTA.Core.Client
 
 			// The IP group that will be used to send the queued message.
 			MtaIpAddress.MtaIPGroup messageIpGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(msg.IPGroupID);
-			MtaIpAddress.MtaIpAddress sndIpAddress = messageIpGroup.GetRandomIP();
+			MtaIpAddress.MtaIpAddress sndIpAddress = messageIpGroup.GetIpAddressForSending(mxs[0]);
 
 			ArrayList noneThrottledMXs = new ArrayList();
 			for (int i = 0; i < mxs.Length; i++)
