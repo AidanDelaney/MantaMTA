@@ -222,6 +222,7 @@ namespace MantaMTA.Core.OutboundRules
 
 			// Should have been found by default at least, but hasn't.
 			Logging.Fatal("No MX Pattern Rules! Default Deleted?");
+			MantaCoreEvents.InvokeMantaCoreStopping();
 			Environment.Exit(0);
 			return -1;
 		}

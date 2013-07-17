@@ -216,7 +216,7 @@ namespace MantaMTA.Core.Server
 					ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
 
 				// Need to put this message in the database for relaying to pickup
-				MessageSender.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+				MessageSender.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
 			}
 			else
 				throw new Exception("MessageDestination not set.");

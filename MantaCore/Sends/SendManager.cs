@@ -88,6 +88,7 @@ namespace MantaMTA.Core.Sends
 													 new EventHandler(delegate(object sender, EventArgs e)
 													 {
 														 Logging.Fatal("SendManager ServiceHost Faulted");
+														 MantaCoreEvents.InvokeMantaCoreStopping();
 														 Environment.Exit(-1);
 													 }));
 			_ServiceHost.Open();

@@ -36,7 +36,7 @@ namespace MantaMTA.Console
 			}
 
 			// Start the SMTP Client
-			MessageSender.Start();
+			MessageSender.Instance.Start();
 			
 			bool quit = false;
 			while (!quit)
@@ -47,7 +47,7 @@ namespace MantaMTA.Console
 			}
 
 			// Need to wait while servers & client shutdown.
-			MessageSender.Stop();
+			MantaCoreEvents.InvokeMantaCoreStopping();
 			for (int i = 0; i < smtpServers.Count; i++)
 				(smtpServers[i] as SmtpServer).Dispose();
 

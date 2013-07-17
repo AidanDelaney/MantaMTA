@@ -12,23 +12,54 @@ namespace MantaMTA.Core.Client
 	/// <summary>
 	/// MessageSender sends Emails to other servers from the Queue.
 	/// </summary>
-	public static class MessageSender
+	public class MessageSender : IStopRequired
 	{
+		#region Singleton
 		/// <summary>
-		/// Holds the amount of messages that should be picked up as a single batch
-		/// for sending. Batches are used so we don't need to pickup all messages
-		/// in one go.
+		/// The Single instance of this class.
 		/// </summary>
-		private const int _PICKUP_SIZE = 100;
+		private static MessageSender _Instance = new MessageSender();
+		
+		/// <summary>
+		/// Instance of the MessageSender class.
+		/// </summary>
+		public static MessageSender Instance { get { return _Instance; } }
+
+		private MessageSender()
+		{
+			MantaCoreEvents.RegisterStopRequiredInstance(this);
+		}
+		#endregion
+
+		/// <summary>
+		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
+		/// </summary>
+		private const int _MAX_SENDING_WORKER_TASKS = 100;
 		
 		/// <summary>
 		/// Client thread.
 		/// </summary>
-		private static Thread _ClientThread = null;
+		private Thread _ClientThread = null;
+
 		/// <summary>
 		/// If TRUE then request for client to stop has been made.
 		/// </summary>
-		private static bool _IsStopping = false;
+		private bool _IsStopping = false;
+
+		/// <summary>
+		/// IStopRequired method. Will be called by MantaCoreEvents on stopping of MTA.
+		/// </summary>
+		public void Stop()
+		{
+			_IsStopping = true;
+
+			// Hold the stopping thread here while we wait for _ClientThread to stop.
+			while (_ClientThread != null && _ClientThread.ThreadState != ThreadState.Stopped)
+			{
+				System.Threading.Thread.Sleep(10);
+			}
+		}
+
 		/// <summary>
 		/// Enqueue a message for delivery.
 		/// </summary>
@@ -36,7 +67,7 @@ namespace MantaMTA.Core.Client
 		/// <param name="mailFrom"></param>
 		/// <param name="rcptTo"></param>
 		/// <param name="message"></param>
-		public static void Enqueue(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
+		public void Enqueue(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
 			MtaMessage msg = MtaMessage.Create(messageID, internalSendID, mailFrom, rcptTo);
 			msg.Queue(message, ipGroupID);
@@ -45,32 +76,41 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Starts the SMTP Client.
 		/// </summary>
-		public static void Start()
+		public void Start()
 		{
 			if (_ClientThread == null || _ClientThread.ThreadState != ThreadState.Running)
 			{
 				_IsStopping = false;
 				_ClientThread = new Thread(new ThreadStart(delegate()
 					{
-						// Get the first block of messages
-						MtaQueuedMessageCollection messagesToSend = DAL.MtaMessageDB.PickupForSending(_PICKUP_SIZE);
+						// Will hold the current queued message we are working with.
+						MtaQueuedMessage queuedMessage = null;
 
 						while (!_IsStopping) // Run until stop requested
 						{
 							// Dictionary will hold a single int for each running task. The int means nothing.
 							ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
 							
-							// Loop through all of the messages in this batch and run the Send task
-							for (int i = 0; i < messagesToSend.Count; i++)
+							// Loop to create the worker tasks.
+							for (int i = 0; i < _MAX_SENDING_WORKER_TASKS; i++)
 							{
-								// Get the message for this loop.
-								MtaQueuedMessage queuedMessage = messagesToSend[i];
+								// If we don't have a queued message attempt to get one from the queue.
+								if(queuedMessage == null)
+									queuedMessage = QueueManager.Instance.GetMessageForSending();
+								
+								// There are no  more messages to send so exit the loop.
+								if(queuedMessage == null)
+									break;
 
 								// Don't try and send the message if stop has been issued.
 								if (!_IsStopping)
 								{
 									// Generate a unique ID for this task.
 									Guid taskID = Guid.NewGuid();
+
+									// Use the current queued message for this task.
+									MtaQueuedMessage taskMessage = queuedMessage;
+									queuedMessage = null;
 
 									// Add this task to the running list.
 									if (!runningTasks.TryAdd(taskID, 1))
@@ -81,8 +121,16 @@ namespace MantaMTA.Core.Client
 									{
 										try
 										{
-											// Send the message
-											await SendMessageAsync(queuedMessage);
+											// Loop while there is a task message to send.
+											while (taskMessage != null)
+											{
+												// Send the message.
+												await SendMessageAsync(taskMessage);
+												// Dispose of the message.
+												taskMessage.Dispose();
+												// Try to get another message to send.
+												taskMessage = QueueManager.Instance.GetMessageForSending();
+											}
 										}
 										catch (Exception ex)
 										{
@@ -91,11 +139,15 @@ namespace MantaMTA.Core.Client
 										}
 										finally
 										{
+											// If there is still a task message then dispose of it.
+											if(taskMessage != null)
+												taskMessage.Dispose();
+
 											// Remove this task from the dictionary
 											int value;
 											runningTasks.TryRemove(taskID, out value);
 										}
-									})).ContinueWith(task => queuedMessage.Dispose()); // Always dispose of the queued message.
+									})); // Always dispose of the queued message.
 								}
 								else // Stop requested, dispose the message without any attempt to send it.
 									queuedMessage.Dispose();
@@ -107,27 +159,23 @@ namespace MantaMTA.Core.Client
 								System.Threading.Thread.Sleep(10);
 							}
 
-							// If not stopping get another batch of messages.
+							// If not stopping get another message to send.
 							if (!_IsStopping)
 							{
-								messagesToSend = DAL.MtaMessageDB.PickupForSending(_PICKUP_SIZE);
+								queuedMessage = QueueManager.Instance.GetMessageForSending();
 								
 								// There are no more messages at the moment. Take a nap so not to hammer cpu.
-								if (messagesToSend.Count == 0)
-									Thread.Sleep(15 * 1000);
+								if (queuedMessage == null)
+									Thread.Sleep(1 * 1000);
 							}
 						}
+
+						// If queued message isn't null dispose of it.
+						if (queuedMessage != null)
+							queuedMessage.Dispose();
 					}));
 				_ClientThread.Start();
 			}
-		}
-
-		/// <summary>
-		/// Stop the client from sending.
-		/// </summary>
-		public static void Stop()
-		{
-			_IsStopping = true;
 		}
 
 		/// <summary>
@@ -135,7 +183,7 @@ namespace MantaMTA.Core.Client
 		/// </summary>
 		/// <param name="msg">Message to send</param>
 		/// <returns>True if message sent, false if not.</returns>
-		private static async Task<bool> SendMessageAsync(MtaQueuedMessage msg)
+		private async Task<bool> SendMessageAsync(MtaQueuedMessage msg)
 		{
 			// Check the message hasn't timed out. If it has don't attempt to send it.
 			// Need to do this here as there may be a massive backlog on the server

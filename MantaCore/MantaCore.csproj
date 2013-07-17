@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
+    <Compile Include="Client\QueueManager.cs" />
     <Compile Include="Client\ServiceNotAvailableManager.cs" />
     <Compile Include="Client\MessageSender.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
@@ -69,7 +70,9 @@
     <Compile Include="Enums\SendStatus.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
+    <Compile Include="IStopRequired.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="MantaCoreEvents.cs" />
     <Compile Include="Message\MimeMessage.cs" />
     <Compile Include="Message\MimeMessageBodyPart.cs" />
     <Compile Include="Message\ReturnPathManager.cs" />

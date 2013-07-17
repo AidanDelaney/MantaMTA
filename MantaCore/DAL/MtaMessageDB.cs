@@ -125,6 +125,7 @@ DECLARE @msgIdTbl table(msgID uniqueidentifier)
 		JOIN man_mta_send AS [snd] ON [msg].mta_send_internalId = [snd].mta_send_internalId 
 	WHERE [que].mta_queue_attemptSendAfter <= GETUTCDATE()
 		AND [snd].mta_sendStatus_id = 1
+		AND [que].mta_queue_isPickupLocked = 0
 )
 INSERT INTO @msgIdTbl
 SELECT TOP " + maxMessages + @" [queue].mta_msg_id
