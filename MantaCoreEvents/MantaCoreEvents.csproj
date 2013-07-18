@@ -35,6 +35,7 @@
       <HintPath>..\log4net\1.2.11\log4net.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -43,6 +44,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\MantaCore\DAL\DataRetrieval.cs">
+      <Link>ExternalIncludes\DataRetrieval.cs</Link>
+    </Compile>
     <Compile Include="..\MantaCore\Logging.cs">
       <Link>ExternalIncludes\Logging.cs</Link>
     </Compile>
@@ -63,6 +67,7 @@
     <Compile Include="Enums\BounceRuleEnums.cs" />
     <Compile Include="Enums\EventEnums.cs" />
     <Compile Include="EventClasses.cs" />
+    <Compile Include="EventDB.cs" />
     <Compile Include="EventsManager.cs" />
     <Compile Include="ExternalIncludes\ReturnPathManagerTEMP.cs" />
     <Compile Include="FakeDAL.cs" />

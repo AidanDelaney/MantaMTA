@@ -25,7 +25,10 @@ namespace MantaMTA.Core.Events
 				if (_bounceRules == null || _bounceRules.LoadedTimestampUtc.AddMinutes(5) < DateTime.UtcNow)
 				{
 					// Would be nice to write to a log that we're updating.
-					_bounceRules = DAL.CfgBounceRules.GetBounceRules();
+					_bounceRules = DAL.EventDB.GetBounceRules();
+
+					// Ensure the Rules are in the correct order.
+					_bounceRules = new BounceRulesCollection(_bounceRules.OrderBy(r => r.ExecutionOrder));
 				}
 
 				return _bounceRules;

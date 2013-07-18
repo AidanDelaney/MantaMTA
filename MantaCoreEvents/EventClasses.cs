@@ -36,16 +36,13 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// The type of bounce.
 		/// </summary>
-		public MantaBounceType BounceType { get; set; }
-		/// <summary>
-		/// The code of the type of bounce.
-		/// </summary>
-		public MantaBounceCode BounceCode { get; set; }
+		public BouncePair BounceInfo;
 		/// <summary>
 		/// The text of the failure message. (Up to the number of characters configured.)
 		/// </summary>
 		public string Message { get; set; }
 	}
+
 
 	/// <summary>
 	/// Manta Spam Complaint (Abuse) event.  The result of an email coming back from a feedback loop with an ISP.
@@ -53,5 +50,26 @@ namespace MantaMTA.Core.Events
 	public class MantaAubseEvent : MantaEvent
 	{
 		
+	}
+
+
+	/// <summary>
+	/// Holds information about an SMTP code returned by a server as a bounce.
+	/// </summary>
+	public struct BouncePair
+	{
+		/// <summary>
+		/// The MantaBounceCode for the Bounce.
+		/// </summary>
+		public MantaBounceCode BounceCode;
+		/// <summary>
+		/// The MentaBounceType for the Bounce.
+		/// </summary>
+		public MantaBounceType BounceType;
+
+		public override string ToString()
+		{
+			return String.Format("BounceType: {0}, BounceCode: {1}", this.BounceType, this.BounceCode);
+		}
 	}
 }

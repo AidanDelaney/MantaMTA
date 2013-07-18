@@ -108,34 +108,29 @@ namespace MantaMTA.Core.Events
 		/// Not actually a bounce.
 		/// </summary>
 		NotABounce = 1,
-		DeferredBadEmailAddress = 11,
-		DeferredGeneral = 20,
-		DeferredDNSFailure = 21,
-		DeferredMailboxFull = 22,
-		DeferredMessageSizeTooLarge = 23,
-		DeferredUnableToConnect = 29,
+		BadEmailAddress = 11,
+		General = 20,
+		DNSFailure = 21,
+		MailboxFull = 22,
+		MessageSizeTooLarge = 23,
+		UnableToConnect = 29,
 		/// <summary>
 		/// A bounce that we're unable to identify a reason for.
 		/// </summary>
 		BounceUnknown = 40,
 		/// <summary>
-		/// 550 User Unknown
+		/// 
 		/// </summary>
-		RejectedBadEmailAddress = 10,
-		RejectedGeneral = 50,
+		KnownSpammer = 51,
 		/// <summary>
 		/// 
 		/// </summary>
-		RejectedKnownSpammer = 51,
+		SpamDetected = 52,
+		AttachmentDetected = 53,
+		RelayDenied = 54,
 		/// <summary>
-		/// 
+		/// Used when a receiving MTA has indicated we're sending too many emails to them.
 		/// </summary>
-		RejectedSpamDetected = 52,
-		RejectedAttachmentDetected = 53,
-		RejectedRelayDenied = 54,
-		RejectedUnableToConnect = 59,
-		RejectedMailboxFull = 60,
-		RejectedMessageSizeTooLarge = 61
-
+		RateLimitedByReceivingMta = 55
 	}
 }

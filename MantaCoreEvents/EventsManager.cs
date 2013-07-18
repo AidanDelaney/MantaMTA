@@ -53,14 +53,14 @@ namespace MantaMTA.Core.Events
 
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EmailAddress = rcptTo;
-			bounceEvent.SendID = DAL.SendIdDb.GetSendIdFromInternalSendId(internalSendID);
+			bounceEvent.SendID = MantaMTA.Core.DAL.SendDb.GetSendIdFromInternalSendId(internalSendID);
 
 			// Might be good to get the DateTime found in the email at a later point.
 			bounceEvent.EventTime = DateTime.UtcNow;
 
 			// These properties are both down to what SMTP code we find, if any.
-			bounceEvent.BounceCode = MantaBounceCode.Unknown;
-			bounceEvent.BounceType = MantaBounceType.Unknown;
+			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
+			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
 
 
 
@@ -70,16 +70,14 @@ namespace MantaMTA.Core.Events
 
 			foreach(MimeMessageBodyPart b in ndrBodies)
 			{
-				MantaBounceType bType = MantaBounceType.Unknown;
-				MantaBounceCode bCode = MantaBounceCode.Unknown;
+				BouncePair bp;
 				string bMsg = string.Empty;
 
 
 				// Successfully parsed?
-				if (ParseNdr(b.GetDecodedBody(), out bType, out bCode, out bMsg))
+				if (ParseNdr(b.GetDecodedBody(), out bp, out bMsg))
 				{
-					bounceEvent.BounceType = bType;
-					bounceEvent.BounceCode = bCode;
+					bounceEvent.BounceInfo = bp;
 					bounceEvent.Message = bMsg;
 
 					// Write BounceEvent to DB.
@@ -93,14 +91,12 @@ namespace MantaMTA.Core.Events
 			// No NDR part, have to to this the manual way and check all content.
 			foreach (MimeMessageBodyPart b in msg.BodyParts)
 			{
-				MantaBounceType bType = MantaBounceType.Unknown;
-				MantaBounceCode bCode = MantaBounceCode.Unknown;
+				BouncePair bp;
 				string bMsg = string.Empty;
 
-				if (ParseBounceMessage(b.GetDecodedBody(), out bType, out bCode, out bMsg))
+				if (ParseBounceMessage(b.GetDecodedBody(), out bp, out bMsg))
 				{
-					bounceEvent.BounceType = bType;
-					bounceEvent.BounceCode = bCode;
+					bounceEvent.BounceInfo = bp;
 					bounceEvent.Message = bMsg;
 
 					// Write BounceEvent to DB.
@@ -111,7 +107,6 @@ namespace MantaMTA.Core.Events
 			}
 			
 			
-			// return ProcessBounce(from, to, message);
 			return EmailProcessingResult.Unknown;
 		}
 
@@ -124,85 +119,176 @@ namespace MantaMTA.Core.Events
 		/// <param name="bounceCode"></param>
 		/// <param name="bounceMessage"></param>
 		/// <returns></returns>
-		internal bool ParseNdr(string message, out MantaBounceType bounceType, out MantaBounceCode bounceCode, out string bounceMessage)
+		internal bool ParseNdr(string message, out BouncePair bouncePair, out string bounceMessage)
 		{
 			// Check for the Diagnostic-Code as hopefully contains more information about the error.
+			const string DiagnosticCodeFieldName = "Diagnostic-Code: ";
+			const string StatusFieldName = "Status: ";
+
+
 
 			string[] lines = message.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 			string diagnosticCode = string.Empty;
 			string status = string.Empty;
+			int lineIndex = 0;
 
-			foreach (string l in lines)
+
+			// Go through the message line by line.
+			while(lineIndex < lines.Length)
 			{
-				// Check if the line begins with something we can check.
-				if (l.StartsWith("Diagnostic-Code:") && string.IsNullOrWhiteSpace(diagnosticCode))
+				string l = lines[lineIndex];
+
+
+				// Skip blank lines.
+				if (string.IsNullOrWhiteSpace(l))
 				{
-					diagnosticCode = l;
+					lineIndex++;
+					continue;
 				}
-				else if (l.StartsWith("Status:") && string.IsNullOrWhiteSpace(status))
+
+
+
+				// Check if the line begins with the name of a field we can examine.
+
+				if (l.StartsWith(DiagnosticCodeFieldName, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(diagnosticCode))
 				{
-					status = l;
+					// "Diagnostic-Code" Field.  Preferred to "Status" Field as it contains more detail.
+
+					// Get the value and remove any surrounding whitespace.
+					diagnosticCode = l.Substring(DiagnosticCodeFieldName.Length).Trim();
+
+					
+					// Advance to the next line to check for more folded content.
+					// If subsequent lines are prefixed by whitespace, then this field has more content.
+					lineIndex++;
+
+					while (lineIndex < lines.Length)
+					{				
+
+						l = lines[lineIndex];
+
+
+						if (!string.IsNullOrWhiteSpace(l) && ((l.StartsWith(" ") || l.StartsWith("\t"))))
+						{
+							// There's more...
+							diagnosticCode += l.Trim();
+						}
+						else
+							break;
+
+						lineIndex++;
+					}
+					
 				}
+				else if (l.StartsWith(StatusFieldName, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(status))
+				{
+					// "Status" Field.  If no "Diagnostic-Code", this is the second best thing to check.
+
+					// Get the value and remove any surrounding whitespace.
+					status = l.Trim();
+				}
+
+
+				// Have we got all we need?
+				if (!string.IsNullOrWhiteSpace(diagnosticCode) && !string.IsNullOrWhiteSpace(status))
+					break;
+
+
+				lineIndex++;
 			}
 
 
 
+			// Process what we've managed to find...
 
+			// Diagnostic-Code
 			if (!string.IsNullOrWhiteSpace(diagnosticCode))
 			{
-				ParseSmtpDiagnosticCode(diagnosticCode, out bounceType, out bounceCode, out bounceMessage))
+				if (ParseSmtpDiagnosticCode(diagnosticCode, out bouncePair, out bounceMessage))
 				{
-
-				}
-
-			}
-			else
-			{
-				// Looks like all we've got is the Status Code.
-				m = Regex.Match(message, @"^Status\:\s+(?<Status>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-				if (m != null)
-				{
-					if (m.Groups["Status"].Value.StartsWith("5"))
-					{
-						// 5xx codes are permanent errors.
-						bounceType = MantaBounceType.Hard;
-						bounceCode = MantaBounceCode.BounceUnknown;
-					}
-					else if (m.Groups["Status"].Value.StartsWith("4"))
-					{
-						// 4xx codes are temporary errors.
-						bounceType = MantaBounceType.Soft;
-						bounceCode = MantaBounceCode.BounceUnknown;
-					}
-					else
-					{
-						bounceType = MantaBounceType.Unknown;
-						bounceCode = MantaBounceCode.BounceUnknown;
-					}
-
-					// Use the whole message.
-					bounceMessage = message;
 					return true;
 				}
 			}
 
 
-			bounceType = MantaBounceType.Unknown;
-			bounceCode = MantaBounceCode.Unknown;
+			// Status
+			if (!string.IsNullOrWhiteSpace(status))
+			{
+				// Looks like all we've got is the Status Code.
+				Match match = Regex.Match(message, @"^Status\:\s+(?<Status>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+				if (match.Success)
+				{
+					string allVal = match.Value;
+					string statusVal = match.Groups["Status"].Value;
+
+					// Ditch any closing carriage returns (\r) if using "$" in the Regex pattern above as "$" comes
+					// _between_ the \r and the \n of a full Windows carriage return.
+
+					while (allVal.EndsWith("\r"))
+						allVal = allVal.Substring(0, allVal.Length - 1);
+
+					while (statusVal.EndsWith("\r"))
+						statusVal = statusVal.Substring(0, statusVal.Length-1);
+
+
+
+					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(statusVal);
+					bounceMessage = allVal;
+					return true;
+				}
+			}
+
+
+
+			// Parse the entire message as a string.
+			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
+				return true;
+			
+
+			// Nope - no clues relating to why the bounce occurred.
+			bouncePair.BounceType = MantaBounceType.Unknown;
+			bouncePair.BounceCode = MantaBounceCode.Unknown;
 			bounceMessage = string.Empty;
 			return false;
 		}
 
-		internal void ParseSmtpDiagnosticCode(string message, out MantaBounceType bounceType, out MantaBounceCode bounceCode, out string bounceMessage)
-		{
-			Match match = Regex.Match(message, @"(?<Code>\d{3}[-\s]*(?<Message>.*)");
 
-			if (match.Success)
-			{
-				MantaBounceCode mbc = BounceRulesManager.Instance.ConvertNdrCodeToMantaBounceCode(match.Groups["Code"].Value);
-				// match.Groups["Message"]
-			}
+		/// <summary>
+		/// Examines an SMTP response that is thought to relate to delivery of an email failing.
+		/// </summary>
+		/// <param name="message">An SMTP response either found as the "Diagnostic-Code" value in a Non-Delivery Report
+		/// or received directly from another MTA in an SMTP session.</param>
+		/// <param name="bouncePair">out.  Details of the Bounce (or not) based on details found in <paramref name="message"/>.</param>
+		/// <param name="bounceMessage">out.  The message found that indicated a Bounce or string.Empty if it wasn't
+		/// found to indicate a bounce.</param>
+		/// <returns>true if a bounce was positively identified, else false.</returns>
+		internal bool ParseSmtpDiagnosticCode(string message, out BouncePair bouncePair, out string bounceMessage)
+		{
+			// Remove "smtp;[possible whitespace]" if it appears at the beginning of the message.
+			if (message.StartsWith("smtp;", StringComparison.OrdinalIgnoreCase))
+				message = message.Substring("smtp;".Length).Trim();
+
+			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
+				return true;
+
+			
+			return false;
+
+			// Do more checking.
+			
+			// Match match = Regex.Match(message, @"(?<SmtpStatus>\d{3})\s+(?<NdrCode>\d{1,}\.\d{1,}\.\d{1,})?(?<Message>.*)");
+			//
+			//if (match.Success)
+			//{
+			//    bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(match.Groups["NdrCode"].Value));
+			//    bounceMessage = match.Groups["Message"].Value;
+			//}
+			//else
+			//{
+			//    bouncePair = new BouncePair() { BounceType = MantaBounceType.Unknown, BounceCode = MantaBounceCode.Unknown };
+			//    bounceMessage = string.Empty;
+			//}
 		}
 
 
@@ -218,31 +304,26 @@ namespace MantaMTA.Core.Events
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EventType = MantaEventType.Unknown;
 			bounceEvent.EmailAddress = rcptTo;
-			bounceEvent.SendID = DAL.SendIdDb.GetSendIdFromInternalSendId(internalSendID);
+			bounceEvent.SendID = MantaMTA.Core.DAL.SendDb.GetSendIdFromInternalSendId(internalSendID);
 
 			// It is possible that the bounce was generated a while back, but we're assuming "now" for the moment.
 			// Might be good to get the DateTime found in the email at a later point.
 			bounceEvent.EventTime = DateTime.UtcNow;
 
 
-			MantaBounceCode bCode = MantaBounceCode.Unknown;
-			MantaBounceType bType = MantaBounceType.Unknown;
+			BouncePair bouncePair = new BouncePair();
 			string bounceMessage = string.Empty;
 
-			if (ParseBounceMessage(message, out bType, out bCode, out bounceMessage))
+			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
 			{
 				bounceEvent.EventType = MantaEventType.Bounce;
-				bounceEvent.BounceCode = bCode;
-				bounceEvent.BounceType = bType;
+				bounceEvent.BounceInfo = bouncePair;
 				bounceEvent.Message = bounceMessage;
 			}
 			else
 			{
-				bounceEvent.BounceCode = MantaBounceCode.Unknown;
-				bounceEvent.BounceType = MantaBounceType.Unknown;
-				bounceEvent.Message = string.Empty;
+				// TODO: Figure out alternative.
 			}
-
 
 
 			return bounceEvent;
@@ -250,31 +331,83 @@ namespace MantaMTA.Core.Events
 
 
 		/// <summary>
-		/// Runs Bounce Rules against a message.
+		/// Attempts to find the reason for the bounce by running Bounce Rules, then checking for Non-Delivery Report codes,
+		/// and finally checking for SMTP codes.
 		/// </summary>
 		/// <param name="message">Could either be an email body part or a single or multiple line response from another MTA.</param>
-		/// <param name="bounceType">out.</param>
-		/// <param name="bounceCode">out.</param>
+		/// <param name="bouncePair">out.</param>
 		/// <param name="bounceMessage">out.</param>
-		/// <returns>true if a Bounce Rule matched the <paramref name="message"/>, else false.</returns>
-		internal bool ParseBounceMessage(string message, out MantaBounceType bounceType, out MantaBounceCode bounceCode, out string bounceMessage)
+		/// <returns>true if a positive match in <paramref name="message"/> was found indicating a bounce, else false.</returns>
+		internal bool ParseBounceMessage(string message, out BouncePair bouncePair, out string bounceMessage)
 		{
+			// Check all Bounce Rules for a match.
 			foreach (BounceRule r in BounceRulesManager.BounceRules)
 			{
 				// If we get a match, we're done processing Rules.
 				if (r.IsMatch(message, out bounceMessage))
 				{
-					bounceType = MantaBounceType.Unknown;
-					bounceCode = MantaBounceCode.Unknown;
+					bouncePair.BounceType = r.BounceTypeIndicated;
+					bouncePair.BounceCode = r.BounceCodeIndicated;
 					return true;
 				}
 			}
 
-			// No Rules matched.
-			bounceType = MantaBounceType.Unknown;
-			bounceCode = MantaBounceCode.Unknown;
+
+			// No Bounce Rules match the message so try to get a match on an NDR code ("5.1.1") or an SMTP code ("550").
+			// TODO: Handle several matches being found - somehow find The Best?
+			// Pattern: Should match like this:
+			//	[anything at the beginning if present][then either an SMTP code or an NDR code, but both should be grabbed if they exist][then the rest
+			// of the content (if any)]
+			Match match = Regex.Match(message, @"^.*?((?<SmtpCode>\d{3}\s)|(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}))+(?<Detail>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+			if (match.Success)
+			{
+				// Check for anything useful with the NDR code first as it contains more specific detail than the SMTP code.
+				if (match.Groups["NdrCode"].Success)
+					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(match.Groups["NdrCode"].Value);
+				// Try the SMTP code as there wasn't an NDR.
+				else if (match.Groups["SmtpCode"].Success)
+					bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(match.Groups["SmtpCode"].Value));
+				else
+					// If we're here, then the Regex pattern shouldn't really have matched as it specifies that an NDR
+					// and/or an SMTP code must appear, but neither have.  Check the pattern.
+					throw new Exception("Unable to process bounce: NDR and/or SMTP codes indicated but neither found.");
+
+				bounceMessage = match.Value;
+
+				return true;
+			}
+
+
+			// Failed to identify a reason so shouldn't be a bounce.
+			bouncePair.BounceCode = MantaBounceCode.Unknown;
+			bouncePair.BounceType = MantaBounceType.Unknown;
 			bounceMessage = string.Empty;
+
 			return false;
+
+			/*
+			// Still no luck?!  Try SMTP codes (e.g. 550").
+
+			Match smtpCode = Regex.Match(message, @"^.*\s+(?<Code>\d{3})\s+.*?$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+			if (smtpCode.Success)
+			{
+				// Can be sure this'll parse to an int successfully as the Regex pattern is checking for "\d{3}".
+				bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(smtpCode.Groups["Code"].Value));
+				bounceMessage = smtpCode.Value;
+
+				return true;
+			}
+			else
+			{
+				bouncePair.BounceCode = MantaBounceCode.Unknown;
+				bouncePair.BounceType = MantaBounceType.Unknown;
+				bounceMessage = string.Empty;
+
+				return false;
+			}
+			*/
 		}
 
 
