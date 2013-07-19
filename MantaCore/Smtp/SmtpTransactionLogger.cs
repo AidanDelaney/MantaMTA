@@ -78,7 +78,7 @@ namespace MantaMTA.Core.Smtp
 				if (_Writer == null || _Writer.BaseStream == null || !_Writer.BaseStream.CanWrite)
 					_Writer = new StreamWriter(GetCurrentLogPath(), true);
 
-				_Writer.WriteLine(GetCurrentTimestamp() + " " + msg);
+				_Writer.WriteLine(GetCurrentTimestamp() + " " + msg.TrimEnd());
 				_Writer.Flush();
 				_Writer.BaseStream.Flush();
 			}
