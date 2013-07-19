@@ -199,7 +199,7 @@ namespace MantaMTA.Core.OutboundRules
 				else if (pattern.Type == OutboundMxPatternType.Regex)
 				{
 					// Pattern is Regex so just need to do an IsMatch
-					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase))
+					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture))
 					{
 						// Found pattern match.
 						if (pattern.LimitedToOutboundIpAddressID.HasValue)
