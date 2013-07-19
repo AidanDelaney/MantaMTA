@@ -217,6 +217,9 @@ namespace MantaMTA.Core.Smtp
 				{
 					Logging.Warn("Failed to connect to " + mxs[i].Host, ex);
 
+					// If we fail to connect to an MX then don't try again for at least a minute.
+					ServiceNotAvailableManager.Add(ipAddress.IPAddress.ToString(), mxs[i].Host, DateTime.UtcNow);
+
 					// Failed to connect to MX
 					if (i == (mxs.Length - 1))
 					{
