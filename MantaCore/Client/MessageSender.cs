@@ -83,80 +83,89 @@ namespace MantaMTA.Core.Client
 				_IsStopping = false;
 				_ClientThread = new Thread(new ThreadStart(delegate()
 					{
+						// Dictionary will hold a single int for each running task. The int means nothing.
+						ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
+
+						Action<MtaQueuedMessage> actSendMessage = new Action<MtaQueuedMessage>(delegate(MtaQueuedMessage taskMessage)
+						{
+							// Generate a unique ID for this task.
+							Guid taskID = Guid.NewGuid();
+
+							// Add this task to the running list.
+							if (!runningTasks.TryAdd(taskID, 1))
+								return;
+
+							Task.Run(new Action(async delegate()
+							{
+								try
+								{
+									// Loop while there is a task message to send.
+									while (taskMessage != null)
+									{
+										// Send the message.
+										await SendMessageAsync(taskMessage);
+										// Dispose of the message.
+										taskMessage.Dispose();
+										// Try to get another message to send.
+										taskMessage = QueueManager.Instance.GetMessageForSending();
+									}
+								}
+								catch (Exception ex)
+								{
+									// Log if we can't send the message.
+									Logging.Debug("Failed to send message", ex);
+								}
+								finally
+								{
+									// If there is still a task message then dispose of it.
+									if (taskMessage != null)
+										taskMessage.Dispose();
+
+									// Remove this task from the dictionary
+									int value;
+									runningTasks.TryRemove(taskID, out value);
+								}
+							})); // Always dispose of the queued message.
+						});
+
+
 						// Will hold the current queued message we are working with.
 						MtaQueuedMessage queuedMessage = null;
 
 						while (!_IsStopping) // Run until stop requested
 						{
-							// Dictionary will hold a single int for each running task. The int means nothing.
-							ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
-							
-							// Loop to create the worker tasks.
-							for (int i = 0; i < _MAX_SENDING_WORKER_TASKS; i++)
+							Action actStartSendingTasks = new Action(delegate()
 							{
-								// If we don't have a queued message attempt to get one from the queue.
-								if(queuedMessage == null)
-									queuedMessage = QueueManager.Instance.GetMessageForSending();
-								
-								// There are no  more messages to send so exit the loop.
-								if(queuedMessage == null)
-									break;
-
-								// Don't try and send the message if stop has been issued.
-								if (!_IsStopping)
+								// Loop to create the worker tasks.
+								for (int i = runningTasks.Count; i < _MAX_SENDING_WORKER_TASKS; i++)
 								{
-									// Generate a unique ID for this task.
-									Guid taskID = Guid.NewGuid();
+									// If we don't have a queued message attempt to get one from the queue.
+									if (queuedMessage == null)
+										queuedMessage = QueueManager.Instance.GetMessageForSending();
 
-									// Use the current queued message for this task.
-									MtaQueuedMessage taskMessage = queuedMessage;
-									queuedMessage = null;
+									// There are no  more messages to send so exit the loop.
+									if (queuedMessage == null)
+										break;
 
-									// Add this task to the running list.
-									if (!runningTasks.TryAdd(taskID, 1))
-										return;
-
-
-									Task.Run(new Action(async delegate()
+									// Don't try and send the message if stop has been issued.
+									if (!_IsStopping)
 									{
-										try
-										{
-											// Loop while there is a task message to send.
-											while (taskMessage != null)
-											{
-												// Send the message.
-												await SendMessageAsync(taskMessage);
-												// Dispose of the message.
-												taskMessage.Dispose();
-												// Try to get another message to send.
-												taskMessage = QueueManager.Instance.GetMessageForSending();
-											}
-										}
-										catch (Exception ex)
-										{
-											// Log if we can't send the message.
-											Logging.Debug("Failed to send message", ex);
-										}
-										finally
-										{
-											// If there is still a task message then dispose of it.
-											if(taskMessage != null)
-												taskMessage.Dispose();
-
-											// Remove this task from the dictionary
-											int value;
-											runningTasks.TryRemove(taskID, out value);
-										}
-									})); // Always dispose of the queued message.
+										actSendMessage(queuedMessage);
+										queuedMessage = null;
+									}
+									else // Stop requested, dispose the message without any attempt to send it.
+										queuedMessage.Dispose();
 								}
-								else // Stop requested, dispose the message without any attempt to send it.
-									queuedMessage.Dispose();
-							}
+							});
+
+							actStartSendingTasks();
 
 							// As long as tasks are running then we should wait here.
 							while (runningTasks.Count > 0)
 							{
-								System.Threading.Thread.Sleep(10);
+								System.Threading.Thread.Sleep(100);
+								if (runningTasks.Count < _MAX_SENDING_WORKER_TASKS)
+									actStartSendingTasks();
 							}
 
 							// If not stopping get another message to send.
