@@ -84,6 +84,14 @@ namespace MantaMTA.Core.DAL
 		}
 
 		/// <summary>
+		/// Gets the amount of days to keep SMTP log files from the database.
+		/// </summary>
+		internal static int GetDaysToKeepSmtpLogsFor()
+		{
+			return (int)GetColumnValue("cfg_para_maxDaysToKeepSmtpLogs");
+		}
+
+		/// <summary>
 		/// Gets the connection receive timeout in seconds from the database.
 		/// </summary>
 		public static int GetReceiveTimeout()

@@ -102,7 +102,7 @@ namespace MantaMTA.Core
 		/// Log foler, where SMTP Transaction logs will go.
 		/// This should be in config.
 		/// </summary>
-		public static string MTA_LOGFOLDER
+		public static string MTA_SMTP_LOGFOLDER
 		{
 			get
 			{
@@ -279,6 +279,20 @@ namespace MantaMTA.Core
 			private static int _connectionSendTimeoutInterval = -1;
 			private static DateTime _connectionSendTimeoutIntervalLoadTime = DateTime.MinValue;
 		}
+
+		/// <summary>
+		/// The amount of days to keep SMTP logs for before deleting them.
+		/// </summary>
+		internal static int DaysToKeepSmtpLogsFor
+		{
+			get
+			{
+				if (_DaysToKeepSmtpLogsFor == -1)
+					_DaysToKeepSmtpLogsFor = DAL.CfgPara.GetDaysToKeepSmtpLogsFor();
+				return _DaysToKeepSmtpLogsFor;
+			}
+		}
+		private static int _DaysToKeepSmtpLogsFor = -1;
 	}
 
 	/// <summary>
