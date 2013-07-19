@@ -279,7 +279,7 @@ namespace MantaMTA.Core.Message
 		/// The send group ID header name.
 		/// Used to pass in the Send Group.
 		/// </summary>
-		public const string SendGroupID = HeaderNamePrefix + "SendGroupID";
+		public const string SendGroupID = HeaderNamePrefix + "VMtaGroupID";
 
 		/// <summary>
 		/// The SendID is used by external systems to identify the send.
