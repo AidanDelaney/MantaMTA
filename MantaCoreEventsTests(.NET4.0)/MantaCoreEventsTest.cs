@@ -5,6 +5,7 @@ using System.Text;
 using NUnit.Framework;
 using MantaMTA.Core.Events;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace MantaCoreEventsTests_NET4_0
 {
@@ -19,6 +20,13 @@ namespace MantaCoreEventsTests_NET4_0
 		/// </summary>
 		Func<BouncePair, BouncePair, bool> AreBouncePairsTheSame = new Func<BouncePair, BouncePair, bool>(delegate(BouncePair expected, BouncePair actual) { return (actual.BounceType == expected.BounceType && actual.BounceCode == expected.BounceCode); });
 
+
+		/// <summary>
+		/// Checks that the SmtpResponse Regex pattern is working as intended.
+		/// </summary>
+		/// <param name="msg">An example of an SMTP response message to be tested.</param>
+		/// <returns>true if the SmtpResponse Regex pattern matches, else false.</returns>
+		delegate bool CheckSmtpResponseRegexPattern(string msg, string expectedSmtpCode, string expectedNdrCode, string expectedDetail);
 
 
 		/// <summary>
@@ -259,6 +267,41 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		}
 
 
+		
+
+		[Test]
+		public void SmtpResponseRegexPattern()
+		{
+			CheckSmtpResponseRegexPattern checker = 
+				delegate(string msg, string expectedSmtpCode, string expectedNdrCode, string expectedDetail)
+				{
+					Match m = Regex.Match(msg, EventsManager.RegexPatterns.SmtpResponse, RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+					if (!m.Success)
+						return false;
+
+					Assert.AreEqual(expectedSmtpCode, m.Groups["SmtpCode"].Value);
+					Assert.AreEqual(expectedNdrCode, m.Groups["NdrCode"].Value);
+					Assert.AreEqual(expectedDetail, m.Groups["Detail"].Value);
+
+					return true;
+				};
+
+			Assert.IsTrue(checker(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "550", "5.1.1", "<bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com"));
+
+			Assert.IsTrue(checker(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
+550-5.1.1 double-checking the recipient's email address for typos or
+550-5.1.1 unnecessary spaces. Learn more at
+550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", string.Empty, "5.1.1", "http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp"));
+			Assert.IsTrue(checker(@"5.1.0 The email account that you tried to reach does not exist. Please try", string.Empty, "5.1.0", "The email account that you tried to reach does not exist. Please try"));
+			Assert.IsTrue(checker(@"5.1.0 550 The email account that you tried to reach does not exist. Please try", "550", "5.1.0", "The email account that you tried to reach does not exist. Please try"));
+			Assert.IsTrue(checker(@"552 No such user (users@domain.com)", "552", string.Empty, "No such user (users@domain.com)"));
+			Assert.IsTrue(checker(@"5.1.5 more stuff", string.Empty, "5.1.5", "more stuff"));
+		}
+
+
+
+
 		/// <summary>
 		/// Full checking of processing an SMTP response message.
 		/// </summary>
@@ -289,7 +332,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, mbEvent.BounceInfo.BounceCode);
 			Assert.AreEqual("bobobobobobobobobobobob@gmail.com", mbEvent.EmailAddress);
 			Assert.AreEqual(MantaEventType.Bounce, mbEvent.EventType);
-			Assert.AreEqual(@"550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", mbEvent.Message);
+			Assert.AreEqual(@"550-5.1.1 The email account that you tried to reach does not exist. Please try", mbEvent.Message);
 		}
 	}
 }

@@ -22,6 +22,15 @@ namespace MantaMTA.Core.Events
 		private EventsManager() { }
 
 
+		internal static class RegexPatterns
+		{
+			/// <summary>
+			/// Regex pattern to grab an SMTP code (e.g. "550") and/or an NDR code (e.g. "5.1.1") as well as any detail that follows them.
+			/// </summary>
+			internal static string SmtpResponse = @"^.*?([\s\b]*?(((?<SmtpCode>\d{3})(?:[^\d-]*?))|(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}))[\s\b])+(?<Detail>.*)$";
+		}
+
+
 		/// <summary>
 		/// Examines an email to try identify detailed bounce information from it.
 		/// </summary>
@@ -316,13 +325,18 @@ namespace MantaMTA.Core.Events
 
 			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
 			{
+				// Got some information about the bounce.
 				bounceEvent.EventType = MantaEventType.Bounce;
 				bounceEvent.BounceInfo = bouncePair;
 				bounceEvent.Message = bounceMessage;
 			}
 			else
 			{
-				// TODO: Figure out alternative.
+				// Wasn't able to identify if it was a bounce.
+				bounceEvent.EventType = MantaEventType.Unknown;
+				bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
+				bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
+				bounceEvent.Message = string.Empty;
 			}
 
 
@@ -358,7 +372,7 @@ namespace MantaMTA.Core.Events
 			// Pattern: Should match like this:
 			//	[anything at the beginning if present][then either an SMTP code or an NDR code, but both should be grabbed if they exist][then the rest
 			// of the content (if any)]
-			Match match = Regex.Match(message, @"^.*?((?<SmtpCode>\d{3}\s)|(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}))+(?<Detail>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+			Match match = Regex.Match(message, RegexPatterns.SmtpResponse, RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
 			if (match.Success)
 			{
@@ -385,31 +399,7 @@ namespace MantaMTA.Core.Events
 			bounceMessage = string.Empty;
 
 			return false;
-
-			/*
-			// Still no luck?!  Try SMTP codes (e.g. 550").
-
-			Match smtpCode = Regex.Match(message, @"^.*\s+(?<Code>\d{3})\s+.*?$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-			if (smtpCode.Success)
-			{
-				// Can be sure this'll parse to an int successfully as the Regex pattern is checking for "\d{3}".
-				bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(smtpCode.Groups["Code"].Value));
-				bounceMessage = smtpCode.Value;
-
-				return true;
-			}
-			else
-			{
-				bouncePair.BounceCode = MantaBounceCode.Unknown;
-				bouncePair.BounceType = MantaBounceType.Unknown;
-				bounceMessage = string.Empty;
-
-				return false;
-			}
-			*/
 		}
-
 
 
 		/// <summary>

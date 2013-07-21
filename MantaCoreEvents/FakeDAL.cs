@@ -71,25 +71,8 @@ namespace MantaMTA.Core.DAL
 		}
 	}
 
-	internal static class CfgBounceRules
-	{
-		internal static BounceRulesCollection GetBounceRules()
-		{
-			BounceRulesCollection rules = new BounceRulesCollection();
 
-			rules.LoadedTimestampUtc = DateTime.UtcNow;
-
-			// Load BounceRules.
-			rules.Add(new BounceRule { RuleID = 1, Name = "", CriteriaType = BounceRuleCriteriaType.StringMatch, Criteria = "undeliverable" });
-			rules.Add(new BounceRule { RuleID = 1, CriteriaType = BounceRuleCriteriaType.StringMatch, Criteria = "bounced" });
-			rules.Add(new BounceRule { RuleID = 1, CriteriaType = BounceRuleCriteriaType.StringMatch, Criteria = "non-deliverable" });
-			rules.Add(new BounceRule { RuleID = 1, CriteriaType = BounceRuleCriteriaType.StringMatch, Criteria = "delivery failed" });
-
-			return rules;
-		}
-	}
-
-	internal static class SendIdDb
+	internal static class SendDb
 	{
 		internal static string GetSendIdFromInternalSendId(int internalSendId)
 		{
