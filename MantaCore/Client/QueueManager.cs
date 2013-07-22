@@ -97,7 +97,7 @@ namespace MantaMTA.Core.Client
 							// Set to true if we have messages from the database.
 							pickedUpMessages = (messages.Count > 0);
 							
-							// Loop throught the messages we just got.
+							// Loop through the messages we just got.
 							for (int i = 0; i < messages.Count; i++)
 							{
 								if (_IsStopping)
@@ -113,7 +113,7 @@ namespace MantaMTA.Core.Client
 						// If we have filled up the queue sleep for a bit.
 						if (_MemoryQueue.Count == MAX_QUEUE_SIZE)
 							Thread.Sleep(250);
-						// If there where no more messages in the database sleep for a bit longer.
+						// If there were no more messages in the database sleep for a bit longer.
 						else if (!pickedUpMessages)
 							Thread.Sleep(1000);
 					}
@@ -126,7 +126,7 @@ namespace MantaMTA.Core.Client
 					Environment.Exit(-1);
 				}
 			}));
-				_QueueFillerThread.Start();
+			_QueueFillerThread.Start();
 		}
 	}
 }
