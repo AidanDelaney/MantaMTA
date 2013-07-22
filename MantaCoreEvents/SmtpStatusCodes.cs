@@ -65,15 +65,10 @@ namespace MantaMTA.Core.Events
 
 				case 420:// Timeout communication problem encountered during transmission
 				case 421://	Service not available, closing transmission channel
-				case 451://	Requested action aborted: local error in processing
-				case 500://	Syntax error, command unrecognised
-				case 501://	Syntax error in parameters or arguments
-				case 502://	Command not implemented
-				case 503://	Bad sequence of commands
-				case 504://	Command parameter not implemented
+				case 451://	Requested action aborted: local error in processing				
 				case 521://	<domain> does not accept mail (see rfc1846)
 				case 530://	Access denied (???a Sendmailism)
-					bp.BounceCode = MantaBounceCode.UnableToConnect;
+					bp.BounceCode = MantaBounceCode.ServiceUnavailable;
 					break;
 
 				case 431:// Receiving mail server's disk is full
@@ -93,6 +88,11 @@ namespace MantaMTA.Core.Events
 					bp.BounceCode = MantaBounceCode.RelayDenied;
 					break;
 
+				case 500://	Syntax error, command unrecognised
+				case 501://	Syntax error in parameters or arguments
+				case 502://	Command not implemented
+				case 503://	Bad sequence of commands
+				case 504://	Command parameter not implemented
 				case 554://	Transaction failed
 					bp.BounceCode = MantaBounceCode.General;
 					break;

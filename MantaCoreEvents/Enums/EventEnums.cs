@@ -114,6 +114,7 @@ namespace MantaMTA.Core.Events
 		MailboxFull = 22,
 		MessageSizeTooLarge = 23,
 		UnableToConnect = 29,
+		ServiceUnavailable = 30,
 		/// <summary>
 		/// A bounce that we're unable to identify a reason for.
 		/// </summary>
