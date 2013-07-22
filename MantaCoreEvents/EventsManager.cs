@@ -21,7 +21,9 @@ namespace MantaMTA.Core.Events
 		private static readonly EventsManager _Instance = new EventsManager();
 		private EventsManager() { }
 
-
+		/// <summary>
+		/// Class to store any re-usable Regex patterns.
+		/// </summary>
 		internal static class RegexPatterns
 		{
 			/// <summary>
@@ -97,7 +99,7 @@ namespace MantaMTA.Core.Events
 			}
 
 
-			// No NDR part, have to to this the manual way and check all content.
+			// No NDR part, have to to this the manual way and check _all_ content.
 			foreach (MimeMessageBodyPart b in msg.BodyParts)
 			{
 				BouncePair bp;
@@ -280,21 +282,6 @@ namespace MantaMTA.Core.Events
 
 			
 			return false;
-
-			// Do more checking.
-			
-			// Match match = Regex.Match(message, @"(?<SmtpStatus>\d{3})\s+(?<NdrCode>\d{1,}\.\d{1,}\.\d{1,})?(?<Message>.*)");
-			//
-			//if (match.Success)
-			//{
-			//    bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(match.Groups["NdrCode"].Value));
-			//    bounceMessage = match.Groups["Message"].Value;
-			//}
-			//else
-			//{
-			//    bouncePair = new BouncePair() { BounceType = MantaBounceType.Unknown, BounceCode = MantaBounceCode.Unknown };
-			//    bounceMessage = string.Empty;
-			//}
 		}
 
 
@@ -367,8 +354,8 @@ namespace MantaMTA.Core.Events
 			// No Bounce Rules match the message so try to get a match on an NDR code ("5.1.1") or an SMTP code ("550").
 			// TODO: Handle several matches being found - somehow find The Best?
 			// Pattern: Should match like this:
-			//	[anything at the beginning if present][then either an SMTP code or an NDR code, but both should be grabbed if they exist][then the rest
-			// of the content (if any)]
+			//	[anything at the beginning if present][then either an SMTP code or an NDR code, but both should be grabbed if
+			// they exist][then the rest of the content (if any)]
 			Match match = Regex.Match(message, RegexPatterns.SmtpResponse, RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
 			if (match.Success)
