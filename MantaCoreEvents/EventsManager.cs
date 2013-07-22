@@ -234,11 +234,8 @@ namespace MantaMTA.Core.Events
 					// Ditch any closing carriage returns (\r) if using "$" in the Regex pattern above as "$" comes
 					// _between_ the \r and the \n of a full Windows carriage return.
 
-					while (allVal.EndsWith("\r"))
-						allVal = allVal.Substring(0, allVal.Length - 1);
-
-					while (statusVal.EndsWith("\r"))
-						statusVal = statusVal.Substring(0, statusVal.Length-1);
+					allVal = allVal.Trim();
+					statusVal = statusVal.Trim();
 
 
 
@@ -387,7 +384,8 @@ namespace MantaMTA.Core.Events
 					// and/or an SMTP code must appear, but neither have.  Check the pattern.
 					throw new Exception("Unable to process bounce: NDR and/or SMTP codes indicated but neither found.");
 
-				bounceMessage = match.Value;
+
+				bounceMessage = match.Value.Trim();
 
 				return true;
 			}

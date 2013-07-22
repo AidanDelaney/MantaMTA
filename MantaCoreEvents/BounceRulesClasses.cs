@@ -84,7 +84,11 @@ namespace MantaMTA.Core.Events
 					if (m.Success)
 					{
 						this.Hits++;
-						matchedMessage = m.Value;
+
+						// Regex patterns that match to the end of a line may contain a "\r" at the end as
+						// "$" matches _between_ a "\r" and a "\n".
+						matchedMessage = m.Value.Trim();
+
 						return true;
 					}
 					break;
