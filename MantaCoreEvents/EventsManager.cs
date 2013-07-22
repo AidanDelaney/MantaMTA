@@ -47,7 +47,8 @@ namespace MantaMTA.Core.Events
 				return EmailProcessingResult.ErrorContent;
 
 
-			MessageHeader returnPath = msg.Headers.GetFirst("Return-Path");
+			// "x-receiver" should contain what Manta originally set as the "return-path" when sending.
+			MessageHeader returnPath = msg.Headers.GetFirst("x-receiver");
 			string rcptTo = string.Empty;
 			int internalSendID = 0;
 
@@ -138,7 +139,7 @@ namespace MantaMTA.Core.Events
 
 
 
-			string[] lines = message.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+			string[] lines = message.Split(new string[] { MtaParameters.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 			string diagnosticCode = string.Empty;
 			string status = string.Empty;
 			int lineIndex = 0;
