@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MantaMTA.Core.Events;
+using CDO;
+using System.Runtime.ExceptionServices;
 
 namespace MantaEventsConsole
 {
@@ -20,7 +22,12 @@ namespace MantaEventsConsole
 
 		static void Main(string[] args)
 		{
+			AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
 			// AppDomain.CurrentDomain.FirstChanceException += new EventHandler<System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs>(CurrentDomain_FirstChanceException);
+
+
+
+			ShowBounceRuleStats();
 
 
 			Action<string> FeedbackLoopLogger = delegate(string msg) { Console.WriteLine("FeedbackLoop: {0}", msg); };
@@ -28,7 +35,7 @@ namespace MantaEventsConsole
 
 
 			Action<string> BounceLogger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Action<string> BounceProcessor = delegate(string content) { EventsManager.Instance.ProcessBounce(content); };
+			Action<string> BounceProcessor = delegate(string content) { EventsManager.Instance.ProcessBounceEmail(content); };
 
 
 			
@@ -44,26 +51,29 @@ namespace MantaEventsConsole
 			Directory.CreateDirectory(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 			Directory.CreateDirectory(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails, SubdirectoryForProblemEmails));
 
+			Directory.CreateDirectory(Path.Combine(RootDirectory, DirectoryOfBounceEmails, "ProcessedSuccessfully"));
 
 
-			// Process anything that's currently in the directories.
+
+
+			// Process anything that's currently waiting in the directories.
 			ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
 			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 
 
 
 
-			// Create a FileWatcher that checks for any email files being created so we should leap into action.
+			// Create FileSystemWatchers that check for any email files being created so we should leap into action.
+
 			FileSystemWatcher bounceWatcher = new FileSystemWatcher(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
 			bounceWatcher.Created += new FileSystemEventHandler(bounceWatcher_Created);
 			bounceWatcher.EnableRaisingEvents = true;
 
-
 			FileSystemWatcher feedbackLoopWatcher = new FileSystemWatcher(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 			feedbackLoopWatcher.Created += new FileSystemEventHandler(feedbackLoopWatcher_Created);
-			feedbackLoopWatcher.EnableRaisingEvents = true;
-
-
+			//feedbackLoopWatcher.EnableRaisingEvents = true;
+			feedbackLoopWatcher.EnableRaisingEvents = false;
+			
 
 			Console.WriteLine("FileSystemWatchers running.");
 
@@ -73,6 +83,9 @@ namespace MantaEventsConsole
 			Console.ReadKey(true);
 
 
+			ShowBounceRuleStats();
+
+
 			if (Debugger.IsAttached)
 			{
 				Console.WriteLine("{0}Done.  Press Enter to quit.", Environment.NewLine);
@@ -80,14 +93,63 @@ namespace MantaEventsConsole
 			}
 		}
 
+		private static void ShowBounceRuleStats()
+		{
+			Console.WriteLine("Bounce Rules:");
+			foreach (BounceRule r in BounceRulesManager.BounceRules)
+			{
+				Console.WriteLine("{0}: {1:N0}", r.Name, r.Hits);
+			}
+			Console.WriteLine();
+		}
+
 
 		static void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
 		{
-			Console.WriteLine("Exception Thrown");
-			Console.WriteLine("Message:\t{0}", e.Exception.Message);
-			Console.WriteLine("Source:\t\t{0}", e.Exception.Source);
-			Console.WriteLine("Stack:\t\t{0}", e.Exception.StackTrace);
+			ExceptionHandler(sender, e);
 		}
+
+		static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
+		{
+			ExceptionHandler(sender, e);
+		}
+
+
+			
+		static void ExceptionHandler(object sender, EventArgs e)
+		{
+			Console.WriteLine("Exception Thrown");
+
+
+			if (e is FirstChanceExceptionEventArgs)
+			{
+				FirstChanceExceptionEventArgs fceArgs = e as FirstChanceExceptionEventArgs;
+
+				Console.WriteLine("Message:\t{0}", fceArgs.Exception.Message);
+				Console.WriteLine("Source:\t\t{0}", fceArgs.Exception.Source);
+				Console.WriteLine("Stack:\t\t{0}", fceArgs.Exception.StackTrace);
+			}
+			else if (e is UnhandledExceptionEventArgs && (e as UnhandledExceptionEventArgs).ExceptionObject is Exception)
+			{
+				UnhandledExceptionEventArgs ueArgs = e as UnhandledExceptionEventArgs;
+
+				Console.WriteLine("Message:\t{0}", (ueArgs.ExceptionObject as Exception).Message);
+				Console.WriteLine("Source:\t\t{0}", (ueArgs.ExceptionObject as Exception).Source);
+				Console.WriteLine("Stack:\t\t{0}", (ueArgs.ExceptionObject as Exception).StackTrace);
+			}
+			else
+			{
+				Console.WriteLine("[unidentified exception thrown]");
+			}
+
+			if (Debugger.IsAttached)
+			{
+				Console.WriteLine("{0}Exception caught.  Press Enter to continue...", Environment.NewLine);
+				Console.ReadLine();
+			}
+		}
+
+
 
 
 		/// <summary>
@@ -98,14 +160,22 @@ namespace MantaEventsConsole
 		/// Indicates whether the bounceWatcher_Created method has been called so shouldn't be called again until it completes.
 		/// </summary>
 		private static bool _BounceFileWatcherCalled = false;
-		///
+		/// <summary>
+		/// Method to handle the BounceWatcher being told by the o/s that a file has been created.
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		static void bounceWatcher_Created(object sender, FileSystemEventArgs e)
 		{
 			lock (_BounceFileWatcherLock)
 			{
 				if (_BounceFileWatcherCalled == true)
+				{
+					Console.WriteLine("BounceFileWatcher already running.");
 					return;
+				}
 
+				Console.WriteLine("BounceFileWatcher called ({0})", e.Name);
 				_BounceFileWatcherCalled = true;
 			}
 			
@@ -121,11 +191,12 @@ namespace MantaEventsConsole
 			}
 			catch(Exception)
 			{
-
+				Console.WriteLine("Exception processing file!");
 			}
 			finally
 			{
 				_BounceFileWatcherCalled = false;
+				Console.WriteLine("BounceFileWatcher completed ({0})", e.Name);
 
 				// And resume the listening for events.
 				fsw.EnableRaisingEvents = true;
@@ -143,7 +214,7 @@ namespace MantaEventsConsole
 		/// </summary>
 		private static bool _FeedbackLoopFileWatcherCalled = false;
 		/// <summary>
-		/// 
+		/// Method to handle the FeedbackLoopWatcher being told by the o/s that a file has been created.
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
@@ -182,11 +253,14 @@ namespace MantaEventsConsole
 		}
 
 
-
+		/// <summary>
+		/// Processes emails that have been received as bounces.
+		/// </summary>
+		/// <param name="path">The path to email files to process.</param>
 		static void ProcessBounceFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessBounce(content); });
+			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessBounceEmail(content); });
 
 
 			DirectoryHandler(path, Processor, Logger);
@@ -196,8 +270,7 @@ namespace MantaEventsConsole
 		/// <summary>
 		/// Processes emails that have come in from Feedback Loops, indicating spam complaints.
 		/// </summary>
-		/// <param name="path"></param>
-		/// <param name="eventType"></param>
+		/// <param name="path">The path to email files to process.</param>
 		static void ProcessFeedbackLoopFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("FeedbackLoop: {0}", msg); };
@@ -207,13 +280,16 @@ namespace MantaEventsConsole
 		}
 
 
-
 		/// <summary>
 		/// DirectoryHandler provides a standard way of processing a directory of email files.
 		/// </summary>
+		/// <param name="path">The filepath to operate on.</param>
+		/// <param name="fileProcessor">A delegate method that will be used to process each file found in <paramref name="path"/>.</param>
+		/// <param name="logger">A delegate method that will be used to return information to an interface, e.g. to
+		/// display messages to a user.</param>
 		internal static void DirectoryHandler(string path, Func<string, EmailProcessingResult> fileProcessor, Action<string> logger)
 		{
-			int loopCount = 0;
+			// A filter to use when pulling out files to process; likely to be "*.eml".
 			string fileSearchPattern = "*.eml";
 
 
@@ -225,11 +301,6 @@ namespace MantaEventsConsole
 			// back into life again.
 			do
 			{
-				loopCount++;
-
-				logger(String.Format("Loop Count: {0:N0}", loopCount));
-
-
 				// Loop through and process all the files we've picked up.
 				Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => FileHandler(f, fileProcessor, logger)));
 
@@ -264,16 +335,14 @@ namespace MantaEventsConsole
 
 			// If a file's not accessible, skip it so we'll pick it up the next time.
 			if (IsFileLocked(f))
-			{
-				logger("File locked: " + f.FullName);
 				return;
-			}
 
 
 
 
 			content = File.ReadAllText(f.FullName);
 
+			// Send the content to the delegate method that'll process its contents.
 			result = processor(content);
 
 
@@ -282,7 +351,8 @@ namespace MantaEventsConsole
 				case EmailProcessingResult.SuccessAbuse:
 				case EmailProcessingResult.SuccessBounce:
 					// All good.  Nothing to do other than delete the file.
-					File.Delete(f.FullName);
+					//File.Delete(f.FullName);
+					File.Move(f.FullName, Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", f.Name));
 					break;
 
 				case EmailProcessingResult.ErrorNoFile:
@@ -353,6 +423,32 @@ namespace MantaEventsConsole
 					stream.Close();
 			}   
 			return false;
+		}
+
+
+		static IMessage OpenAsCdoMessage(string filePath)
+		{
+			IMessages msgs = new DropDirectory().GetMessages(Path.GetDirectoryName(filePath));
+			IMessage found = null;
+
+
+			foreach(IMessage m in msgs)
+			{
+				if (msgs.get_FileName(m) == filePath)
+				{
+					found = m;
+					break;
+				}
+			}
+
+
+			if (found == null)
+			{
+				Console.WriteLine("Failed to find message {0}.", filePath);
+				return null;
+			}
+
+			return found;
 		}
 	}
 }

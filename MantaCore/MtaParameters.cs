@@ -13,7 +13,7 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// New line as should be used in emails.
 		/// </summary>
-		internal const string NewLine = "\r\n";
+		public const string NewLine = "\r\n";
 
 		/// <summary>
 		/// The time in minutes of how long stuff should be cached in memory for.

@@ -159,10 +159,12 @@ namespace MantaMTA.Core.Message
 							}
 						}
 
-						// Look for the content type.
+						// Look for the content type.  Default is "text/plain".
 						m = Regex.Match(line, @"Content-Type:\s+(?<ContentType>\S+)", RegexOptions.IgnoreCase);
 						if (m.Success)
-							currentBodyPart.ContentType = new System.Net.Mime.ContentType(m.Groups["ContentType"].Value);
+							currentBodyPart.ContentType = new ContentType(m.Groups["ContentType"].Value);
+						else
+							currentBodyPart.ContentType = new ContentType();
 					}
 					// Not in a boundry marker so must be body part content.
 					else if (currentBodyPart != null)
