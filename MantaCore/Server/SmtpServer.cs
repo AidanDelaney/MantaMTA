@@ -314,6 +314,7 @@ namespace MantaMTA.Core.Server
 							// Message to be delivered locally. Make sure mailbox is abuse/postmaster or feedback loop.
 							if (!rcptTo.User.Equals("abuse", StringComparison.OrdinalIgnoreCase) &&
 								!rcptTo.User.Equals("postmaster", StringComparison.OrdinalIgnoreCase) &&
+								!rcptTo.User.StartsWith("return-", StringComparison.OrdinalIgnoreCase) &&
 								!DAL.FeedbackLoopEmailAddressDB.IsFeedbackLoopEmailAddress(rcptTo.Address))
 							{
 								await smtpStream.WriteLineAsync("550 Unknown mailbox");

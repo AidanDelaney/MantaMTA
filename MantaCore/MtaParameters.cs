@@ -68,6 +68,28 @@ namespace MantaMTA.Core
 		}
 
 		/// <summary>
+		/// Drop folder for email bounces.
+		/// </summary>
+		internal static string BounceDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "bounce");
+			}
+		}
+
+		/// <summary>
+		/// Drop folder for feedback loop emails.
+		/// </summary>
+		internal static string FeedbackLoopDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "feedback");
+			}
+		}
+
+		/// <summary>
 		/// Drop folder for postmaster@
 		/// </summary>
 		internal static string PostmasterDropFolder

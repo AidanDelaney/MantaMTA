@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InboundEmails.cs" />
     <Compile Include="ReturnPath.cs" />
     <Compile Include="FeedbackLoopTests.cs" />
     <Compile Include="MimeMessageTests.cs" />
