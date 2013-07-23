@@ -57,6 +57,7 @@
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />
     <Compile Include="DAL\DataRetrieval.cs" />
+    <Compile Include="DAL\FeedbackLoopEmailAddressDB.cs" />
     <Compile Include="DAL\MantaDB.cs" />
     <Compile Include="DAL\MtaIpAddressDB.cs" />
     <Compile Include="DAL\MtaIpGroupDB.cs" />
