@@ -46,7 +46,7 @@ namespace MantaCoreEventsTests_NET4_0
 
 			Assert.IsTrue(
 				AreBouncePairsTheSame(
-					new BouncePair{ BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.UnableToConnect },
+					new BouncePair{ BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
 					BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(421)
 				)
 			);
@@ -199,7 +199,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			Assert.AreEqual(MantaBounceType.Hard, actualBouncePair.BounceType);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, actualBouncePair.BounceCode);
 			// 
-			Assert.AreEqual("Status: 5.1.1", bounceMessage);
+			Assert.AreEqual("5.1.1", bounceMessage);
 		}
 
 
@@ -268,7 +268,9 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 
 
 		
-
+		/// <summary>
+		/// Check the SmtpResponse Regex pattern works correctly.
+		/// </summary>
 		[Test]
 		public void SmtpResponseRegexPattern()
 		{
@@ -302,6 +304,31 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		}
 
 
+		/// <summary>
+		/// Check the SmtpResponse Regex pattern works correctly.
+		/// </summary>
+		[Test]
+		public void NdrCodeRegexPattern()
+		{
+			Regex re = new Regex(EventsManager.RegexPatterns.NonDeliveryReportCode, RegexOptions.ExplicitCapture);
+
+			// Check the pattern can pull out a typical NDR code, no matter where it appears.
+			Assert.AreEqual("1.2.3", re.Match("1.2.3").Value);
+			Assert.AreEqual("1.2.3", re.Match("Text before 1.2.3").Value);
+			Assert.AreEqual("1.2.3", re.Match("1.2.3 text after").Value);
+			Assert.AreEqual("1.2.3", re.Match("Text before 1.2.3 and text after").Value);
+
+			// Check the pattern can pull out an NDR code that's the full size of what's specified in the RFC:
+			// "x.y[1-3].z[1-3]" so "5.123.456".
+			Assert.IsFalse(re.Match("111.222.333").Success);
+			Assert.AreEqual("1.222.333", re.Match("1.222.333").Value);
+			Assert.AreEqual("1.222.333", re.Match("Text before 1.222.333").Value);
+			Assert.AreEqual("1.222.333", re.Match("1.222.333 text after").Value);
+			Assert.AreEqual("1.222.333", re.Match("Text before 1.222.333 and text after").Value);
+
+			// Check it gets the first match only.
+			Assert.AreEqual("1.222.333", re.Match("Text before 1.222.333 and text after 4.555.666 and more text after").Value);
+		}
 
 
 		/// <summary>

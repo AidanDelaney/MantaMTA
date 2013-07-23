@@ -30,6 +30,11 @@ namespace MantaMTA.Core.Events
 			/// Regex pattern to grab an SMTP code (e.g. "550") and/or an NDR code (e.g. "5.1.1") as well as any detail that follows them.
 			/// </summary>
 			internal static string SmtpResponse = @"^.*?([\s\b]*?(((?<SmtpCode>\d{3})(?:[^\d-]*?))|(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}))[\s\b])+(?<Detail>.*)$";
+
+			/// <summary>
+			/// Pattern to get a Non-Delivery Report code from a string.  They are in the format "x.y[1-3].z[1-3]".
+			/// </summary>
+			internal static string NonDeliveryReportCode = @"\b(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3})\b";
 		}
 
 
@@ -197,7 +202,7 @@ namespace MantaMTA.Core.Events
 					// "Status" Field.  If no "Diagnostic-Code", this is the second best thing to check.
 
 					// Get the value and remove any surrounding whitespace.
-					status = l.Trim();
+					status = l.Substring(StatusFieldName.Length).Trim();
 				}
 
 
@@ -226,34 +231,27 @@ namespace MantaMTA.Core.Events
 			// Status
 			if (!string.IsNullOrWhiteSpace(status))
 			{
-				// Looks like all we've got is the Status Code.
-				Match match = Regex.Match(message, @"^Status\:\s+(?<Status>.*)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+				// If there's an NDR code in the Status value, use it.
+				Match m = Regex.Match(status, RegexPatterns.NonDeliveryReportCode, RegexOptions.ExplicitCapture);
 
-				if (match.Success)
+				if (m.Success)
 				{
-					string allVal = match.Value;
-					string statusVal = match.Groups["Status"].Value;
-
-					// Ditch any closing carriage returns (\r) if using "$" in the Regex pattern above as "$" comes
-					// _between_ the \r and the \n of a full Windows carriage return.
-
-					allVal = allVal.Trim();
-					statusVal = statusVal.Trim();
-
-
-
-					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(statusVal);
-					bounceMessage = allVal;
+					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(m.Value);
+					bounceMessage = m.Value;
 					return true;
 				}
 			}
 
 
 
-			// Parse the entire message as a string.
+
+
+			// If we've not already returned from this method, then we're still looking for an explanation
+			// for the bounce so parse the entire message as a string.
 			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
 				return true;
 			
+
 
 			// Nope - no clues relating to why the bounce occurred.
 			bouncePair.BounceType = MantaBounceType.Unknown;
