@@ -104,5 +104,24 @@ WHERE mta_send_internalId = @internalSndID";
 				cmd.ExecuteNonQuery();
 			}
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="internalSendID"></param>
+		/// <returns></returns>
+		internal static Send GetSend(int internalSendID)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT *
+FROM man_mta_send
+WHERE mta_send_internalId = @internalSndID";
+				cmd.Parameters.AddWithValue("@internalSndID", (int)internalSendID);
+				return DataRetrieval.GetSingleObjectFromDatabase<Send>(cmd, CreateAndFillSendFromRecord);
+			}
+		}
 	}
 }

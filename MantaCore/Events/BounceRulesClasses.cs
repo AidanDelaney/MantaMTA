@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MantaMTA.Core.Events.Enums;
 using System.Text.RegularExpressions;
-using System.Collections.Concurrent;
+using MantaMTA.Core.Events.Enums;
 
 namespace MantaMTA.Core.Events
 {

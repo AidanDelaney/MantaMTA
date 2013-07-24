@@ -70,7 +70,7 @@ namespace MantaMTA.Core.Events
 
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EmailAddress = rcptTo;
-			bounceEvent.SendID = MantaMTA.Core.DAL.SendDb.GetSendIdFromInternalSendId(internalSendID);
+			bounceEvent.SendID = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID).ID;
 
 			// Might be good to get the DateTime found in the email at a later point.
 			bounceEvent.EventTime = DateTime.UtcNow;
@@ -296,7 +296,7 @@ namespace MantaMTA.Core.Events
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EventType = MantaEventType.Unknown;
 			bounceEvent.EmailAddress = rcptTo;
-			bounceEvent.SendID = MantaMTA.Core.DAL.SendDb.GetSendIdFromInternalSendId(internalSendID);
+			bounceEvent.SendID = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID).ID;
 
 			// It is possible that the bounce was generated a while back, but we're assuming "now" for the moment.
 			// Might be good to get the DateTime found in the email at a later point.

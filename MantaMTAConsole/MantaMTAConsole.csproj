@@ -49,10 +49,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MantaCoreEvents\MantaCoreEvents.csproj">
-      <Project>{61b74d22-8e87-4e45-90a4-35a78164bde3}</Project>
-      <Name>MantaCoreEvents</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MantaCore\MantaCore.csproj">
       <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
       <Name>MantaCore</Name>

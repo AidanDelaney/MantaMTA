@@ -71,6 +71,14 @@
     <Compile Include="Enums\SendStatus.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
+    <Compile Include="Events\BounceRulesClasses.cs" />
+    <Compile Include="Events\BounceRulesManager.cs" />
+    <Compile Include="Events\Enums\BounceRuleEnums.cs" />
+    <Compile Include="Events\Enums\EventEnums.cs" />
+    <Compile Include="Events\EventClasses.cs" />
+    <Compile Include="Events\EventDB.cs" />
+    <Compile Include="Events\EventsManager.cs" />
+    <Compile Include="Events\SmtpStatusCodes.cs" />
     <Compile Include="IStopRequired.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="MantaCoreEvents.cs" />
