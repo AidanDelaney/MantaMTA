@@ -283,7 +283,7 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		/// <param name="header">The Name of the header to find.  The case of it is not important.</param>
 		/// <returns>A MessageHeader object for the first match, else null if no matches were found.</returns>
-		public MessageHeader GetFirst(string header)
+		public MessageHeader GetFirstOrDefault(string header)
 		{
 			return this.FirstOrDefault(h => h.Name.Equals(header, StringComparison.OrdinalIgnoreCase));
 		}

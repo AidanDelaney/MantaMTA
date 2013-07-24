@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using System.Threading.Tasks;
-using System.Net.Mail;
-using MantaMTA.Core.Message;
+using System.Linq;
 using System.Text.RegularExpressions;
+using MantaMTA.Core.Message;
 
 namespace MantaMTA.Core.Events
 {
@@ -52,9 +49,11 @@ namespace MantaMTA.Core.Events
 			if (msg == null)
 				return EmailProcessingResult.ErrorContent;
 
-
 			// "x-receiver" should contain what Manta originally set as the "return-path" when sending.
-			MessageHeader returnPath = msg.Headers.GetFirst("x-receiver");
+			MessageHeader returnPath = msg.Headers.GetFirstOrDefault("x-receiver");
+			if (returnPath == null)
+				return EmailProcessingResult.ErrorNoReturnPath;
+
 			string rcptTo = string.Empty;
 			int internalSendID = 0;
 
