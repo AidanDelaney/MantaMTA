@@ -312,6 +312,8 @@ namespace MantaMTA.Core.Events
 				bounceEvent.EventType = MantaEventType.Bounce;
 				bounceEvent.BounceInfo = bouncePair;
 				bounceEvent.Message = bounceMessage;
+
+				// Log to DB.
 			}
 			else
 			{
@@ -321,7 +323,6 @@ namespace MantaMTA.Core.Events
 				bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 				bounceEvent.Message = string.Empty;
 			}
-
 
 			return bounceEvent;
 		}

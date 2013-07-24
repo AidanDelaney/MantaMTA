@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="InboundEmails.cs" />
+    <Compile Include="MantaCoreEventsTest.cs" />
     <Compile Include="QueueControl.cs" />
     <Compile Include="ReturnPath.cs" />
     <Compile Include="FeedbackLoopTests.cs" />

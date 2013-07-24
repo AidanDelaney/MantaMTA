@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NUnit.Framework;
-using MantaMTA.Core.Events;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using MantaMTA.Core.Events;
+using NUnit.Framework;
 
-namespace MantaCoreEventsTests_NET4_0
+namespace MantaMTA.Core.Tests
 {
 	[TestFixture]
 	public class MantaCoreEventsTest
@@ -341,7 +337,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 
 
 			// Check an AOL response.
-			mbEvent = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 100);
+			mbEvent = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
 			Assert.AreEqual(MantaBounceType.Hard, mbEvent.BounceInfo.BounceType);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, mbEvent.BounceInfo.BounceCode);
 			Assert.AreEqual("bobobobobobobobobobobob@aol.com", mbEvent.EmailAddress);
@@ -356,7 +352,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			mbEvent = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
 550-5.1.1 double-checking the recipient's email address for typos or
 550-5.1.1 unnecessary spaces. Learn more at
-550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 100);
+550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 1);
 			Assert.AreEqual(MantaBounceType.Hard, mbEvent.BounceInfo.BounceType);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, mbEvent.BounceInfo.BounceCode);
 			Assert.AreEqual("bobobobobobobobobobobob@gmail.com", mbEvent.EmailAddress);
