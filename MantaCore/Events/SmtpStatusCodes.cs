@@ -64,8 +64,7 @@ namespace MantaMTA.Core.Events
 					return bp;
 
 				case 420:// Timeout communication problem encountered during transmission
-				case 421://	Service not available, closing transmission channel
-				case 451://	Requested action aborted: local error in processing				
+				case 421://	Service not available, closing transmission channel				
 				case 521://	<domain> does not accept mail (see rfc1846)
 				case 530://	Access denied (???a Sendmailism)
 					bp.BounceCode = MantaBounceCode.ServiceUnavailable;
@@ -88,6 +87,7 @@ namespace MantaMTA.Core.Events
 					bp.BounceCode = MantaBounceCode.RelayDenied;
 					break;
 
+				case 451://	Requested action aborted: local error in processing
 				case 500://	Syntax error, command unrecognised
 				case 501://	Syntax error in parameters or arguments
 				case 502://	Command not implemented
@@ -205,7 +205,7 @@ namespace MantaMTA.Core.Events
 					bp.BounceCode = MantaBounceCode.UnableToConnect;
 					break;
 
-				case ".1.7":	// Bad sender's mailbox address syntax
+				/*case ".1.7":	// Bad sender's mailbox address syntax
 				case ".1.8":	// Bad sender's system address
 				case ".5.1":	// Invalid command
 				case ".5.2":	// Syntax error
@@ -225,7 +225,7 @@ namespace MantaMTA.Core.Events
 				case ".7.4":	// Security features not supported
 				case ".7.5":	// Cryptographic failure
 				case ".7.6":	// Cryptographic algorithm not supported
-				case ".7.7":	// Message integrity failure
+				case ".7.7":	// Message integrity failure*/
 				default:
 					// Do additional processing if no matches above.
 					bp.BounceCode = MantaBounceCode.General;

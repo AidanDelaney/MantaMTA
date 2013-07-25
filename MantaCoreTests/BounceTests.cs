@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace MantaMTA.Core.Tests
 {
 	[TestFixture]
-	public class MantaCoreEventsTest
+	public class BounceTests
 	{
 		/// <summary>
 		/// Func we can use to compare two BouncePair objects to make Assert testing simpler.
@@ -22,7 +22,7 @@ namespace MantaMTA.Core.Tests
 		/// </summary>
 		/// <param name="msg">An example of an SMTP response message to be tested.</param>
 		/// <returns>true if the SmtpResponse Regex pattern matches, else false.</returns>
-		delegate bool CheckSmtpResponseRegexPattern(string msg, string expectedSmtpCode, string expectedNdrCode, string expectedDetail);
+		delegate bool CheckSmtpResponseRegexPattern(string msg, string expectedSmtpCode, string expectedNdrCode);
 
 
 		/// <summary>
@@ -198,68 +198,87 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			Assert.AreEqual("5.1.1", bounceMessage);
 		}
 
-
 		/// <summary>
 		/// Check we're parsing bounce messages correctly.
 		/// </summary>
 		[Test]
 		public void BounceMessageParsing()
 		{
-			BouncePair actualBouncePair;
-			string bounceMessage;
-			bool returned;
+			#region Test Data
+			var testData = new []
+			{ 
+				new 
+				{ 
+					Message = @"421 4.7.1 : (DYN:T1) http://postmaster.info.aol.com/errors/421dynt1.html", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.RateLimitedByReceivingMta }
+				},
+				new 
+				{ 
+					Message = @"421 4.7.1 : (DYN:T2) some content", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+				},
+				new 
+				{ 
+					Message = @"421 4.7.1 Intrusion prevention active for [173.203.70.224][S]", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+				},
+				new 
+				{ 
+					Message = @"450 4.1.1 <some.user@colony101.co.uk>: Recipient address rejected: unverified address: connect to mailgate.jtc65.co.uk[193.195.220.67]: Connection timed out", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress}
+				},
+				new 
+				{ 
+					Message = @"450 4.1.1 <some.user@colony101.co.uk>: Recipient address rejected: User unknown in virtual mailbox table", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress }
+				},
+				new 
+				{ 
+					Message = @"450 4.2.0 <some.user@colony101.co.uk>: Recipient address rejected: Greylisted", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress }
+				},
+				new 
+				{ 
+					Message = @"451 Requested action aborted: local error in processing (code: 11)", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General }
+				},
+				new 
+				{ 
+					Message = @"451 4.7.1 Access denied by DCC", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General }
+				},
+				new 
+				{ 
+					Message = @"551 You have sent an email to an address not recognised by our system. The email has been refused.", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress }
+				},
+				new 
+				{
+					Message = @"550-5.7.1 recipient <EMAIL> unknown #292 (p6NBV6039032582700)
+550-5.7.1 The line above says why the NorMAN mail gateways REJECTED this email.
+550-5.7.1 Please see <http://www.ncl.ac.uk/iss/support/security/NORMAN_reject>
+550 5.7.1 for a more detailed explanation.", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress }
+				},
+				new 
+				{ 
+					Message = @"421 4.7.0 [GL01] Message from (192.129.253.20) temporarily deferred - 4.16.50. Please refer to http://postmaster.yahoo.com/errors/postmaster-21.html", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+				}
+			};
+			#endregion
 
+			for (int i = 0; i < testData.Length; i++)
+			{
+				var currentTestData = testData[i];
+				BouncePair bouncePair;
+				string bounceMessage = string.Empty;
 
-			#region AOL-specific Rule checks.
-
-			// This message was taken from SNT1's SMTP logs.
-			returned = EventsManager.Instance.ParseBounceMessage(@"421 4.7.1 : (DYN:T1) http://postmaster.info.aol.com/errors/421dynt1.html", out actualBouncePair, out bounceMessage);
-
-			Assert.IsTrue(returned);
-
-			Assert.IsTrue(
-				AreBouncePairsTheSame(
-					new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.RateLimitedByReceivingMta },
-					actualBouncePair
-				)
-			);
-
-
-			// This message is faked from the "DYN:T1" message above but with the code tweaked and don't know what the following
-			// string is.
-			returned = EventsManager.Instance.ParseBounceMessage(@"421 4.7.1 : (DYN:T2) some content", out actualBouncePair, out bounceMessage);
-
-			Assert.IsTrue(returned);
-
-			Assert.IsTrue(
-				AreBouncePairsTheSame(
-					new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.UnableToConnect },
-					actualBouncePair
-				)
-			);
-
-			#endregion AOL-specific Rule checks.
-
-
-
-			// Some actual SMTP log entries from SNT1:
-			//
-			// 421 4.7.1 : (DYN:T1) http://postmaster.info.aol.com/errors/421dynt1.html
-			// 421 4.7.1 Intrusion prevention active for [173.203.70.224][S]
-			// 450 4.1.1 <mickludwell@jtc65.co.uk>: Recipient address rejected: unverified address: connect to mailgate.jtc65.co.uk[193.195.220.67]: Connection timed out
-			// 450 4.1.1 <anthony.kneller@regens.co.uk>: Recipient address rejected: User unknown in virtual mailbox table
-			// 450 4.2.0 <john@winweb.net>: Recipient address rejected: Greylisted
-			// 451 Requested action aborted: local error in processing (code: 11)
-			// 451 4.7.1 Access denied by DCC
-			// 451 Internal resource temporarily unavailable - KBID10473 - http://www.mimecast.com/knowledgebase/kbid10473.htm#451
-			// 451 Internal resource temporarily unavailable - http://www.mimecast.com/knowledgebase/KBID10473.htm#451
-			// 451 Temporary local problem - please try later
-			// 451 4.7.1 Service unavailable - try again later
-			// 451 This server employs greylisting as a means of reducing spam. Your message has been delayed and will be accepted later.
-			// 451 Greylisted
-			// 452 4.3.1 Insufficient system storage
-			// 454 4.7.1 Temp Spam Reject; Client host [173.203.70.224] deferred using hostkarma.junkemailfilter.com=127.0.0.2; Black listed at hostkarma http://ipadmin.junkemailfilter.com/remove.php?ip=173.203.70.224
-			
+				bool returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage);
+				Assert.IsTrue(returned, currentTestData.Message);
+				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceCode, bouncePair.BounceCode, currentTestData.Message);
+				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceType, bouncePair.BounceType,currentTestData.Message);
+			}
 		}
 
 
@@ -271,32 +290,32 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		public void SmtpResponseRegexPattern()
 		{
 			CheckSmtpResponseRegexPattern checker = 
-				delegate(string msg, string expectedSmtpCode, string expectedNdrCode, string expectedDetail)
+				delegate(string msg, string expectedSmtpCode, string expectedNdrCode)
 				{
-					Match m = Regex.Match(msg, EventsManager.RegexPatterns.SmtpResponse, RegexOptions.IgnoreCase | RegexOptions.Multiline);
+					Match m = Regex.Match(msg, EventsManager.RegexPatterns.SmtpResponse, RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
 					if (!m.Success)
 						return false;
 
 					Assert.AreEqual(expectedSmtpCode, m.Groups["SmtpCode"].Value);
 					Assert.AreEqual(expectedNdrCode, m.Groups["NdrCode"].Value);
-					Assert.AreEqual(expectedDetail, m.Groups["Detail"].Value);
+					Assert.AreEqual(msg, m.Groups["Detail"].Value);
 
 					return true;
 				};
 
-			Assert.IsTrue(checker(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "550", "5.1.1", "<bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com"));
+			Assert.IsTrue(checker(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "550", "5.1.1"));
 
 			// Not sure how to handle these:
-			//Assert.IsTrue(checker(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
-//550-5.1.1 double-checking the recipient's email address for typos or
-//550-5.1.1 unnecessary spaces. Learn more at
-//550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", string.Empty, "5.1.1", "http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp"));
+			Assert.IsTrue(checker(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
+			550-5.1.1 double-checking the recipient's email address for typos or
+			550-5.1.1 unnecessary spaces. Learn more at
+			550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "550", "5.1.1"));
 
-			Assert.IsTrue(checker(@"5.1.0 The email account that you tried to reach does not exist. Please try", string.Empty, "5.1.0", "The email account that you tried to reach does not exist. Please try"));
-			Assert.IsTrue(checker(@"5.1.0 550 The email account that you tried to reach does not exist. Please try", "550", "5.1.0", "The email account that you tried to reach does not exist. Please try"));
-			Assert.IsTrue(checker(@"552 No such user (users@domain.com)", "552", string.Empty, "No such user (users@domain.com)"));
-			Assert.IsTrue(checker(@"5.1.5 more stuff", string.Empty, "5.1.5", "more stuff"));
+			Assert.IsTrue(checker(@"5.1.0 The email account that you tried to reach does not exist. Please try", string.Empty, "5.1.0"));
+			Assert.IsTrue(checker(@"5.1.0 550 The email account that you tried to reach does not exist. Please try", string.Empty, "5.1.0"));
+			Assert.IsTrue(checker(@"552 No such user (users@domain.com)", "552", string.Empty));
+			Assert.IsTrue(checker(@"5.1.5 more stuff", string.Empty, "5.1.5"));
 		}
 
 
@@ -333,31 +352,112 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		[Test]
 		public void SmtpResponseBounceProcessing()
 		{
-			MantaBounceEvent mbEvent = null;
-
+			bool result = false;
 
 			// Check an AOL response.
-			mbEvent = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
-			Assert.AreEqual(MantaBounceType.Hard, mbEvent.BounceInfo.BounceType);
-			Assert.AreEqual(MantaBounceCode.BadEmailAddress, mbEvent.BounceInfo.BounceCode);
-			Assert.AreEqual("bobobobobobobobobobobob@aol.com", mbEvent.EmailAddress);
-			Assert.AreEqual(MantaEventType.Bounce, mbEvent.EventType);
-			Assert.AreEqual("550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", mbEvent.Message);
-			// Need to get GetSendIdFromInternalSendId() method wired up before we can predict what this will give us.
-			// Likely to be the current DateTime as a string if we provide an InternalSendID value that doesn't yet exist.
-			// Assert.AreEqual("100", mbEvent.SendID);
+			result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
+			Assert.IsTrue(result);
 
 			
 			// Check a GMail response (multi-line).
-			mbEvent = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
+			result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
 550-5.1.1 double-checking the recipient's email address for typos or
 550-5.1.1 unnecessary spaces. Learn more at
 550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 1);
-			Assert.AreEqual(MantaBounceType.Hard, mbEvent.BounceInfo.BounceType);
-			Assert.AreEqual(MantaBounceCode.BadEmailAddress, mbEvent.BounceInfo.BounceCode);
-			Assert.AreEqual("bobobobobobobobobobobob@gmail.com", mbEvent.EmailAddress);
-			Assert.AreEqual(MantaEventType.Bounce, mbEvent.EventType);
-			Assert.AreEqual(@"550-5.1.1 The email account that you tried to reach does not exist. Please try", mbEvent.Message);
+			Assert.IsTrue(result);
+		}
+
+		/// <summary>
+		/// Test to check AOL NDR works as expected.
+		/// </summary>
+		[Test]
+		public void NDR_AOL()
+		{
+			string ndr = @"Reporting-MTA: dns;snt3.net
+Received-From-MTA: dns;SNT3
+Arrival-Date: Mon, 15 Jul 2013 19:01:58 +0100
+
+Final-Recipient: rfc822;artymall@aol.com
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 <artymall@aol.com>: Recipient address rejected: aol.com";
+			TestNdr(ndr, MantaBounceCode.BadEmailAddress, MantaBounceType.Hard, "550 5.1.1 <artymall@aol.com>: Recipient address rejected: aol.com");
+		}
+
+		/// <summary>
+		/// Test to check GMail NDR works as expected.
+		/// </summary>
+		[Test]
+		public void NDR_GMail()
+		{
+			string ndr = @"Reporting-MTA: dns;snt3.net
+Received-From-MTA: dns;SNT3
+Arrival-Date: Mon, 15 Jul 2013 18:35:44 +0100
+
+Final-Recipient: rfc822;some.user@gmail.com
+Action: failed
+Status: 5.5.0
+Diagnostic-Code: smtp;550-5.1.1 The email account that you tried to reach does not exist. Please try
+550-5.1.1 double-checking the recipient's email address for typos or
+550-5.1.1 unnecessary spaces. Learn more at
+550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 eq9si1178242wib.32 - gsmtp";
+			TestNdr(ndr, MantaBounceCode.BadEmailAddress, MantaBounceType.Hard, @"550-5.1.1 The email account that you tried to reach does not exist. Please try
+550-5.1.1 double-checking the recipient's email address for typos or
+550-5.1.1 unnecessary spaces. Learn more at
+550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 eq9si1178242wib.32 - gsmtp");
+		}
+
+		/// <summary>
+		/// Test to check Hotmail NDR works as expected.
+		/// </summary>
+		[Test]
+		public void NDR_Hotmail()
+		{
+			string ndr = @"Reporting-MTA: dns;snt3.net
+Received-From-MTA: dns;SNT3
+Arrival-Date: Mon, 15 Jul 2013 19:14:12 +0100
+
+Final-Recipient: rfc822;some.user@hotmail.com
+Action: failed
+Status: 5.5.0
+Diagnostic-Code: smtp;550 Requested action not taken: mailbox unavailable";
+			TestNdr(ndr, MantaBounceCode.BadEmailAddress, MantaBounceType.Hard, "550 Requested action not taken: mailbox unavailable");
+		}
+
+		/// <summary>
+		/// Test to check Yahoo NDR works as expected.
+		/// </summary>
+		[Test]
+		public void NDR_Yahoo()
+		{
+			string ndr = @"Reporting-MTA: dns;snt3.net
+Received-From-MTA: dns;SNT3
+Arrival-Date: Mon, 15 Jul 2013 18:29:22 +0100
+
+Final-Recipient: rfc822;some.user@yahoo.com
+Action: failed
+Status: 5.5.0
+Diagnostic-Code: smtp;554 delivery error: dd This user doesn't have a yahoo.com account (some.user@yahoo.com) [0] - mta1184.mail.ir2.yahoo.com";
+			TestNdr(ndr, MantaBounceCode.BadEmailAddress, MantaBounceType.Hard, "554 delivery error: dd This user doesn't have a yahoo.com account (some.user@yahoo.com) [0] - mta1184.mail.ir2.yahoo.com");
+		}
+
+		/// <summary>
+		/// Run an NDR Test.
+		/// </summary>
+		/// <param name="ndr">The NDR body part content.</param>
+		/// <param name="expectedCode">The expected Manta Bounce Code.</param>
+		/// <param name="expectedType">The expected Manta Bounce Type.</param>
+		/// <param name="expectedMessage">The expected report message.</param>
+		private void TestNdr(string ndr, MantaBounceCode expectedCode, MantaBounceType expectedType, string expectedMessage)
+		{
+			string bounceMessage = string.Empty;
+			BouncePair bouncePair;
+
+			bool returned = EventsManager.Instance.ParseNdr(ndr, out bouncePair, out bounceMessage);
+			Assert.IsTrue(returned);
+			Assert.AreEqual(expectedCode, bouncePair.BounceCode);
+			Assert.AreEqual(expectedType, bouncePair.BounceType);
+			Assert.AreEqual(expectedMessage, bounceMessage);
 		}
 	}
 }

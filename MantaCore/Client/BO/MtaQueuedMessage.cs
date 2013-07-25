@@ -106,7 +106,9 @@ namespace MantaMTA.Core.Client.BO
 		public void HandleDeliveryFail(string failMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
-			//Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo, base.InternalSendID);
+			// Send fails to Manta.Core.Events
+			for (int i = 0; i < base.RcptTo.Length; i++)
+				Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID);
 			MtaMessageDB.Delete(this);
 			DeleteMessageData();
 		}

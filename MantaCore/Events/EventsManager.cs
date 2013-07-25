@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using MantaMTA.Core.DAL;
 using MantaMTA.Core.Message;
 
 namespace MantaMTA.Core.Events
@@ -27,7 +29,7 @@ namespace MantaMTA.Core.Events
 			/// <summary>
 			/// Regex pattern to grab an SMTP code (e.g. "550") and/or an NDR code (e.g. "5.1.1") as well as any detail that follows them.
 			/// </summary>
-			internal static string SmtpResponse = @"^.*?([\s\b]*?(((?<SmtpCode>\d{3})(?:[^\d-]*?))|(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}))[\s\b])+(?<Detail>.*)$";
+			internal static string SmtpResponse = @"^(?<Detail>((?<SmtpCode>\d{3}|)(\s|-)|)(?<NdrCode>\d{1}\.\d{1,3}\.\d{1,3}|).*)$";
 
 			/// <summary>
 			/// Pattern to get a Non-Delivery Report code from a string.  They are in the format "x.y[1-3].z[1-3]".
@@ -144,84 +146,82 @@ namespace MantaMTA.Core.Events
 
 
 
-			string[] lines = message.Split(new string[] { MtaParameters.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-			string diagnosticCode = string.Empty;
+			StringBuilder diagnosticCode = new StringBuilder(string.Empty);
 			string status = string.Empty;
-			int lineIndex = 0;
 
-
-			// Go through the message line by line.
-			while(lineIndex < lines.Length)
+			using (StringReader sr = new StringReader(message))
 			{
-				string l = lines[lineIndex];
+				string line = sr.ReadLine();
 
-
-				// Skip blank lines.
-				if (string.IsNullOrWhiteSpace(l))
+				// While the string reader has stuff to read keep looping through each line.
+				while (!string.IsNullOrWhiteSpace(line) || sr.Peek() > -1)
 				{
-					lineIndex++;
-					continue;
-				}
+					if (line.StartsWith(DiagnosticCodeFieldName, StringComparison.OrdinalIgnoreCase))
+					{
+						// Found the diagnostic code.
 
+						// Remove the field name.
+						line = line.Substring(DiagnosticCodeFieldName.Length);
 
+						// Check to see if the disagnostic-code contains an SMTP response.
+						bool isSmtpResponse = line.StartsWith("smtp;", StringComparison.OrdinalIgnoreCase);
+						
+						// Add the first line of the diagnostic-code.
+						diagnosticCode.AppendLine(line);
 
-				// Check if the line begins with the name of a field we can examine.
-
-				if (l.StartsWith(DiagnosticCodeFieldName, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(diagnosticCode))
-				{
-					// "Diagnostic-Code" Field.  Preferred to "Status" Field as it contains more detail.
-
-					// Get the value and remove any surrounding whitespace.
-					diagnosticCode = l.Substring(DiagnosticCodeFieldName.Length).Trim();
-
-					
-					// Advance to the next line to check for more folded content.
-					// If subsequent lines are prefixed by whitespace, then this field has more content.
-					lineIndex++;
-
-					while (lineIndex < lines.Length)
-					{				
-
-						l = lines[lineIndex];
-
-
-						if (!string.IsNullOrWhiteSpace(l) && ((l.StartsWith(" ") || l.StartsWith("\t"))))
+						// Will be set to true when we find the next non diagnostic-code line.
+						bool foundNextLine = false;
+						
+						// Loop to read multiline diagnostic-code.
+						while (!foundNextLine)
 						{
-							// There's more...
-							diagnosticCode += l.Trim();
+							if (sr.Peek() == -1)
+								break; // We've reached the end of the string!
+
+							// Read the next line.
+							line = sr.ReadLine();
+
+							if (isSmtpResponse)
+							{
+								// Diagnostic code is an SMTP response so look for SMTP response line.
+								if (Regex.IsMatch(line, @"\d{3}(-|\s)"))
+									diagnosticCode.AppendLine(line);
+								else // Not a SMTP response line so must be next NDR line.
+									foundNextLine = true;
+							}
+							else
+							{
+								// Non SMTP response. If first char is whitespace then it's part of the disagnostic-code otherwise it isn't.
+								if (char.IsWhiteSpace(line[0]))
+									diagnosticCode.AppendLine(line);
+								else
+									foundNextLine = true;
+							}
 						}
-						else
-							break;
-
-						lineIndex++;
 					}
-					
+					else
+					{
+						// We haven't found a diagnostic-code line.
+						// Check to see if we have found a status field.
+						if (line.StartsWith(StatusFieldName, StringComparison.OrdinalIgnoreCase))
+							status = line.Substring(StatusFieldName.Length).TrimEnd();
+
+						// If there is more of the string to read then read the next line, otherwise set line to string.empty.
+						if (sr.Peek() > -1)
+							line = sr.ReadLine();
+						else
+							line = string.Empty;
+					}
 				}
-				else if (l.StartsWith(StatusFieldName, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(status))
-				{
-					// "Status" Field.  If no "Diagnostic-Code", this is the second best thing to check.
-
-					// Get the value and remove any surrounding whitespace.
-					status = l.Substring(StatusFieldName.Length).Trim();
-				}
-
-
-				// Have we got all we need?
-				if (!string.IsNullOrWhiteSpace(diagnosticCode) && !string.IsNullOrWhiteSpace(status))
-					break;
-
-
-				lineIndex++;
 			}
-
 
 
 			// Process what we've managed to find...
 
 			// Diagnostic-Code
-			if (!string.IsNullOrWhiteSpace(diagnosticCode))
+			if (!string.IsNullOrWhiteSpace(diagnosticCode.ToString()))
 			{
-				if (ParseSmtpDiagnosticCode(diagnosticCode, out bouncePair, out bounceMessage))
+				if (ParseSmtpDiagnosticCode(diagnosticCode.ToString(), out bouncePair, out bounceMessage))
 				{
 					return true;
 				}
@@ -241,7 +241,6 @@ namespace MantaMTA.Core.Events
 					return true;
 				}
 			}
-
 
 
 
@@ -287,44 +286,39 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// Examines an SMTP response message to identify detailed bounce information from it.
 		/// </summary>
-		/// <param name="message">The message that's come back from an external MTA when attempting to send an email.</param>
+		/// <param name="response">The message that's come back from an external MTA when attempting to send an email.</param>
 		/// <param name="rcptTo">The email address that was being sent to.</param>
 		/// <param name="internalSendID">The internal Manta SendID.</param>
-		/// <returns>A MantaBounceEvent object with details of the bounce.</returns>
-		internal MantaBounceEvent ProcessSmtpResponseMessage(string message, string rcptTo, int internalSendID)
+		/// <returns>True if a bounce was found and recorded, false if not.</returns>
+		internal bool ProcessSmtpResponseMessage(string response, string rcptTo, int internalSendID)
 		{
-			MantaBounceEvent bounceEvent = new MantaBounceEvent();
-			bounceEvent.EventType = MantaEventType.Unknown;
-			bounceEvent.EmailAddress = rcptTo;
-			bounceEvent.SendID = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID).ID;
-
-			// It is possible that the bounce was generated a while back, but we're assuming "now" for the moment.
-			// Might be good to get the DateTime found in the email at a later point.
-			bounceEvent.EventTime = DateTime.UtcNow;
-
-
 			BouncePair bouncePair = new BouncePair();
 			string bounceMessage = string.Empty;
 
-			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
+			if (ParseBounceMessage(response, out bouncePair, out bounceMessage))
 			{
-				// Got some information about the bounce.
-				bounceEvent.EventType = MantaEventType.Bounce;
-				bounceEvent.BounceInfo = bouncePair;
-				bounceEvent.Message = bounceMessage;
+				// Were able to find the bounce so create the bounce event.
+				MantaBounceEvent bounceEvent = new MantaBounceEvent
+				{
+					EventType = MantaEventType.Bounce,
+					EmailAddress = rcptTo,
+					BounceInfo = bouncePair,
+					SendID = SendDB.GetSend(internalSendID).ID,
+					// It is possible that the bounce was generated a while back, but we're assuming "now" for the moment.
+					// Might be good to get the DateTime found in the email at a later point.
+					EventTime = DateTime.UtcNow,
+					Message = response
+				};
 
 				// Log to DB.
-			}
-			else
-			{
-				// Wasn't able to identify if it was a bounce.
-				bounceEvent.EventType = MantaEventType.Unknown;
-				bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
-				bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
-				bounceEvent.Message = string.Empty;
+
+
+				// All done return true.
+				return true;
 			}
 
-			return bounceEvent;
+			// Couldn't identify the bounce.
+			return false;
 		}
 
 
@@ -346,6 +340,7 @@ namespace MantaMTA.Core.Events
 				{
 					bouncePair.BounceType = r.BounceTypeIndicated;
 					bouncePair.BounceCode = r.BounceCodeIndicated;
+					bounceMessage = message;
 					return true;
 				}
 			}
@@ -356,25 +351,26 @@ namespace MantaMTA.Core.Events
 			// Pattern: Should match like this:
 			//	[anything at the beginning if present][then either an SMTP code or an NDR code, but both should be grabbed if
 			// they exist][then the rest of the content (if any)]
-			Match match = Regex.Match(message, RegexPatterns.SmtpResponse, RegexOptions.Multiline | RegexOptions.IgnoreCase);
+			Match match = Regex.Match(message, RegexPatterns.SmtpResponse, RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 
 			if (match.Success)
 			{
+				bounceMessage = match.Value;
+
 				// Check for anything useful with the NDR code first as it contains more specific detail than the SMTP code.
-				if (match.Groups["NdrCode"].Success)
+				if (match.Groups["NdrCode"].Success && match.Groups["NdrCode"].Length > 0)
+				{
 					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(match.Groups["NdrCode"].Value);
+					if (bouncePair.BounceCode != MantaBounceCode.General)
+						return true;
+				}
+
 				// Try the SMTP code as there wasn't an NDR.
-				else if (match.Groups["SmtpCode"].Success)
+				if (match.Groups["SmtpCode"].Success && match.Groups["SmtpCode"].Length > 0)
+				{
 					bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(match.Groups["SmtpCode"].Value));
-				else
-					// If we're here, then the Regex pattern shouldn't really have matched as it specifies that an NDR
-					// and/or an SMTP code must appear, but neither have.  Check the pattern.
-					throw new Exception("Unable to process bounce: NDR and/or SMTP codes indicated but neither found.");
-
-
-				bounceMessage = match.Value.Trim();
-
-				return true;
+					return true;
+				}
 			}
 
 
