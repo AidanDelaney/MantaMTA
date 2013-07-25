@@ -33,6 +33,15 @@ namespace MantaMTA.Core.Events
 	}
 
 	/// <summary>
+	/// A collection of MantaEvents.
+	/// </summary>
+	public class MantaEventCollection : List<MantaEvent>
+	{
+		public MantaEventCollection() { }
+		public MantaEventCollection(IEnumerable<MantaEvent> collection) : base(collection) { }
+	}
+
+	/// <summary>
 	/// Manta Bounce Event Notification.
 	/// </summary>
 	public class MantaBounceEvent : MantaEvent

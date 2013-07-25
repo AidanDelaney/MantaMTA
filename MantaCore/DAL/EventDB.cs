@@ -26,6 +26,22 @@ WHERE [evt].evn_event_id = @eventId";
 		}
 
 		/// <summary>
+		/// Gets all of the MantaEvents from the database.
+		/// </summary>
+		/// <returns>Collection of MantaEvent objects.</returns>
+		public static MantaEventCollection GetEvents()
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"SELECT [evt].*, [bnc].evn_bounceCode_id, [bnc].evn_bounceEvent_message, [bnc].evn_bounceType_id
+FROM man_evn_event AS [evt]
+LEFT JOIN man_evn_bounceEvent AS [bnc] ON [evt].evn_event_id = [bnc].evn_event_id";
+				return new MantaEventCollection(DataRetrieval.GetCollectionFromDatabase<MantaEvent>(cmd, CreateAndFillMantaEventFromRecord));
+			}
+		}
+
+		/// <summary>
 		/// Saves the MantaEvent to the database.
 		/// </summary>
 		/// <param name="evn">The Manta Event to save.</param>

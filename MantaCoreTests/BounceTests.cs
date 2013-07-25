@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace MantaMTA.Core.Tests
 {
 	[TestFixture]
-	public class BounceTests
+	public class BounceTests : TestFixtureBase
 	{
 		/// <summary>
 		/// Func we can use to compare two BouncePair objects to make Assert testing simpler.
@@ -352,19 +352,23 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		[Test]
 		public void SmtpResponseBounceProcessing()
 		{
-			bool result = false;
+			using (CreateTransactionScopeObject())
+			{
+				bool result = false;
 
-			// Check an AOL response.
-			result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
-			Assert.IsTrue(result);
 
-			
-			// Check a GMail response (multi-line).
-			result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
+				// Check an AOL response.
+				result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
+				Assert.IsTrue(result);
+
+
+				// Check a GMail response (multi-line).
+				result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
 550-5.1.1 double-checking the recipient's email address for typos or
 550-5.1.1 unnecessary spaces. Learn more at
 550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 1);
-			Assert.IsTrue(result);
+				Assert.IsTrue(result);
+			}
 		}
 
 		/// <summary>
@@ -450,14 +454,17 @@ Diagnostic-Code: smtp;554 delivery error: dd This user doesn't have a yahoo.com 
 		/// <param name="expectedMessage">The expected report message.</param>
 		private void TestNdr(string ndr, MantaBounceCode expectedCode, MantaBounceType expectedType, string expectedMessage)
 		{
-			string bounceMessage = string.Empty;
-			BouncePair bouncePair;
+			using (CreateTransactionScopeObject())
+			{
+				string bounceMessage = string.Empty;
+				BouncePair bouncePair;
 
-			bool returned = EventsManager.Instance.ParseNdr(ndr, out bouncePair, out bounceMessage);
-			Assert.IsTrue(returned);
-			Assert.AreEqual(expectedCode, bouncePair.BounceCode);
-			Assert.AreEqual(expectedType, bouncePair.BounceType);
-			Assert.AreEqual(expectedMessage, bounceMessage);
+				bool returned = EventsManager.Instance.ParseNdr(ndr, out bouncePair, out bounceMessage);
+				Assert.IsTrue(returned);
+				Assert.AreEqual(expectedCode, bouncePair.BounceCode);
+				Assert.AreEqual(expectedType, bouncePair.BounceType);
+				Assert.AreEqual(expectedMessage, bounceMessage);
+			}
 		}
 	}
 }

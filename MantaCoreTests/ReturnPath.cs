@@ -27,6 +27,11 @@ namespace MantaMTA.Core.Tests
 			Assert.True(decoded);
 			Assert.AreEqual("test@remote", rcptTo);
 			Assert.AreEqual(10, internalSendID);
+
+			decoded = ReturnPathManager.TryDecode("< return-test=remote-a@localhost>", out rcptTo, out internalSendID);
+			Assert.True(decoded);
+			Assert.AreEqual("test@remote", rcptTo);
+			Assert.AreEqual(10, internalSendID);
 		}
 	}
 }

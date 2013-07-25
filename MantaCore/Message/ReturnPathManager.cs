@@ -48,7 +48,8 @@ namespace MantaMTA.Core.Message
 		{
 			try
 			{
-				returnPath = returnPath.Substring("return-".Length, returnPath.LastIndexOf("@") - "return-".Length);
+				int spos = returnPath.IndexOf("-") + 1;
+				returnPath = returnPath.Substring(spos, returnPath.LastIndexOf("@") - spos);
 				internalSendID = Int32.Parse(returnPath.Substring(returnPath.LastIndexOf("-") + 1), System.Globalization.NumberStyles.HexNumber);
 				rcptTo = returnPath.Substring(0, returnPath.LastIndexOf("-")).Replace(RCPT_TO_AT_REPLACEMENT, "@");
 				return true;

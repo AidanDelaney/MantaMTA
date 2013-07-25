@@ -80,6 +80,7 @@ namespace MantaMTA.Core.Events
 			// These properties are both down to what SMTP code we find, if any.
 			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
+			bounceEvent.EventType = MantaEventType.Bounce;
 
 
 
@@ -100,7 +101,7 @@ namespace MantaMTA.Core.Events
 					bounceEvent.Message = bMsg;
 
 					// Write BounceEvent to DB.
-					// TODO
+					Save(bounceEvent);
 
 					return EmailProcessingResult.SuccessBounce;
 				}
@@ -119,7 +120,7 @@ namespace MantaMTA.Core.Events
 					bounceEvent.Message = bMsg;
 
 					// Write BounceEvent to DB.
-					// TODO
+					Save(bounceEvent);
 
 					return EmailProcessingResult.SuccessBounce;
 				}
@@ -311,6 +312,7 @@ namespace MantaMTA.Core.Events
 				};
 
 				// Log to DB.
+				Save(bounceEvent);
 
 
 				// All done return true.
@@ -417,6 +419,14 @@ namespace MantaMTA.Core.Events
 									if (ReturnPathManager.TryDecode(tmp, out rcptTo, out internalSendID))
 									{
 										// NEED TO LOG TO DB HERE!!!!!
+										Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+										Save(new MantaAubseEvent 
+										{ 
+											EmailAddress = rcptTo, 
+											EventTime = DateTime.UtcNow, 
+											EventType = MantaEventType.Abuse, 
+											SendID = (snd == null ? string.Empty : snd.ID) 
+										});
 										return EmailProcessingResult.SuccessAbuse;
 									}
 								}
@@ -442,6 +452,14 @@ namespace MantaMTA.Core.Events
 							if (ReturnPathManager.TryDecode(returnPathHeader.Value, out rcptTo, out internalSendID))
 							{
 								// NEED TO LOG TO DB HERE!!!!!
+								Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+								Save(new MantaAubseEvent
+								{
+									EmailAddress = rcptTo,
+									EventTime = DateTime.UtcNow,
+									EventType = MantaEventType.Abuse,
+									SendID = (snd == null ? string.Empty : snd.ID)
+								});
 								return true;
 							}
 						}
@@ -461,6 +479,14 @@ namespace MantaMTA.Core.Events
 								if (ReturnPathManager.TryDecode(tmp, out rcptTo, out internalSendID))
 								{
 									// NEED TO LOG TO DB HERE!!!!!
+									Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+									Save(new MantaAubseEvent
+									{
+										EmailAddress = rcptTo,
+										EventTime = DateTime.UtcNow,
+										EventType = MantaEventType.Abuse,
+										SendID = (snd == null ? string.Empty : snd.ID)
+									});
 									return true;
 								}
 							}
@@ -514,6 +540,15 @@ namespace MantaMTA.Core.Events
 		internal MantaEvent GetEvent(int ID)
 		{
 			return MantaMTA.Core.DAL.EventDB.GetEvent(ID);
+		}
+
+		/// <summary>
+		/// Gets all of the MantaEvents that Manta knows about.
+		/// </summary>
+		/// <returns>Collection of MantaEvent objects.</returns>
+		internal MantaEventCollection GetEvents()
+		{
+			return MantaMTA.Core.DAL.EventDB.GetEvents();
 		}
 	}
 }
