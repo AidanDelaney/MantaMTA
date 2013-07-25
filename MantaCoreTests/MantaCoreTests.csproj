@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Events.cs" />
     <Compile Include="InboundEmails.cs" />
     <Compile Include="BounceTests.cs" />
     <Compile Include="QueueControl.cs" />

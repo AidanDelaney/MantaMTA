@@ -11,6 +11,10 @@ namespace MantaMTA.Core.Events
 	public class MantaEvent
 	{
 		/// <summary>
+		/// ID of the Event.
+		/// </summary>
+		public int ID { get; set; }
+		/// <summary>
 		/// The type of event that this is.
 		/// </summary>
 		public MantaEventType EventType { get; set; }

@@ -492,5 +492,28 @@ namespace MantaMTA.Core.Events
 			Logging.Debug("Failed to find return path!");
 			return EmailProcessingResult.ErrorNoReturnPath;
 		}
+
+		/// <summary>
+		/// Saves a Manta Event.
+		/// </summary>
+		/// <param name="evt">Event to save.</param>
+		/// <returns>The Events ID</returns>
+		internal int Save(MantaEvent evt)
+		{
+			evt.ID = MantaMTA.Core.DAL.EventDB.Save(evt);
+			if (evt is MantaBounceEvent)
+				MantaMTA.Core.DAL.EventDB.Save(evt as MantaBounceEvent);
+			return evt.ID;
+		}
+
+		/// <summary>
+		/// Gets a Manta Event.
+		/// </summary>
+		/// <param name="ID">ID of the Event to get.</param>
+		/// <returns>The MantaEvent or NULL if ID doesn't belong to any.</returns>
+		internal MantaEvent GetEvent(int ID)
+		{
+			return MantaMTA.Core.DAL.EventDB.GetEvent(ID);
+		}
 	}
 }
