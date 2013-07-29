@@ -274,10 +274,14 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 				BouncePair bouncePair;
 				string bounceMessage = string.Empty;
 
-				bool returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage);
+				bool returned = false;
+				using (CreateTransactionScopeObject())
+				{
+					returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage);
+				}
 				Assert.IsTrue(returned, currentTestData.Message);
 				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceCode, bouncePair.BounceCode, currentTestData.Message);
-				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceType, bouncePair.BounceType,currentTestData.Message);
+				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceType, bouncePair.BounceType, currentTestData.Message);
 			}
 		}
 
