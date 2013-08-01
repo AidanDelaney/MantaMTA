@@ -94,7 +94,7 @@ namespace MantaMTA.Core.Message
 
 
 				// Remove the initial carriage return from the beginning of a body part's content (will appear
-				// immediatley after the boundary).
+				// immediately after the boundary).
 				p = p.StartsWith(MtaParameters.NewLine) ? p.Substring(MtaParameters.NewLine.Length) : p;
 
 
@@ -135,6 +135,10 @@ namespace MantaMTA.Core.Message
 			if (temp != null)
 			{
 				bp.ContentType = new ContentType(temp.Value);
+
+				// Ensure we have a CharSet value - default is "us-ascii" according to RFCs.
+				if (bp.ContentType.CharSet == null)
+					bp.ContentType.CharSet = "us-ascii";
 				// Content-Type: multipart/alternative; differences=Content-Type;
 				//  boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
 			}
@@ -302,7 +306,7 @@ namespace MantaMTA.Core.Message
 				headers = string.Empty;
 
 				// Remove the initial blank line to give the body.
-				body = content.Substring(MtaParameters.NewLine.Length);
+				body = RemoveFunctionalBlankLinesAroundContent(content);	//.Substring(MtaParameters.NewLine.Length);
 
 				return;
 			}
@@ -321,8 +325,31 @@ namespace MantaMTA.Core.Message
 			{
 				// Grab the header and body parts, remembering to remove the double CRLF between the two.
 				headers = content.Substring(0, splitAt);
-				body = content.Substring(splitAt + separator.Length);
+				body = RemoveFunctionalBlankLinesAroundContent(content.Substring(splitAt + separator.Length));
 			}
+		}
+
+
+		/// <summary>
+		/// Removes the functional blank lines that appear around content within a body part.
+		/// Should be one before and one after, but this method will remove each independently.
+		/// </summary>
+		/// <param name="content">The MIME body part content.</param>
+		/// <returns>The value in <paramref name="content"/> with one leading and one trailing
+		/// blank line removed.</returns>
+		private static string RemoveFunctionalBlankLinesAroundContent(string content)
+		{
+			string temp = content;
+
+			if (temp.StartsWith(MtaParameters.NewLine))
+				temp = temp.Substring(MtaParameters.NewLine.Length);
+
+
+			if (content.EndsWith(MtaParameters.NewLine))
+				temp = temp.Substring(0, temp.Length - MtaParameters.NewLine.Length);
+			
+
+			return temp;
 		}
 
 

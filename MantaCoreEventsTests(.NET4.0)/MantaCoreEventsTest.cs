@@ -381,36 +381,85 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		[Test]
 		public void ParseMimeMessage()
 		{
-			// string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts.eml").ReadToEnd();
-			string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd();
+			MimeMessageBodyPart bodyPart = null;
+
+			string emailContent = System.IO.File.OpenText(@".\..\..\A Complex Multipart Example.eml").ReadToEnd();
 
 			MimeMessage msg = MimeMessage.Parse2(emailContent);
-			Assert.AreEqual(3, msg.BodyParts.Count());
 
-			Assert.AreEqual("multipart/alternative", msg.BodyParts[0].ContentType.MediaType);
-			Assert.AreEqual(null, msg.BodyParts[0].ContentType.CharSet);
-			Assert.AreEqual(TransferEncoding.SevenBit, msg.BodyParts[0].TransferEncoding);
+			ContentType msgContentType = new ContentType(msg.Headers.GetFirst("Content-Type").Value);
+			Assert.AreEqual("unique-boundary-1", msgContentType.Boundary);
 
-			Assert.AreEqual("text/plain", msg.BodyParts[0].BodyParts[0].ContentType.MediaType);
-			Assert.AreEqual("us-ascii", msg.BodyParts[0].BodyParts[0].ContentType.CharSet);
-			Assert.AreEqual(TransferEncoding.QuotedPrintable, msg.BodyParts[0].BodyParts[0].TransferEncoding);
+			Assert.AreEqual(5, msg.BodyParts.Count());
 
-			Assert.AreEqual("text/html", msg.BodyParts[0].BodyParts[1].ContentType.MediaType);
-			Assert.AreEqual("us-ascii", msg.BodyParts[0].BodyParts[1].ContentType.CharSet);
-			Assert.AreEqual(TransferEncoding.QuotedPrintable, msg.BodyParts[0].BodyParts[1].TransferEncoding);
 
-			// TODO Sort these out:
-			Assert.AreEqual("text/plain", msg.BodyParts[1].ContentType.MediaType);
-			Assert.AreEqual("us-ascii", msg.BodyParts[1].ContentType.CharSet);
-			Assert.AreEqual(TransferEncoding.SevenBit, msg.BodyParts[1].TransferEncoding);
-			
+			#region Check the first level of body parts.
 
-			emailContent = System.IO.File.OpenText(@".\..\..\A Complex Multipart Example.eml").ReadToEnd();
+			bodyPart = msg.BodyParts[0];
+			Assert.AreEqual("text/plain", bodyPart.ContentType.MediaType);
+			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
+			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
+			Assert.AreEqual(@"    ...Some text appears here...
+[Note that the preceding blank line means
+no header fields were given and this is text,
+with charset US ASCII.  It could have been
+done with explicit typing as in the next part.]
+", bodyPart.GetDecodedBody());
 
-			msg = MimeMessage.Parse2(emailContent);
-			Assert.AreEqual(3, msg.BodyParts.Count());
+			bodyPart = msg.BodyParts[1];
+			Assert.AreEqual("text/plain", bodyPart.ContentType.MediaType);
+			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
+			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
+			Assert.AreEqual(@"This could have been part of the previous part,
+but illustrates explicit versus implicit
+typing of body parts.
+", bodyPart.GetDecodedBody());
 
-			
+			bodyPart = msg.BodyParts[2];
+			Assert.AreEqual("multipart/mixed", bodyPart.ContentType.MediaType);
+
+
+			bodyPart = msg.BodyParts[3];
+			Assert.AreEqual("text/richtext", bodyPart.ContentType.MediaType);
+			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
+			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
+			Assert.AreEqual(@"This is <bold><italic>richtext.</italic></bold>
+<smaller>as defined in RFC 1341</smaller>
+<nl><nl>Isn't it
+<bigger><bigger>cool?</bigger></bigger>
+", bodyPart.GetDecodedBody());
+
+			bodyPart = msg.BodyParts[4];
+			Assert.AreEqual("message/rfc822", bodyPart.ContentType.MediaType);
+			Assert.AreEqual(@"From: (mailbox in US-ASCII)
+To: (address in US-ASCII)
+Subject: (subject in US-ASCII)
+Content-Type: Text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: Quoted-printable
+
+    ... Additional text in ISO-8859-1 goes here ...
+", bodyPart.GetDecodedBody());
+
+			#endregion Check the first level of body parts.
+
+
+
+			// Check the multipart bodyPart.
+			bodyPart = msg.BodyParts[2];
+			Assert.AreEqual("unique-boundary-2", bodyPart.ContentType.Boundary);
+			Assert.AreEqual(2, bodyPart.BodyParts.Count());
+
+
+			Assert.AreEqual("audio/basic", bodyPart.BodyParts[0].ContentType.MediaType);
+			Assert.AreEqual(TransferEncoding.Base64, bodyPart.BodyParts[0].TransferEncoding);
+			Assert.AreEqual(@"    ... base64-encoded 8000 Hz single-channel
+        mu-law-format audio data goes here....
+", bodyPart.BodyParts[0].EncodedBody);
+
+			Assert.AreEqual("image/gif", bodyPart.BodyParts[1].ContentType.MediaType);
+			Assert.AreEqual(TransferEncoding.Base64, bodyPart.BodyParts[1].TransferEncoding);
+			Assert.AreEqual(@"    ... base64-encoded image data goes here....
+", bodyPart.BodyParts[1].EncodedBody);
 		}
 	}
 }

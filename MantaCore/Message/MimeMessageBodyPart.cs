@@ -63,7 +63,7 @@ namespace MantaMTA.Core.Message
 		/// <returns>Body part body with Transport Encoding decoded.</returns>
 		public string GetDecodedBody()
 		{
-			string tmp = EncodedBody.Trim();
+			string tmp = EncodedBody;
 			if (TransferEncoding == TransferEncoding.Base64)
 			{
 				tmp = UTF8Encoding.Default.GetString(Convert.FromBase64String(tmp));
