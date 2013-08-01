@@ -1,0 +1,94 @@
+x-sender: <>
+x-receiver: info@news.thefriendlyclub.co.uk
+Received: from mail2.bemta5.messagelabs.com ([195.245.231.131]) by snt3.net with Microsoft SMTPSVC(7.5.7601.17514);
+	 Fri, 12 Jul 2013 11:09:52 +0100
+Return-Path: <>
+Received: from [85.158.136.35:15280] by server-15.bemta-5.messagelabs.com id 94/FE-01226-FD5DFD15; Fri, 12 Jul 2013 10:09:35 +0000
+Received: (qmail 26940 invoked from network); 12 Jul 2013 10:09:34 -0000
+MIME-Version: 1.0
+From: <postmaster@fca.org.uk>
+To: <info@news.thefriendlyclub.co.uk>
+Date: Fri, 12 Jul 2013 11:09:33 +0100
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="0017106d-4fe1-4293-97dc-0203576b2b39"
+Content-Language: en-GB
+Message-ID: <464f5cbf-879b-48a4-b457-2b1afd18d0dc@fca.org.uk>
+Subject: Undeliverable: Great Escapes for Summer
+X-OriginalArrivalTime: 12 Jul 2013 10:09:52.0413 (UTC) FILETIME=[F3431CD0:01CE7EE7]
+
+--0017106d-4fe1-4293-97dc-0203576b2b39
+Content-Type: multipart/alternative; differences=Content-Type;
+	boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
+
+--b2420641-bd9f-4b3d-9a4f-c14c58c6ba30
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Inner body part
+
+
+--b2420641-bd9f-4b3d-9a4f-c14c58c6ba30
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html>
+<Head></head><body>HTML body part</body></html>=
+
+--b2420641-bd9f-4b3d-9a4f-c14c58c6ba30--
+
+--0017106d-4fe1-4293-97dc-0203576b2b39
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;fca.org.uk
+Received-From-MTA: dns;sd1mswppw02.fsa.gov.uk
+Arrival-Date: Fri, 12 Jul 2013 10:09:28 +0000
+
+Original-Recipient: rfc822;louise.parmakis@fsa.gov.uk
+Final-Recipient: rfc822;Louise.Parmakis@fca.org.uk
+Action: failed
+Status: 5.2.2
+Diagnostic-Code: smtp;554-5.2.2 mailbox full
+
+
+--0017106d-4fe1-4293-97dc-0203576b2b39
+Content-Type: message/rfc822
+
+Received: from sd1mswppw02.fsa.gov.uk (192.168.101.15) by
+ MIMESweeperSMTPreceive.SD1EXCHPW11.fsa.gov.uk (172.16.190.37) with Microsoft
+ SMTP Server id 14.2.342.3; Fri, 12 Jul 2013 11:09:28 +0100
+Received: from mail6.bemta3.messagelabs.com (mail6.bemta3.messagelabs.com) by
+ sd1mswppw02.fsa.gov.uk (Clearswift SMTPRS 5.4.0) with ESMTP id
+ <Tacdf0e0d09c0a8650f143c@sd1mswppw02.fsa.gov.uk> for
+ <louise.parmakis@fsa.gov.uk>; Fri, 12 Jul 2013 11:30:14 +0100
+Return-Path: <info@news.thefriendlyclub.co.uk>
+Received: from [85.158.137.67:19904] by server-9.bemta-3.messagelabs.com id
+ 2C/11-31358-7D5DFD15; Fri, 12 Jul 2013 10:09:27 +0000
+Received: (qmail 16090 invoked from network); 12 Jul 2013 10:09:25 -0000
+X-Sender: "The Camping and Caravanning Club"
+ <info@news.thefriendlyclub.co.uk>
+X-Receiver: louise.parmakis@fsa.gov.uk
+MIME-Version: 1.0
+From: The Camping and Caravanning Club <info@news.thefriendlyclub.co.uk>
+To: <louise.parmakis@fsa.gov.uk>
+Date: Fri, 12 Jul 2013 11:09:41 +0100
+Subject: Great Escapes for Summer
+Content-Type: multipart/alternative;
+	boundary="--boundary_278092_89efe49e-b0db-430c-a603-ff35b15dde13"
+Message-ID: <SNT3keS8YkdavN3qljW0015fadb@snt3.net>
+X-OriginalArrivalTime: 12 Jul 2013 10:09:42.0114 (UTC) FILETIME=[ED1F9C20:01CE7EE7]
+
+----boundary_278092_89efe49e-b0db-430c-a603-ff35b15dde13
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VGhpcyBlbWFpbCBoYXMgYmVlbiBzZW50IHRvIGxvdWlzZS5wYXJtYWtpc0Bmc2Eu
+ZS5wYXJtYWtpcyU0MGZzYS5nb3YudWs+IC4NCg0KCQ0KCQ0K
+----boundary_278092_89efe49e-b0db-430c-a603-ff35b15dde13
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+PCFkb2N0eXBlIGh0bWw+DQo8aHRtbD4NCjxoZWFkPg0KPG1ldGEgaHR0cC1lcXVp
+bGF0aW9uLW1vZGU6YmljdWJpYzsiPg0KDQo8L2JvZHk+DQo8L2h0bWw+
+----boundary_278092_89efe49e-b0db-430c-a603-ff35b15dde13--
+
+--0017106d-4fe1-4293-97dc-0203576b2b39--

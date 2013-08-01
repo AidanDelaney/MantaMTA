@@ -46,7 +46,7 @@ namespace MantaMTA.Core.Events
 		/// successfully processed or not.</returns>
 		public EmailProcessingResult ProcessBounceEmail(string message)
 		{
-			MimeMessage msg = MimeMessage.Parse(message);
+			MimeMessage msg = MimeMessage.Parse2(message);
 
 			if (msg == null)
 				return EmailProcessingResult.ErrorContent;

@@ -7,9 +7,9 @@ namespace MantaMTA.Core.Message
 	public class MimeMessageBodyPart
 	{
 		/// <summary>
-		/// Holds the boundry
+		/// Holds the boundary
 		/// </summary>
-		public string Boundry { get; set; }
+		public string Boundary { get; set; }
 		/// <summary>
 		/// The content type of the body part.
 		/// </summary>
@@ -22,6 +22,7 @@ namespace MantaMTA.Core.Message
 		/// The Transfer encoded body
 		/// </summary>
 		public string EncodedBody { get; set; }
+		public MimeMessageBodyPart[] BodyParts{ get; set; }
 
 		/// <summary>
 		/// If true then this body part contains a MIME Message

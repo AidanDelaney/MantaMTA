@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using MantaMTA.Core.Events;
 using CDO;
 using System.Runtime.ExceptionServices;
+using System.Text;
+using System.Net.Http;
+using System.Collections.ObjectModel;
 
 namespace MantaEventsConsole
 {
@@ -53,11 +56,20 @@ namespace MantaEventsConsole
 
 			Directory.CreateDirectory(Path.Combine(RootDirectory, DirectoryOfBounceEmails, "ProcessedSuccessfully"));
 
-
+			Stopwatch sw = new Stopwatch();
+			sw.Start();
 
 
 			// Process anything that's currently waiting in the directories.
 			ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
+
+
+			sw.Stop();
+			Console.WriteLine("Time taken: {0}", sw.Elapsed);
+			Console.ReadLine();
+			return;
+
+
 			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 
 

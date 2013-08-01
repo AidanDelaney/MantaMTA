@@ -6,6 +6,8 @@ using NUnit.Framework;
 using MantaMTA.Core.Events;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using MantaMTA.Core.Message;
+using System.Net.Mime;
 
 namespace MantaCoreEventsTests_NET4_0
 {
@@ -362,6 +364,53 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			Assert.AreEqual("bobobobobobobobobobobob@gmail.com", mbEvent.EmailAddress);
 			Assert.AreEqual(MantaEventType.Bounce, mbEvent.EventType);
 			Assert.AreEqual(@"550-5.1.1 The email account that you tried to reach does not exist. Please try", mbEvent.Message);
+		}
+
+
+		/// <summary>
+		/// Dig into an email that contains a deep body part for a message/delivery-status report.
+		/// </summary>
+		[Test]
+		public void FindDeepDeliveryReport()
+		{
+			MimeMessage msg = MimeMessage.Parse("");
+			// msg.
+		}
+
+
+		[Test]
+		public void ParseMimeMessage()
+		{
+			// string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts.eml").ReadToEnd();
+			string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd();
+
+			MimeMessage msg = MimeMessage.Parse2(emailContent);
+			Assert.AreEqual(3, msg.BodyParts.Count());
+
+			Assert.AreEqual("multipart/alternative", msg.BodyParts[0].ContentType.MediaType);
+			Assert.AreEqual(null, msg.BodyParts[0].ContentType.CharSet);
+			Assert.AreEqual(TransferEncoding.SevenBit, msg.BodyParts[0].TransferEncoding);
+
+			Assert.AreEqual("text/plain", msg.BodyParts[0].BodyParts[0].ContentType.MediaType);
+			Assert.AreEqual("us-ascii", msg.BodyParts[0].BodyParts[0].ContentType.CharSet);
+			Assert.AreEqual(TransferEncoding.QuotedPrintable, msg.BodyParts[0].BodyParts[0].TransferEncoding);
+
+			Assert.AreEqual("text/html", msg.BodyParts[0].BodyParts[1].ContentType.MediaType);
+			Assert.AreEqual("us-ascii", msg.BodyParts[0].BodyParts[1].ContentType.CharSet);
+			Assert.AreEqual(TransferEncoding.QuotedPrintable, msg.BodyParts[0].BodyParts[1].TransferEncoding);
+
+			// TODO Sort these out:
+			Assert.AreEqual("text/plain", msg.BodyParts[1].ContentType.MediaType);
+			Assert.AreEqual("us-ascii", msg.BodyParts[1].ContentType.CharSet);
+			Assert.AreEqual(TransferEncoding.SevenBit, msg.BodyParts[1].TransferEncoding);
+			
+
+			emailContent = System.IO.File.OpenText(@".\..\..\A Complex Multipart Example.eml").ReadToEnd();
+
+			msg = MimeMessage.Parse2(emailContent);
+			Assert.AreEqual(3, msg.BodyParts.Count());
+
+			
 		}
 	}
 }
