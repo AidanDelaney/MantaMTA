@@ -10,24 +10,21 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void Aol()
 		{
-			MimeMessage msg = MimeMessage.Parse(FeedbackLoopEmails.AolAbuse);
-			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(msg);
+			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.AolAbuse);
 			Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 		}
 
 		[Test]
 		public void Hotmail()
 		{
-			MimeMessage msg = MimeMessage.Parse(FeedbackLoopEmails.HotmailAbuse);
-			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(msg);
+			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.HotmailAbuse);
 			Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 		}
 
 		[Test]
 		public void Yahoo()
 		{
-			MimeMessage msg = MimeMessage.Parse(FeedbackLoopEmails.YahooAbuse);
-			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(msg);
+			EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.YahooAbuse);
 			Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 		}
 	}

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.ExceptionServices;
 using MantaMTA.Core;
 using MantaMTA.Core.Client;
+using MantaMTA.Core.Events;
 using MantaMTA.Core.MtaIpAddress;
 using MantaMTA.Core.Server;
 
@@ -35,8 +36,10 @@ namespace MantaMTA.Console
 					smtpServers.Add(new SmtpServer(ipAddress.IPAddress, MtaParameters.ServerListeningPorts[i]));
 			}
 
-			// Start the SMTP Client
+			// Start the SMTP Client.
 			MessageSender.Instance.Start();
+			// Start the events (bounce/abuse) handler.
+			EventsFileHandler.Instance.Start();
 			
 			bool quit = false;
 			while (!quit)

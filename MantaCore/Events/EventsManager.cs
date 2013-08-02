@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Message;
 
@@ -20,7 +22,7 @@ namespace MantaMTA.Core.Events
 		public static EventsManager Instance { get { return _Instance; } }
 		private static readonly EventsManager _Instance = new EventsManager();
 		private EventsManager() { }
-
+			
 		/// <summary>
 		/// Class to store any re-usable Regex patterns.
 		/// </summary>
@@ -65,11 +67,6 @@ namespace MantaMTA.Core.Events
 				return EmailProcessingResult.SuccessNoAction;
 			}
 
-
-
-
-
-
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EmailAddress = rcptTo;
 			bounceEvent.SendID = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID).ID;
@@ -82,8 +79,6 @@ namespace MantaMTA.Core.Events
 			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
 			bounceEvent.EventType = MantaEventType.Bounce;
 
-
-
 			// First, try to find a NonDeliveryReport body part as that's the proper way for an MTA
 			// to tell us there was an issue sending the email.
 			IEnumerable<MimeMessageBodyPart> ndrBodies = msg.BodyParts.Where(b => b.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase));
@@ -92,7 +87,6 @@ namespace MantaMTA.Core.Events
 			{
 				BouncePair bp;
 				string bMsg = string.Empty;
-
 
 				// Successfully parsed?
 				if (ParseNdr(b.GetDecodedBody(), out bp, out bMsg))
@@ -125,7 +119,6 @@ namespace MantaMTA.Core.Events
 					return EmailProcessingResult.SuccessBounce;
 				}
 			}
-			
 			
 			return EmailProcessingResult.Unknown;
 		}
@@ -393,8 +386,11 @@ namespace MantaMTA.Core.Events
 		/// Return-Path in message headers.											[Hotmail]
 		/// </summary>
 		/// <param name="message">The feedback look email.</param>
-		public EmailProcessingResult ProcessFeedbackLoop(MimeMessage message)
+		public EmailProcessingResult ProcessFeedbackLoop(string content)
 		{
+			MimeMessage message = MimeMessage.Parse(content);
+			if (message == null)
+				return EmailProcessingResult.ErrorContent;
 			try
 			{
 				// Look for abuse report

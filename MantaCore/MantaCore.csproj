@@ -78,6 +78,7 @@
     <Compile Include="Events\Enums\EventEnums.cs" />
     <Compile Include="Events\EventClasses.cs" />
     <Compile Include="Events\EventDB.cs" />
+    <Compile Include="Events\EventsFileHandler.cs" />
     <Compile Include="Events\EventsManager.cs" />
     <Compile Include="Events\SmtpStatusCodes.cs" />
     <Compile Include="IStopRequired.cs" />
