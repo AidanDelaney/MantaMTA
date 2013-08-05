@@ -46,7 +46,7 @@ namespace MantaMTA.Core.Events
 		/// successfully processed or not.</returns>
 		public EmailProcessingResult ProcessBounceEmail(string message)
 		{
-			MimeMessage msg = MimeMessage.Parse2(message);
+			MimeMessage msg = MimeMessage.Parse(message);
 
 			if (msg == null)
 				return EmailProcessingResult.ErrorContent;
@@ -72,10 +72,10 @@ namespace MantaMTA.Core.Events
 			bounceEvent.EmailAddress = rcptTo;
 			bounceEvent.SendID = MantaMTA.Core.DAL.SendDb.GetSendIdFromInternalSendId(internalSendID);
 
-			// Might be good to get the DateTime found in the email at a later point.
+			// TODO: Might be good to get the DateTime found in the email.
 			bounceEvent.EventTime = DateTime.UtcNow;
 
-			// These properties are both down to what SMTP code we find, if any.
+			// These properties are both set according to the SMTP code we find, if any.
 			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
 
@@ -83,19 +83,21 @@ namespace MantaMTA.Core.Events
 
 			// First, try to find a NonDeliveryReport body part as that's the proper way for an MTA
 			// to tell us there was an issue sending the email.
-			IEnumerable<BodyPart> ndrBodies = msg.BodyParts.Where(b => b.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase));
 
-			foreach(BodyPart b in ndrBodies)
+			BouncePair bouncePair;
+			string bounceMsg;
+			string deliveryReport = string.Empty;
+
+
+			if (FindDeliveryReport(msg.BodyParts, out deliveryReport))
 			{
-				BouncePair bp;
-				string bMsg = string.Empty;
-
-
-				// Successfully parsed?
-				if (ParseNdr(b.GetDecodedBody(), out bp, out bMsg))
+				// If we've got a delivery report, check it for info.
+			
+				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg))
 				{
-					bounceEvent.BounceInfo = bp;
-					bounceEvent.Message = bMsg;
+					// Successfully parsed.
+					bounceEvent.BounceInfo = bouncePair;
+					bounceEvent.Message = bounceMsg;
 
 					// Write BounceEvent to DB.
 					// TODO
@@ -105,25 +107,28 @@ namespace MantaMTA.Core.Events
 			}
 
 
-			// No NDR part, have to to this the manual way and check _all_ content.
-			foreach (BodyPart b in msg.BodyParts)
+
+			// We're still here so there was either no NDR part or nothing contained within it that we could
+			// interpret so have to check _all_ body parts for something useful.
+			if (FindBounceReason(msg.BodyParts, out bouncePair, out bounceMsg))
 			{
-				BouncePair bp;
-				string bMsg = string.Empty;
+				bounceEvent.BounceInfo = bouncePair;
+				bounceEvent.Message = bounceMsg;
 
-				if (ParseBounceMessage(b.GetDecodedBody(), out bp, out bMsg))
-				{
-					bounceEvent.BounceInfo = bp;
-					bounceEvent.Message = bMsg;
+				// Write BounceEvent to DB.
+				// TODO
 
-					// Write BounceEvent to DB.
-					// TODO
-
-					return EmailProcessingResult.SuccessBounce;
-				}
+				return EmailProcessingResult.SuccessBounce;
 			}
-			
-			
+
+
+
+
+
+			// Nope - no clues relating to why the bounce occurred.
+			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
+			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
+			bounceEvent.Message = string.Empty;
 			return EmailProcessingResult.Unknown;
 		}
 
@@ -417,6 +422,39 @@ namespace MantaMTA.Core.Events
 
 			// If we're still here, then we didn't find a delivery report.
 			report = string.Empty;
+			return false;
+		}
+
+
+		/// <summary>
+		/// Attempts to find and process the reason an email bounced by digging through all body parts.
+		/// </summary>
+		/// <param name="bodyParts">Array of BodyParts to dig through; may include child body parts.</param>
+		/// <param name="bouncePair">out.  A BouncePair object containing details of the bounce (if a reason was found).</param>
+		/// <param name="bounceMessage">out.  The text to use as the reason found why the bounce occurred.</param>
+		/// <returns>true if a reason was found, else false.</returns>
+		internal bool FindBounceReason(BodyPart[] bodyParts, out BouncePair bouncePair, out string bounceMessage)
+		{
+			foreach(BodyPart b in bodyParts)
+			{
+				if (b.ContentType.MediaType.StartsWith("multipart/"))
+				{
+					// Just a container for other body parts so check them.
+					if (FindBounceReason(b.BodyParts, out bouncePair, out bounceMessage))
+						return true;
+				}
+				else
+				{
+					if (ParseBounceMessage(b.GetDecodedBody(), out bouncePair, out bounceMessage))
+						return true;
+				}
+			}
+
+
+			// Still here so haven't found anything useful.
+			bouncePair.BounceCode = MantaBounceCode.Unknown;
+			bouncePair.BounceType = MantaBounceType.Unknown;
+			bounceMessage = string.Empty;
 			return false;
 		}
 

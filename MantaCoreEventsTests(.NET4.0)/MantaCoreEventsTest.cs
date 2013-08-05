@@ -374,7 +374,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		public void FindDeepDeliveryReport()
 		{
 			string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd();
-			MimeMessage msg = MimeMessage.Parse2(emailContent);
+			MimeMessage msg = MimeMessage.Parse(emailContent);
 			
 			string deliveryReport = string.Empty;
 
@@ -403,7 +403,7 @@ Diagnostic-Code: smtp;554-5.2.2 mailbox full
 
 			string emailContent = System.IO.File.OpenText(@".\..\..\A Complex Multipart Example.eml").ReadToEnd();
 
-			MimeMessage msg = MimeMessage.Parse2(emailContent);
+			MimeMessage msg = MimeMessage.Parse(emailContent);
 
 			ContentType msgContentType = new ContentType(msg.Headers.GetFirst("Content-Type").Value);
 			Assert.AreEqual("unique-boundary-1", msgContentType.Boundary);

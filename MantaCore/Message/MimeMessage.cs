@@ -31,7 +31,7 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		/// <param name="message">String content representing a MIME formatted email.</param>
 		/// <returns>The MimeMessage represented by the string content in <paramref name="message"/>.</returns>
-		public static MimeMessage Parse2(string message)
+		public static MimeMessage Parse(string message)
 		{
 			MimeMessage msg = new MimeMessage();
 			string headersChunk;

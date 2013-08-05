@@ -50,14 +50,14 @@
     <Compile Include="..\MantaCore\Logging.cs">
       <Link>ExternalIncludes\Logging.cs</Link>
     </Compile>
+    <Compile Include="..\MantaCore\Message\BodyPart.cs">
+      <Link>ExternalIncludes\BodyPart.cs</Link>
+    </Compile>
     <Compile Include="..\MantaCore\Message\MessageManager.cs">
       <Link>ExternalIncludes\MessageManager.cs</Link>
     </Compile>
     <Compile Include="..\MantaCore\Message\MimeMessage.cs">
       <Link>ExternalIncludes\MimeMessage.cs</Link>
-    </Compile>
-    <Compile Include="..\MantaCore\Message\MimeMessageBodyPart.cs">
-      <Link>ExternalIncludes\MimeMessageBodyPart.cs</Link>
     </Compile>
     <Compile Include="..\MantaCore\MtaParameters.cs">
       <Link>ExternalIncludes\MtaParameters.cs</Link>
