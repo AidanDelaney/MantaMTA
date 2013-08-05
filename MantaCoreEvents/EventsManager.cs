@@ -402,13 +402,13 @@ namespace MantaMTA.Core.Events
 		{
 			foreach (BodyPart bp in bodyParts)
 			{
-				if (bp.ContentType.MediaType == "message/delivery-status")
+				if (bp.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase))
 				{
 					// Found it!
 					report = bp.GetDecodedBody();
 					return true;
 				}
-				else if (bp.ContentType.MediaType.StartsWith("multipart/"))
+				else if (bp.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
 				{
 					// Loop through the child body parts.
 					if (FindDeliveryReport(bp.BodyParts, out report))
@@ -437,17 +437,20 @@ namespace MantaMTA.Core.Events
 		{
 			foreach(BodyPart b in bodyParts)
 			{
-				if (b.ContentType.MediaType.StartsWith("multipart/"))
+				if (b.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
 				{
 					// Just a container for other body parts so check them.
 					if (FindBounceReason(b.BodyParts, out bouncePair, out bounceMessage))
 						return true;
 				}
-				else
+				else if (b.ContentType.MediaType.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
 				{
+					// Only useful to examine text/plain body parts (so not "image/gif" etc).
 					if (ParseBounceMessage(b.GetDecodedBody(), out bouncePair, out bounceMessage))
 						return true;
 				}
+				// else
+				//	Console.WriteLine("\tSkipped bodypart \"" + b.ContentType.MediaType + "\".");
 			}
 
 
