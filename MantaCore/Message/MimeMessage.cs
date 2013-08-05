@@ -23,9 +23,14 @@ namespace MantaMTA.Core.Message
 		/// <summary>
 		/// Collection of the mime messages body parts.
 		/// </summary>
-		public MimeMessageBodyPart[] BodyParts { get; set; }
+		public BodyPart[] BodyParts { get; set; }
 
 
+		/// <summary>
+		/// Creates a MimeMessage from a MIME formatted string.
+		/// </summary>
+		/// <param name="message">String content representing a MIME formatted email.</param>
+		/// <returns>The MimeMessage represented by the string content in <paramref name="message"/>.</returns>
 		public static MimeMessage Parse2(string message)
 		{
 			MimeMessage msg = new MimeMessage();
@@ -64,9 +69,15 @@ namespace MantaMTA.Core.Message
 		}
 
 
-		private static MimeMessageBodyPart[] DivideIntoBodyParts(string content, string boundary)
+		/// <summary>
+		/// Breaks up a string of MIME formatted content into one or more MimeMessageBodyPart objects.
+		/// </summary>
+		/// <param name="content">String content in MIME format.</param>
+		/// <param name="boundary">String boundary marker that appears between body parts.</param>
+		/// <returns>An array of MimeMessageBodyPart objects.</returns>
+		private static BodyPart[] DivideIntoBodyParts(string content, string boundary)
 		{
-			List<MimeMessageBodyPart> bodyParts = new List<MimeMessageBodyPart>();
+			List<BodyPart> bodyParts = new List<BodyPart>();
 
 			// Get from "--[boundary]" to "--[boundary]".
 
@@ -100,7 +111,7 @@ namespace MantaMTA.Core.Message
 
 
 				// Got an actual body part.
-				MimeMessageBodyPart bp = CreateBodyPart(p);
+				BodyPart bp = CreateBodyPart(p);
 
 
 				bodyParts.Add(bp);
@@ -113,63 +124,75 @@ namespace MantaMTA.Core.Message
 
 
 		/// <summary>
-		/// Converts a string of MIME content into a MimeMessageBodyPart object.
+		/// Converts a string of MIME content into a MimeMessageBodyPart object, including
+		/// any contained body parts if it is "multipart".
 		/// </summary>
-		/// <param name="content"></param>
+		/// <param name="content">MIME formatted content.</param>
 		/// <returns>A MimeMessageBodyPart represented by <paramref name="content"/>.</returns>
-		private static MimeMessageBodyPart CreateBodyPart(string content)
+		private static BodyPart CreateBodyPart(string content)
 		{
-
-			MimeMessageBodyPart bp = new MimeMessageBodyPart();
+			BodyPart bp = new BodyPart();
 			string headersChunk;
 			string bodyChunk;
 
 			// Split "headers" and "body".
 			SeparateBodyPartHeadersAndBody(content, out headersChunk, out bodyChunk);
 
-			MessageHeaderCollection headers = GetMessageHeaders(headersChunk);
 
 
 			// Get the key values from the headers that indicate how to handle this BodyPart.
-			MessageHeader temp = headers.GetFirst("Content-Type");
-			if (temp != null)
+
+			MessageHeaderCollection headers = GetMessageHeaders(headersChunk);
+			MessageHeader tempHeader = null;
+			
+
+			tempHeader = headers.GetFirst("Content-Transfer-Encoding");
+			if (tempHeader != null)
+				bp.TransferEncoding = IdentifyTransferEncoding(tempHeader.Value);
+			else
+				// Default is specified in RFCs as "7bit".
+				bp.TransferEncoding = TransferEncoding.SevenBit;
+
+
+
+			tempHeader = headers.GetFirst("Content-Type");
+			if (tempHeader != null)
 			{
-				bp.ContentType = new ContentType(temp.Value);
+				bp.ContentType = new ContentType(tempHeader.Value);
 
 				// Ensure we have a CharSet value - default is "us-ascii" according to RFCs.
 				if (bp.ContentType.CharSet == null)
 					bp.ContentType.CharSet = "us-ascii";
-				// Content-Type: multipart/alternative; differences=Content-Type;
-				//  boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
 			}
 			else
 				// Default is specified in RFCs as "text/plain; charset=us-ascii".
 				bp.ContentType = new ContentType("text/plain; charset=us-ascii");
 
 
-			temp = headers.GetFirst("Content-Transfer-Encoding");
-			if (temp != null)
-				bp.TransferEncoding = IdentifyTransferEncoding(temp.Value);
-			else
-				// Default is specified in RFCs as "7bit".
-				bp.TransferEncoding = TransferEncoding.SevenBit;
 
 
+
+			
 			if (bp.ContentType.MediaType.StartsWith("multipart/"))
-			{
 				// This bodypart is just a container for more bodyparts.
 				bp.BodyParts = DivideIntoBodyParts(bodyChunk, bp.ContentType.Boundary);
-			}
 			else
-			{
+				// Nothing other than content contained within this bodypart.
 				bp.EncodedBody = bodyChunk;
-			}
 
 
 			return bp;
 		}
 
 
+		/// <summary>
+		/// Converts the value from a Transfer-Encoding header (a string) into a 
+		/// System.Net.Mime.TranserEncoding enum value.
+		/// </summary>
+		/// <param name="transferEncoding">The string value from a header, e.g. "base64"
+		/// or quoted-printable.</param>
+		/// <returns>The enum value represented by <paramref name="transferEncoding"/>, or TransferEncoding.Unknown
+		/// if the value in <paramref name="transferEncoding"/> is not known.</returns>
 		private static TransferEncoding IdentifyTransferEncoding(string transferEncoding)
 		{
 			switch (transferEncoding.ToUpper())
@@ -350,157 +373,6 @@ namespace MantaMTA.Core.Message
 			
 
 			return temp;
-		}
-
-
-		/// <summary>
-		/// Create a MIME Message from <paramref name="message"/>
-		/// </summary>
-		/// <param name="message">The message to parse.</param>
-		/// <returns>A MimeMessage object if successful otherwise NULL</returns>
-		public static MimeMessage Parse(string message)
-		{
-			try
-			{
-				MimeMessage mimeMessage = new MimeMessage();
-
-				// Get the message headers.
-				mimeMessage.Headers = MessageManager.GetMessageHeaders(message);
-
-				// Get the message content type.
-				MessageHeader contentType = mimeMessage.Headers.SingleOrDefault(h => h.Name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase));
-
-				// Make sure the "Content-Type" header exists.
-				if (contentType == null)
-				{
-					Logging.Debug("No content type header");
-					return null;
-				}
-
-				// If the message isn't multipart then it isn't a Mime message.
-				if (!contentType.Value.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
-				{
-					Logging.Debug("Not a MIME Message");
-					return null;
-				}
-
-				// Get the body parts.
-				mimeMessage.BodyParts = GetBodyParts(MessageManager.GetMessageBodySection(message));
-
-				// Return it.
-				return mimeMessage;
-			}
-			catch (Exception ex)
-			{
-				Logging.Debug("Failed to parse to MimeMessage " + Environment.NewLine + message, ex);
-				// MIME message could contain anything so return null on exception.
-				return null;
-			}
-		}
-
-
-		/// <summary>
-		/// Extracts the body parts from <paramref name="bodyContent"/>
-		/// </summary>
-		/// <param name="bodyContent">The body content of the MIME Messsage that contains boundries.</param>
-		/// <returns>Collection of Body Parts.</returns>
-		private static MimeMessageBodyPart[] GetBodyParts(string bodyContent)
-		{
-			// The collection we will return.
-			List<MimeMessageBodyPart> bodyParts = new List<MimeMessageBodyPart>();
-
-			using (StringReader reader = new StringReader(bodyContent))
-			{
-				// This will be set to true when we are looking at a boundary line (may be folded). Don't wan't to unfold as it
-				// will take quite a while.
-				bool loopInBoundaryMarker = false;
-
-				// This is used to hold the current body part as we step through the message.
-				MimeMessageBodyPart currentBodyPart = null;
-
-				// As long as there are lines keep looping.
-				while (reader.Peek() > -1)
-				{
-					// Get the next line for us to work with.
-					string line = reader.ReadLine();
-
-					// If we are in a boundary marker check that we haven't exited it.
-					if (loopInBoundaryMarker)
-					{
-						// Blank line signifies end of boundary marker.
-						if (string.IsNullOrEmpty(line))
-						{
-							loopInBoundaryMarker = false;
-
-							// Read the next line as we are now out of the boundary marker.
-							line = reader.ReadLine();
-						}
-					}
-					else
-					{
-						// If we aren't in a boundary marker look to see if we have entered one.
-						if (line.StartsWith("--") && !line.EndsWith("--"))
-						{
-							// Get the current boundary name or use -- as that will match all bounderies.
-							string boundary = currentBodyPart != null ? currentBodyPart.Boundary : "--";
-
-							// Make sure the boundary is for this MIME message and not a child message.
-							if (line.Contains(boundary))
-							{
-								currentBodyPart = new MimeMessageBodyPart();
-								currentBodyPart.Boundary = line;
-								bodyParts.Add(currentBodyPart);
-								loopInBoundaryMarker = true;
-							}
-						}
-						// We have reached the end of the message.
-						else if (line.StartsWith("--") && line.EndsWith("--"))
-							break;
-					}
-
-					// If we are in a boundary marker then check for conent- properties.
-					if (loopInBoundaryMarker)
-					{
-						// Look for the Content-Transfer-Encoding.
-						Match m = Regex.Match(line, @"Content-Transfer-Encoding:\s+(?<TransferEncoding>\S+)", RegexOptions.IgnoreCase);
-
-						if (m.Success)
-						{
-							// Found the transfer encoding. Set it in the body marker.
-							switch (m.Groups["TransferEncoding"].Value.ToUpper())
-							{
-								case "BASE64":
-									currentBodyPart.TransferEncoding = TransferEncoding.Base64;
-									break;
-								case "8BIT":
-									currentBodyPart.TransferEncoding = TransferEncoding.EightBit;
-									break;
-								case "QUOTED-PRINTABLE":
-									currentBodyPart.TransferEncoding = TransferEncoding.QuotedPrintable;
-									break;
-								case "7BIT":
-									currentBodyPart.TransferEncoding = TransferEncoding.SevenBit;
-									break;
-								default:
-									currentBodyPart.TransferEncoding = TransferEncoding.Unknown;
-									break;
-							}
-						}
-
-						// Look for the content type.  Default is "text/plain".
-						m = Regex.Match(line, @"Content-Type:\s+(?<ContentType>\S+)", RegexOptions.IgnoreCase);
-						if (m.Success)
-							currentBodyPart.ContentType = new ContentType(m.Groups["ContentType"].Value);
-						else
-							currentBodyPart.ContentType = new ContentType();
-					}
-					// Not in a boundary marker so must be body part content.
-					else if (currentBodyPart != null)
-						currentBodyPart.EncodedBody += line + Environment.NewLine;
-				}
-			}
-
-			return bodyParts.ToArray();
 		}
 	}
 }

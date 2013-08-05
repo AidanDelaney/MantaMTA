@@ -83,9 +83,9 @@ namespace MantaMTA.Core.Events
 
 			// First, try to find a NonDeliveryReport body part as that's the proper way for an MTA
 			// to tell us there was an issue sending the email.
-			IEnumerable<MimeMessageBodyPart> ndrBodies = msg.BodyParts.Where(b => b.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase));
+			IEnumerable<BodyPart> ndrBodies = msg.BodyParts.Where(b => b.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase));
 
-			foreach(MimeMessageBodyPart b in ndrBodies)
+			foreach(BodyPart b in ndrBodies)
 			{
 				BouncePair bp;
 				string bMsg = string.Empty;
@@ -106,7 +106,7 @@ namespace MantaMTA.Core.Events
 
 
 			// No NDR part, have to to this the manual way and check _all_ content.
-			foreach (MimeMessageBodyPart b in msg.BodyParts)
+			foreach (BodyPart b in msg.BodyParts)
 			{
 				BouncePair bp;
 				string bMsg = string.Empty;
@@ -384,6 +384,42 @@ namespace MantaMTA.Core.Events
 
 			return false;
 		}
+
+
+		/// <summary>
+		// Attempts to retrieve a delivery report that appears within a body part of an email.
+		/// </summary>
+		/// <param name="bodyParts">An array of BodyParts to search within (including any child BodyParts).</param>
+		/// <param name="report">out.  If a delivery report is found, this will contain the content of it,
+		/// else string.Empty.</param>
+		/// <returns>true if a delivery report was found, else false.</returns>
+		internal bool FindDeliveryReport(BodyPart[] bodyParts, out string report)
+		{
+			foreach (BodyPart bp in bodyParts)
+			{
+				if (bp.ContentType.MediaType == "message/delivery-status")
+				{
+					// Found it!
+					report = bp.GetDecodedBody();
+					return true;
+				}
+				else if (bp.ContentType.MediaType.StartsWith("multipart/"))
+				{
+					// Loop through the child body parts.
+					if (FindDeliveryReport(bp.BodyParts, out report))
+						return true;
+				}
+				else
+					// Ignore this BodyPart.
+					continue;
+			}
+
+
+			// If we're still here, then we didn't find a delivery report.
+			report = string.Empty;
+			return false;
+		}
+
 
 
 		/// <summary>

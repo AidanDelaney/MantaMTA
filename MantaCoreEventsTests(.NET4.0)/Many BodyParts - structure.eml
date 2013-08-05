@@ -1,19 +1,20 @@
 x-sender: <>
-x-receiver: info@news.thefriendlyclub.co.uk
-Received: from mail2.bemta5.messagelabs.com ([195.245.231.131]) by snt3.net with Microsoft SMTPSVC(7.5.7601.17514);
+x-receiver: sender@somewhere.co.uk
+Received: from mail.someserver.com ([127.0.0.1]) by snt3.net with Microsoft SMTPSVC(7.5.7601.17514);
 	 Fri, 12 Jul 2013 11:09:52 +0100
 Return-Path: <>
-Received: from [85.158.136.35:15280] by server-15.bemta-5.messagelabs.com id 94/FE-01226-FD5DFD15; Fri, 12 Jul 2013 10:09:35 +0000
+Received: from [127.0.0.1] by mail.someserver.com id 94/FE-01226-FD5DFD15;
+	 Fri, 12 Jul 2013 10:09:35 +0000
 Received: (qmail 26940 invoked from network); 12 Jul 2013 10:09:34 -0000
 MIME-Version: 1.0
-From: <postmaster@fca.org.uk>
-To: <info@news.thefriendlyclub.co.uk>
+From: <postmaster@somewhere.co.uk>
+To: <sender@somewhere.co.uk>
 Date: Fri, 12 Jul 2013 11:09:33 +0100
 Content-Type: multipart/report; report-type=delivery-status;
 	boundary="0017106d-4fe1-4293-97dc-0203576b2b39"
 Content-Language: en-GB
-Message-ID: <464f5cbf-879b-48a4-b457-2b1afd18d0dc@fca.org.uk>
-Subject: Undeliverable: Great Escapes for Summer
+Message-ID: <464f5cbf-879b-48a4-b457-2b1afd18d0dc@someserver.com>
+Subject: Undeliverable: My Email
 X-OriginalArrivalTime: 12 Jul 2013 10:09:52.0413 (UTC) FILETIME=[F3431CD0:01CE7EE7]
 
 --0017106d-4fe1-4293-97dc-0203576b2b39
@@ -39,12 +40,12 @@ Content-Transfer-Encoding: quoted-printable
 --0017106d-4fe1-4293-97dc-0203576b2b39
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;fca.org.uk
-Received-From-MTA: dns;sd1mswppw02.fsa.gov.uk
+Reporting-MTA: dns;someserver.com
+Received-From-MTA: dns;mail.someserver.com
 Arrival-Date: Fri, 12 Jul 2013 10:09:28 +0000
 
-Original-Recipient: rfc822;louise.parmakis@fsa.gov.uk
-Final-Recipient: rfc822;Louise.Parmakis@fca.org.uk
+Original-Recipient: rfc822;someone@someserver.com
+Final-Recipient: rfc822;finalsomeone@someserver.com
 Action: failed
 Status: 5.2.2
 Diagnostic-Code: smtp;554-5.2.2 mailbox full
@@ -53,25 +54,19 @@ Diagnostic-Code: smtp;554-5.2.2 mailbox full
 --0017106d-4fe1-4293-97dc-0203576b2b39
 Content-Type: message/rfc822
 
-Received: from sd1mswppw02.fsa.gov.uk (192.168.101.15) by
- MIMESweeperSMTPreceive.SD1EXCHPW11.fsa.gov.uk (172.16.190.37) with Microsoft
+Received: from anotherserver.com (127.0.0.1) by
+ someserver.com (127.0.0.1) with Microsoft
  SMTP Server id 14.2.342.3; Fri, 12 Jul 2013 11:09:28 +0100
-Received: from mail6.bemta3.messagelabs.com (mail6.bemta3.messagelabs.com) by
- sd1mswppw02.fsa.gov.uk (Clearswift SMTPRS 5.4.0) with ESMTP id
- <Tacdf0e0d09c0a8650f143c@sd1mswppw02.fsa.gov.uk> for
- <louise.parmakis@fsa.gov.uk>; Fri, 12 Jul 2013 11:30:14 +0100
-Return-Path: <info@news.thefriendlyclub.co.uk>
-Received: from [85.158.137.67:19904] by server-9.bemta-3.messagelabs.com id
- 2C/11-31358-7D5DFD15; Fri, 12 Jul 2013 10:09:27 +0000
+Return-Path: <sender@somewhere.co.uk>
 Received: (qmail 16090 invoked from network); 12 Jul 2013 10:09:25 -0000
-X-Sender: "The Camping and Caravanning Club"
- <info@news.thefriendlyclub.co.uk>
-X-Receiver: louise.parmakis@fsa.gov.uk
+X-Sender: "Sending Company"
+ <sender@somewhere.co.uk>
+X-Receiver: someone@someserver.com
 MIME-Version: 1.0
-From: The Camping and Caravanning Club <info@news.thefriendlyclub.co.uk>
-To: <louise.parmakis@fsa.gov.uk>
+From: Sending Company <sender@somewhere.co.uk>
+To: <someone@someserver.com>
 Date: Fri, 12 Jul 2013 11:09:41 +0100
-Subject: Great Escapes for Summer
+Subject: My Email Subject
 Content-Type: multipart/alternative;
 	boundary="--boundary_278092_89efe49e-b0db-430c-a603-ff35b15dde13"
 Message-ID: <SNT3keS8YkdavN3qljW0015fadb@snt3.net>

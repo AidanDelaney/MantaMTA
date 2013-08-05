@@ -4,7 +4,12 @@ using System.Text;
 
 namespace MantaMTA.Core.Message
 {
-	public class MimeMessageBodyPart
+	/// <summary>
+	/// A single part of a MimeMessage that contains part of the content.  This could be
+	/// simply a container for other BodyParts or actual meaningful content as in plain text,
+	/// HTML code, an image, etc.
+	/// </summary>
+	public class BodyPart
 	{
 		/// <summary>
 		/// Holds the boundary
@@ -19,43 +24,15 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		public TransferEncoding TransferEncoding { get; set; }
 		/// <summary>
-		/// The Transfer encoded body
+		/// The Transfer encoded body - might not be legible without being decoded (so call
+		/// GetDecodedBody() to have that appropriately decoded).
 		/// </summary>
 		public string EncodedBody { get; set; }
-		public MimeMessageBodyPart[] BodyParts{ get; set; }
-
 		/// <summary>
-		/// If true then this body part contains a MIME Message
+		/// A collection of MimeMessageBodyPart objects that make up the email.
 		/// </summary>
-		public bool HasChildMimeMessage
-		{
-			get
-			{
-				if (ContentType == null)
-					return false;
+		public BodyPart[] BodyParts{ get; set; }
 
-				return ContentType.MediaType.Equals("message/rfc822", StringComparison.OrdinalIgnoreCase);
-			}
-		}
-
-		/// <summary>
-		/// Child message or null
-		/// </summary>
-		public MimeMessage ChildMimeMessage
-		{
-			get
-			{
-				if (!HasChildMimeMessage)
-					return null;
-
-				return MimeMessage.Parse(this.GetDecodedBody());
-			}
-		}
-
-		public MimeMessageBodyPart()
-		{
-			TransferEncoding = TransferEncoding.Unknown;
-		}
 
 		/// <summary>
 		/// Get this Body Part decoded.
@@ -64,6 +41,7 @@ namespace MantaMTA.Core.Message
 		public string GetDecodedBody()
 		{
 			string tmp = EncodedBody;
+
 			if (TransferEncoding == TransferEncoding.Base64)
 			{
 				tmp = UTF8Encoding.Default.GetString(Convert.FromBase64String(tmp));

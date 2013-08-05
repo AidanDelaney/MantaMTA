@@ -373,15 +373,33 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		[Test]
 		public void FindDeepDeliveryReport()
 		{
-			MimeMessage msg = MimeMessage.Parse("");
-			// msg.
+			string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd();
+			MimeMessage msg = MimeMessage.Parse2(emailContent);
+			
+			string deliveryReport = string.Empty;
+
+			Assert.IsTrue(EventsManager.Instance.FindDeliveryReport(msg.BodyParts, out deliveryReport));
+			Assert.AreEqual(@"Reporting-MTA: dns;someserver.com
+Received-From-MTA: dns;mail.someserver.com
+Arrival-Date: Fri, 12 Jul 2013 10:09:28 +0000
+
+Original-Recipient: rfc822;someone@someserver.com
+Final-Recipient: rfc822;finalsomeone@someserver.com
+Action: failed
+Status: 5.2.2
+Diagnostic-Code: smtp;554-5.2.2 mailbox full
+
+", deliveryReport);
 		}
 
 
+		/// <summary>
+		/// Checks a MIME encoded string can be correctly converted into a MimeMessage object.
+		/// </summary>
 		[Test]
 		public void ParseMimeMessage()
 		{
-			MimeMessageBodyPart bodyPart = null;
+			BodyPart bodyPart = null;
 
 			string emailContent = System.IO.File.OpenText(@".\..\..\A Complex Multipart Example.eml").ReadToEnd();
 
