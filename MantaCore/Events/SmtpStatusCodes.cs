@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿
 namespace MantaMTA.Core.Events
 {
 	internal partial class BounceRulesManager

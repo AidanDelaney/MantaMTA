@@ -41,6 +41,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -74,10 +75,8 @@
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
     <Compile Include="Events\BounceRulesClasses.cs" />
     <Compile Include="Events\BounceRulesManager.cs" />
-    <Compile Include="Events\Enums\BounceRuleEnums.cs" />
-    <Compile Include="Events\Enums\EventEnums.cs" />
-    <Compile Include="Events\EventClasses.cs" />
     <Compile Include="Events\EventDB.cs" />
+    <Compile Include="Events\EventHttpForwarder.cs" />
     <Compile Include="Events\EventsFileHandler.cs" />
     <Compile Include="Events\EventsManager.cs" />
     <Compile Include="Events\SmtpStatusCodes.cs" />
@@ -112,6 +111,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MantaEventTypes\MantaEventTypes.csproj">
+      <Project>{030eccbf-bec0-4e6b-8260-7286b043b5c6}</Project>
+      <Name>MantaEventTypes</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

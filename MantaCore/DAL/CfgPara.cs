@@ -125,6 +125,14 @@ WHERE [dmn].cfg_localDomain_id = (SELECT TOP 1 [para].cfg_para_returnPathDomain_
 		}
 
 		/// <summary>
+		/// Gets the URL to post events to from the database.
+		/// </summary>
+		public static string GetEventForwardingHttpPostUrl()
+		{
+			return GetColumnValue("cfg_para_eventForwardingHttpPostUrl").ToString();
+		}
+
+		/// <summary>
 		/// ExecuteScalar getting value of colName in man_cfg_para
 		/// </summary>
 		/// <param name="colName"></param>

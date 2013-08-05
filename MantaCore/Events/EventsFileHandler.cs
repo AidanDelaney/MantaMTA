@@ -58,7 +58,8 @@ namespace MantaMTA.Core.Events
 
 		public void Start()
 		{
-			// Don't need to do anything here as instance constuctor will start.
+			// Start the events forwarder.
+			EventHttpForwarder.Instance.Start();
 		}
 
 		/// <summary>

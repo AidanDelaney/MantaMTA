@@ -53,7 +53,7 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				MantaAubseEvent origAbuse = new MantaAubseEvent
+				MantaAbuseEvent origAbuse = new MantaAbuseEvent
 				{
 					EmailAddress = "some.user@colony101.co.uk",
 					EventTime = DateTime.Now,
@@ -62,7 +62,7 @@ namespace MantaMTA.Core.Tests
 				};
 
 				origAbuse.ID = EventsManager.Instance.Save(origAbuse);
-				MantaAubseEvent savedAbuse = (MantaAubseEvent)EventsManager.Instance.GetEvent(origAbuse.ID);
+				MantaAbuseEvent savedAbuse = (MantaAbuseEvent)EventsManager.Instance.GetEvent(origAbuse.ID);
 				Assert.NotNull(savedAbuse);
 				Assert.AreEqual(origAbuse.EmailAddress, savedAbuse.EmailAddress);
 				Assert.That(savedAbuse.EventTime, Is.EqualTo(origAbuse.EventTime).Within(TimeSpan.FromSeconds(1)));
@@ -101,8 +101,8 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 				MantaEventCollection events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(1, events.Count);
-				Assert.IsTrue(events[0] is MantaAubseEvent);
-				MantaAubseEvent abuse = (MantaAubseEvent)events[0];
+				Assert.IsTrue(events[0] is MantaAbuseEvent);
+				MantaAbuseEvent abuse = (MantaAbuseEvent)events[0];
 				Assert.AreEqual("test@remote", abuse.EmailAddress);
 				Assert.AreEqual("TestData", abuse.SendID);
 
@@ -111,8 +111,8 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 				events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(2, events.Count);
-				Assert.IsTrue(events[1] is MantaAubseEvent);
-				abuse = (MantaAubseEvent)events[1];
+				Assert.IsTrue(events[1] is MantaAbuseEvent);
+				abuse = (MantaAbuseEvent)events[1];
 				Assert.AreEqual("some.user@yahoo.co.uk", abuse.EmailAddress);
 				Assert.AreEqual("TestData", abuse.SendID);
 
@@ -120,8 +120,8 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
 				events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(3, events.Count);
-				Assert.IsTrue(events[2] is MantaAubseEvent);
-				abuse = (MantaAubseEvent)events[2];
+				Assert.IsTrue(events[2] is MantaAbuseEvent);
+				abuse = (MantaAbuseEvent)events[2];
 				Assert.AreEqual("some.user@hotmail.com", abuse.EmailAddress);
 				Assert.AreEqual("TestData", abuse.SendID);
 			}

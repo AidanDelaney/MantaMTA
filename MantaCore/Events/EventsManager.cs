@@ -416,7 +416,7 @@ namespace MantaMTA.Core.Events
 									{
 										// NEED TO LOG TO DB HERE!!!!!
 										Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-										Save(new MantaAubseEvent 
+										Save(new MantaAbuseEvent 
 										{ 
 											EmailAddress = rcptTo, 
 											EventTime = DateTime.UtcNow, 
@@ -449,7 +449,7 @@ namespace MantaMTA.Core.Events
 							{
 								// NEED TO LOG TO DB HERE!!!!!
 								Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-								Save(new MantaAubseEvent
+								Save(new MantaAbuseEvent
 								{
 									EmailAddress = rcptTo,
 									EventTime = DateTime.UtcNow,
@@ -476,7 +476,7 @@ namespace MantaMTA.Core.Events
 								{
 									// NEED TO LOG TO DB HERE!!!!!
 									Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-									Save(new MantaAubseEvent
+									Save(new MantaAbuseEvent
 									{
 										EmailAddress = rcptTo,
 										EventTime = DateTime.UtcNow,

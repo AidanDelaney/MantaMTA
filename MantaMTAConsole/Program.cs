@@ -55,6 +55,8 @@ namespace MantaMTA.Console
 				(smtpServers[i] as SmtpServer).Dispose();
 
 			Logging.Info("MTA Stopped");
+			System.Console.WriteLine("Press any key to continue");
+			System.Console.ReadKey(true);
 		}
 	}
 }

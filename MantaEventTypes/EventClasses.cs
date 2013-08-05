@@ -30,6 +30,15 @@ namespace MantaMTA.Core.Events
 		/// The date and time the event was recorded.
 		/// </summary>
 		public DateTime EventTime { get; set; }
+		/// <summary>
+		/// Will be set to true when event has been forwarded.
+		/// </summary>
+		public bool Forwarded { get; set; }
+
+		public MantaEvent()
+		{
+			Forwarded = false;
+		}
 	}
 
 	/// <summary>
@@ -60,7 +69,7 @@ namespace MantaMTA.Core.Events
 	/// <summary>
 	/// Manta Spam Complaint (Abuse) event.  The result of an email coming back from a feedback loop with an ISP.
 	/// </summary>
-	public class MantaAubseEvent : MantaEvent
+	public class MantaAbuseEvent : MantaEvent
 	{
 		
 	}

@@ -315,6 +315,21 @@ namespace MantaMTA.Core
 			}
 		}
 		private static int _DaysToKeepSmtpLogsFor = -1;
+
+		/// <summary>
+		/// The URL to post Manta Events (abuse/bounce) to.
+		/// </summary>
+		public static Uri EventForwardingHttpPostUrl
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(_EventForwardingHttpPostUrl))
+					_EventForwardingHttpPostUrl = DAL.CfgPara.GetEventForwardingHttpPostUrl();
+
+				return new Uri(_EventForwardingHttpPostUrl);
+			}
+		}
+		private static string _EventForwardingHttpPostUrl = string.Empty;
 	}
 
 	/// <summary>

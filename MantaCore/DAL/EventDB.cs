@@ -42,6 +42,24 @@ LEFT JOIN man_evn_bounceEvent AS [bnc] ON [evt].evn_event_id = [bnc].evn_event_i
 		}
 
 		/// <summary>
+		/// Gets <param name="maxEventsToGet"/> amount of Events that need forwarding from the database.
+		/// </summary>
+		public static MantaEventCollection GetEventsForForwarding(int maxEventsToGet)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT TOP " + maxEventsToGet + @" [evt].*, [bnc].evn_bounceCode_id, [bnc].evn_bounceEvent_message, [bnc].evn_bounceType_id
+FROM man_evn_event AS [evt]
+LEFT JOIN man_evn_bounceEvent AS [bnc] ON [evt].evn_event_id = [bnc].evn_event_id
+WHERE evn_event_forwarded = 0
+ORDER BY evn_event_id ASC";
+				return new MantaEventCollection(DataRetrieval.GetCollectionFromDatabase<MantaEvent>(cmd, CreateAndFillMantaEventFromRecord));
+			}
+		}
+
+		/// <summary>
 		/// Saves the MantaEvent to the database.
 		/// </summary>
 		/// <param name="evn">The Manta Event to save.</param>
@@ -58,15 +76,16 @@ IF EXISTS (SELECT 1 FROM man_evn_event WHERE evn_event_id = @eventID)
 		SET evn_type_id = @eventType,
 		evn_event_timestamp = @timestmap,
 		evn_event_emailAddress = @emailAddress,
-		snd_send_id = @sendId
+		snd_send_id = @sendId,
+		evn_event_forwarded = @forwarded
 		WHERE evn_event_id = @eventID
 		
 		SELECT @eventID
 	END
 ELSE
 	BEGIN
-		INSERT INTO man_evn_event(evn_type_id, evn_event_timestamp, evn_event_emailAddress, snd_send_id)
-		VALUES(@eventType, @timestmap, @emailAddress, @sendId)
+		INSERT INTO man_evn_event(evn_type_id, evn_event_timestamp, evn_event_emailAddress, snd_send_id, evn_event_forwarded)
+		VALUES(@eventType, @timestmap, @emailAddress, @sendId, @forwarded)
 
 		SELECT @@IDENTITY
 	END";
@@ -75,6 +94,7 @@ ELSE
 				cmd.Parameters.AddWithValue("@timestmap", evn.EventTime);
 				cmd.Parameters.AddWithValue("@emailAddress", evn.EmailAddress);
 				cmd.Parameters.AddWithValue("@sendId", evn.SendID);
+				cmd.Parameters.AddWithValue("@forwarded", evn.Forwarded);
 
 				conn.Open();
 				return Convert.ToInt32(cmd.ExecuteScalar());
@@ -122,7 +142,7 @@ ELSE
 			switch (type)
 			{
 				case MantaEventType.Abuse:
-					thisEvent = new MantaAubseEvent();
+					thisEvent = new MantaAbuseEvent();
 					break;
 				case MantaEventType.Bounce:
 					thisEvent = new MantaBounceEvent();
@@ -137,6 +157,7 @@ ELSE
 			thisEvent.EventType = type;
 			thisEvent.ID = record.GetInt32("evn_event_id");
 			thisEvent.SendID = record.GetString("snd_send_id");
+			thisEvent.Forwarded = record.GetBoolean("evn_event_forwarded");
 			return thisEvent;
 		}
 
