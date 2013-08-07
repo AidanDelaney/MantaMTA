@@ -10,8 +10,9 @@ CREATE TABLE [dbo].[man_cfg_para](
 	[cfg_para_receiveTimeout] [int] NOT NULL,
 	[cfg_para_sendTimeout] [int] NOT NULL,
 	[cfg_para_returnPathDomain_id] [int] NOT NULL,
-	[cfg_para_maxDaysToKeepSmtpLogs] [int] NOT NULL
-) ON [PRIMARY]
+	[cfg_para_maxDaysToKeepSmtpLogs] [int] NOT NULL,
+	[cfg_para_eventForwardingHttpPostUrl] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 
