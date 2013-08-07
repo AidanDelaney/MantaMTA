@@ -17,7 +17,7 @@
 			}],
 			datasets: [
 				{
-					fillColor: "green",
+					fillColor: "rgba(0,255,0,0.2)",
 					strokeColor: "green",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -26,7 +26,7 @@
 				},
 				{
 					//fillColor: "rgba(151,187,205,0.5)",
-					fillColor: "red",
+					fillColor: "rgba(255,0,0,0.2)",
 					strokeColor: "red",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -35,7 +35,7 @@
 				},
 				{
 					//fillColor: "rgba(151,187,205,0.5)",
-					fillColor: "blue",
+					fillColor: "rgba(0,0,255,0.2)",
 					strokeColor: "blue",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -48,7 +48,7 @@
 		}
 
 
-		var myLine = new Chart(document.getElementById("chart").getContext("2d")).Bar(barChartData);
+		var myLine = new Chart(document.getElementById("chart").getContext("2d")).Line(barChartData);
 
 	});
 </script>

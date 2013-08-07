@@ -31,9 +31,9 @@
 	</tr>
 	<tr>
 		<td>Log</td>
-		<td>@Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_LOGFOLDER, "*.*", SearchOption.AllDirectories).Length</td>
-		<td>@(Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_LOGFOLDER, "*.*", SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length) / 1024 / 1024)Mb</td>
-		<td>@(new DriveInfo(MantaMTA.Core.MtaParameters.MTA_LOGFOLDER.Substring(0,1)).AvailableFreeSpace / 1024 / 1024)Mb</td>
+		<td>@Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER, "*.*", SearchOption.AllDirectories).Length</td>
+		<td>@(Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER, "*.*", SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length) / 1024 / 1024)Mb</td>
+		<td>@(new DriveInfo(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER.Substring(0,1)).AvailableFreeSpace / 1024 / 1024)Mb</td>
 	</tr>
 </table>
 
