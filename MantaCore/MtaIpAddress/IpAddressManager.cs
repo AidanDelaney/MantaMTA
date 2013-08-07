@@ -125,7 +125,7 @@ namespace MantaMTA.Core.MtaIpAddress
 				// Check that something else didn't already load from the database.
 				// If it did then we can just return that.
 				_ipGroups.TryGetValue(id, out group);
-				if (group != null)
+				if (group != null && group.CreatedTimestamp.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 					return group;
 
 				// Get group from the database.
