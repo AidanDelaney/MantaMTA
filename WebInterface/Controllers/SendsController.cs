@@ -78,11 +78,11 @@ ORDER BY [tran].mta_transaction_timestamp DESC";
 SELECT *
 FROM
 (select 
-	CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)) + ' ' +
-	CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)) + ':' +
-	CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)) as 'Date', 
+	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date', 
 	count(*) as 'Sent',
 	4 as 'status'
 from man_mta_transaction as [tran]
@@ -107,11 +107,11 @@ where mta_transactionStatus_id = 2 OR mta_transactionStatus_id = 6
 and [snd].mta_send_id = @sndID
 GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp))
 UNION (select 
-	CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)) + ' ' +
-	CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)) + ':' +
-	CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)) as 'Date', 
+	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date',
 	count(*) as 'Failed',
 	1 as 'Status'
 from man_mta_transaction as [tran]

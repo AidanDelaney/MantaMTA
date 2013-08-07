@@ -23,7 +23,7 @@ namespace MantaMTA.Core.Tests
 						BounceType = MantaBounceType.Hard
 					},
 					EmailAddress = "some.user@colony101.co.uk",
-					EventTime = DateTime.Now,
+					EventTime = DateTime.UtcNow,
 					EventType = MantaEventType.Bounce,
 					Message = "550 Invalid Inbox",
 					SendID = "qwerty"
@@ -56,7 +56,7 @@ namespace MantaMTA.Core.Tests
 				MantaAbuseEvent origAbuse = new MantaAbuseEvent
 				{
 					EmailAddress = "some.user@colony101.co.uk",
-					EventTime = DateTime.Now,
+					EventTime = DateTime.UtcNow,
 					EventType = MantaEventType.Abuse,
 					SendID = "qwerty"
 				};
