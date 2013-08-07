@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebInterface", "WebInterfac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaEventTypes", "MantaEventTypes\MantaEventTypes.csproj", "{030ECCBF-BEC0-4E6B-8260-7286B043B5C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaService", "MantaService\MantaService.csproj", "{915935CA-7B88-466A-AADD-46BA64BA8021}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{030ECCBF-BEC0-4E6B-8260-7286B043B5C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{030ECCBF-BEC0-4E6B-8260-7286B043B5C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{030ECCBF-BEC0-4E6B-8260-7286B043B5C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{915935CA-7B88-466A-AADD-46BA64BA8021}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{915935CA-7B88-466A-AADD-46BA64BA8021}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{915935CA-7B88-466A-AADD-46BA64BA8021}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{915935CA-7B88-466A-AADD-46BA64BA8021}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -172,8 +172,6 @@ namespace MantaMTA.Core.Events
 
 
 			FileInfo[] files = new DirectoryInfo(path).GetFiles(fileSearchPattern);
-			Logging.Debug(String.Format("Found {0:N0} files.", files.Count()));
-
 
 			// Keep going until there aren't any more files to process, then we wait for the FileSystemWatcher to nudge us
 			// back into life again.
@@ -184,8 +182,6 @@ namespace MantaMTA.Core.Events
 				{
 					if (_IsStopping)
 						return;
-
-					Logging.Debug(String.Format("Processing: {0}", f.FullName));
 
 					if (!File.Exists(f.FullName))
 					{
@@ -258,7 +254,6 @@ namespace MantaMTA.Core.Events
 				{
 					// Get any new files that have turned up.
 					files = new DirectoryInfo(path).GetFiles(fileSearchPattern);
-					Logging.Debug(String.Format("Found {0:N0} files.", files.Count()));
 				}
 			}
 			while (files.Count() > 0);
