@@ -207,8 +207,7 @@ namespace MantaMTA.Core.Events
 						case EmailProcessingResult.SuccessAbuse:
 						case EmailProcessingResult.SuccessBounce:
 							// All good.  Nothing to do other than delete the file.
-							//File.Delete(f.FullName);
-							File.Move(f.FullName, Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", f.Name));
+							File.Delete(f.FullName);
 							break;
 
 						case EmailProcessingResult.ErrorNoFile:
