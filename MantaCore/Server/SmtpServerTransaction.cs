@@ -207,7 +207,7 @@ namespace MantaMTA.Core.Server
 					returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId);
 
 				// Insert the return path header.
-				headers.Insert(0, new MessageHeader("Return-Path", returnPath));
+				headers.Insert(0, new MessageHeader("Return-Path", "<" + returnPath + ">"));
 			}
 			else
 			{

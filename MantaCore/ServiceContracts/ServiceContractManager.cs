@@ -22,7 +22,7 @@ namespace MantaMTA.Core.ServiceContracts
 		/// <summary>
 		/// Base endpoint address.
 		/// </summary>
-		private const string _baseAddress = "net.pipe://MantaMTA";
+		private const string _baseAddress = "net.pipe://localhost/MantaMTA";
 
 		/// <summary>
 		/// Creates a ServiceHost using the specified parameters.

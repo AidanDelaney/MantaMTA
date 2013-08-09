@@ -58,21 +58,35 @@
 			<th>IP Address</th>
 			<th>Connections</th>
 		</tr>
-		<tr>
+		
 		@foreach (IGrouping<IPAddress, TcpConnectionInformation> group in ((List<TcpConnectionInformation>)Model[0]).GroupBy(tcp => tcp.RemoteEndPoint.Address))
 		{
-			<td>@Dns.GetHostByAddress(group.Key).HostName <sub></sub></td>
+		<tr>
+			<td>@{
+			try
+			{
+						<span>@Dns.GetHostEntry(group.Key).HostName</span>
+			}
+			catch (Exception)
+			{
+						<span>@group.Key</span>
+			}
+				}
+			</td>
 			<td>@group.Key</td>
 			<td>@group.Count()</td>
-		}
 		</tr>
+		}
+		
 	</table>
-}else{
+}
+else
+{
 	<h5>-</h5>
 }
 
 <h2>Outbound Connections</h2>
-@if(((List<TcpConnectionInformation>)Model[1]).Count > 0)
+@if (((List<TcpConnectionInformation>)Model[1]).Count > 0)
 {
 <table class="table table-striped">
 	<tr>
@@ -80,15 +94,29 @@
 		<th>IP Address</th>
 		<th>Connections</th>
 	</tr>
-	<tr>
+	
 	@foreach (IGrouping<IPAddress, TcpConnectionInformation> group in ((List<TcpConnectionInformation>)Model[1]).GroupBy(tcp => tcp.RemoteEndPoint.Address))
-	{
-		<td>@Dns.GetHostByAddress(group.Key).HostName <sub></sub></td>
+ {
+	 <tr>
+		<td>@{
+	 try
+	 {
+									<span>@Dns.GetHostEntry(group.Key).HostName</span>
+	 }
+	 catch (Exception)
+	 {
+									<span>@group.Key</span>
+	 }
+			}
+		</td>
 		<td>@group.Key</td>
 		<td>@group.Count()</td>
-	}
 	</tr>
+ }
+	
 </table>
-}else{
+}
+else
+{
 	<h5>-</h5>
 }
