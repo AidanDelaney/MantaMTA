@@ -103,7 +103,7 @@ UNION
 from man_mta_transaction as [tran]
 join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
 join man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-where mta_transactionStatus_id = 2 OR mta_transactionStatus_id = 6
+where (mta_transactionStatus_id = 2 OR mta_transactionStatus_id = 6)
 and [snd].mta_send_id = @sndID
 GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp))
 UNION (select 

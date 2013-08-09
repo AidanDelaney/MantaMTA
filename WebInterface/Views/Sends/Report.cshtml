@@ -47,9 +47,11 @@
 
 		}
 
-
-		var myLine = new Chart(document.getElementById("chart").getContext("2d")).Line(barChartData);
-
+		var myLine = null;
+		if(@Model[1].Tables[0].Rows.Count < 2)
+			myLine = new Chart(document.getElementById('chart').getContext('2d')).Bar(barChartData);
+		else
+			myLine = new Chart(document.getElementById('chart').getContext('2d')).Line(barChartData);
 	});
 </script>
 <canvas id="chart" height="450" width="960"></canvas>
