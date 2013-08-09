@@ -72,6 +72,7 @@ namespace MantaMTA.Core.Client.BO
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
 			base.RcptTo = message.RcptTo;
+			base.InternalSendID = message.InternalSendID;
 
 			QueuedTimestampUtc = queuedTimestampUtc;
 			AttemptSendAfterUtc = attemptSendAfterUtc;

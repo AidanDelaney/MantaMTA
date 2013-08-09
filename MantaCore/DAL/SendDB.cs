@@ -119,7 +119,7 @@ WHERE mta_send_internalId = @internalSndID";
 SELECT *
 FROM man_mta_send
 WHERE mta_send_internalId = @internalSndID";
-				cmd.Parameters.AddWithValue("@internalSndID", (int)internalSendID);
+				cmd.Parameters.AddWithValue("@internalSndID", internalSendID);
 				return DataRetrieval.GetSingleObjectFromDatabase<Send>(cmd, CreateAndFillSendFromRecord);
 			}
 		}
