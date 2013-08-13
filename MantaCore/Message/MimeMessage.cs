@@ -231,9 +231,6 @@ namespace MantaMTA.Core.Message
 			// Get the headers section of the message, unfolded as below loop assumes unfolding has happened.
 			using (StringReader reader = new StringReader(headersUnfolded))
 			{
-				
-
-
 				// Loop until break is hit (EOF).
 				while (true)
 				{
@@ -255,7 +252,7 @@ namespace MantaMTA.Core.Message
 				}
 			}
 
-			// Return the headers.
+			// Return the unfolded headers.
 			return headers;
 		}
 
@@ -263,7 +260,7 @@ namespace MantaMTA.Core.Message
 		/// <summary>
 		/// Unfolds all headers.
 		/// </summary>
-		/// <param name="headersBlock">The raw headers as a string with long lines folded using whitespace.</param>
+		/// <param name="headersBlock">The raw headers as a string with long lines folded.</param>
 		/// <returns>The unfolded raw headers.</returns>
 		private static string UnfoldHeaders(string headersBlock)
 		{
@@ -274,55 +271,43 @@ namespace MantaMTA.Core.Message
 				return str;
 
 
-
-			// Find each "\r\n" and check the following character - if it's whitespace (can use char.IsWhitespace()) then remove the "\r\n".
-
-			int startOfChunk = 0;	// The current position we've got to processing the headers string.
-			int nextCrlfPos = headersBlock.IndexOf(MtaParameters.NewLine);
-			StringBuilder unfoldedHeaders = new StringBuilder();		
-
-
-
-			// Move through the headers string looking at each CRLF and checking if it's immediately followed by whitespace,
-			// if it is, then that CRLF is only there for folding a long header so isn't part of the value or a separator between headers.
-			while (startOfChunk < headersBlock.Length)
+			StringBuilder sb = null;
+			using (StringReader reader = new StringReader(str))
 			{
-				if (nextCrlfPos > 0)
+				// Get the first line.
+				string line = reader.ReadToCrLf();
+
+				// Keep looping until we have gone through all of the lines in the header section.
+				while (line != null)
 				{
-					// Found another CRLF.
-
-					if (char.IsWhiteSpace(headersBlock[nextCrlfPos + MtaParameters.NewLine.Length]))
+					// If first char of line is not white space then we need to add a new line 
+					// as there is no wrapping.
+					if (!char.IsWhiteSpace(line[0]))
 					{
-						// Whitespace is following the CRLF so take everything up until the CRLF.
-
-						unfoldedHeaders.Append(headersBlock.Substring(startOfChunk, nextCrlfPos-startOfChunk));
-					}
-					else
-					{
-						// No whitespace following so grab everything up until the CRLF as well as the CRLF.
-						unfoldedHeaders.Append(headersBlock.Substring(startOfChunk, (nextCrlfPos - startOfChunk) + MtaParameters.NewLine.Length));
+						// If sb is null then this is the first line so create the stringbuilder.
+						if (sb == null)
+							sb = new StringBuilder();
+						// Stringbuilder exists so we should add a new end of line.
+						else
+							sb.Append(MtaParameters.NewLine);
 					}
 
+					// Append the line to the string builder.
+					sb.Append(line);
 
-					// Advance along the string.
-					startOfChunk = nextCrlfPos + MtaParameters.NewLine.Length;
-					
-					// Find the next CRLF.
-					nextCrlfPos = headersBlock.IndexOf(MtaParameters.NewLine, startOfChunk);
-				}
-				else
-				{
-					// Not at the end of the string yet, but there aren't any more CRLFs so grab all that's left.
-					unfoldedHeaders.Append(headersBlock.Substring(startOfChunk));
-					break;
+					// Get the next line.
+					line = reader.ReadToCrLf();
 				}
 			}
 
+			// All unfolded so get our new string from the string builder (if it was created).
+			if (sb != null)
+				str = sb.ToString();
+			else
+				str = string.Empty;
 
-
-
-			// Return the unfolded headers.
-			return unfoldedHeaders.ToString();
+			// Return the message header section.
+			return str;
 		}
 
 
