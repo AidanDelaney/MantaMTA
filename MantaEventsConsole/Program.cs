@@ -415,6 +415,8 @@ namespace MantaEventsConsole
 					}
 					break;
 			}
+
+			// logger(String.Format("Processed: {0}", f.FullName));
 		});
 
 

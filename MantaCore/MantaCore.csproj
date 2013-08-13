@@ -67,8 +67,8 @@
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="Message\BodyPart.cs" />
     <Compile Include="Message\MimeMessage.cs" />
-    <Compile Include="Message\MimeMessageBodyPart.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />

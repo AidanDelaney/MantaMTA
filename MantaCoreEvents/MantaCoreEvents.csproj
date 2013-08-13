@@ -69,6 +69,7 @@
     <Compile Include="EventClasses.cs" />
     <Compile Include="EventDB.cs" />
     <Compile Include="EventsManager.cs" />
+    <Compile Include="ExtensionMethods.cs" />
     <Compile Include="ExternalIncludes\ReturnPathManagerTEMP.cs" />
     <Compile Include="FakeDAL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

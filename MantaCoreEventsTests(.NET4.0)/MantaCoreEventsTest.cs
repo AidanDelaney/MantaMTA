@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NUnit.Framework;
+﻿using MantaMTA.Core;
 using MantaMTA.Core.Events;
-using System.Linq.Expressions;
-using System.Text.RegularExpressions;
 using MantaMTA.Core.Message;
+using NUnit.Framework;
+using System;
+using System.IO;
+using System.Linq;
 using System.Net.Mime;
+using System.Text.RegularExpressions;
 
 namespace MantaCoreEventsTests_NET4_0
 {
@@ -390,6 +389,64 @@ Status: 5.2.2
 Diagnostic-Code: smtp;554-5.2.2 mailbox full
 
 ", deliveryReport);
+		}
+
+
+
+		[Test]
+		public void SplitHeadersAndBody()
+		{
+			string headers, body;
+
+			// No headers, just a body.
+			MimeMessage.SeparateBodyPartHeadersAndBody(MtaParameters.NewLine + "Just a body.", out headers, out body);
+			Assert.AreEqual(string.Empty, headers);
+			Assert.AreEqual("Just a body.", body);
+
+			// Couple of headers and a body.
+			MimeMessage.SeparateBodyPartHeadersAndBody("From: <someone@somewhere.com>" + MtaParameters.NewLine + "To: <receiver@receiving.co.uk>" + MtaParameters.NewLine + MtaParameters.NewLine + "Here's the body.", out headers, out body);
+			Assert.AreEqual("From: <someone@somewhere.com>" + MtaParameters.NewLine + "To: <receiver@receiving.co.uk>", headers);
+			Assert.AreEqual("Here's the body.", body);
+
+
+			// Check headers are separated correctly.
+			MessageHeaderCollection headersColl = MimeMessage.GetMessageHeaders("From: <someone@somewhere.com>" + MtaParameters.NewLine + "To: <receiver@receiving.co.uk>");
+			Assert.AreEqual("From", headersColl[0].Name);
+			Assert.AreEqual("<someone@somewhere.com>", headersColl[0].Value);
+			Assert.AreEqual("To", headersColl[1].Name);
+			Assert.AreEqual("<receiver@receiving.co.uk>", headersColl[1].Value);
+
+
+			// Check headers are unfolded correctly, ensuring that only "\r\n" is used as a line ending ("\r" and "\n" may appear, but should be considered
+			// as part of a header's value.
+			headersColl = MimeMessage.GetMessageHeaders("FoldedHeader1: beginning" + MtaParameters.NewLine + " end" + MtaParameters.NewLine + "FoldedHeader2: beginning" + MtaParameters.NewLine + "\t\tend" + MtaParameters.NewLine + "From: <someone@somewhere.com>" + MtaParameters.NewLine + "To: <receiver@receiving.co.uk>" + MtaParameters.NewLine + "FoldedHeader3: line1\nstill line 1" + MtaParameters.NewLine + "\t\tline2\rstill line 2");
+			Assert.AreEqual("FoldedHeader1", headersColl[0].Name);
+			Assert.AreEqual("beginning end", headersColl[0].Value);
+			Assert.AreEqual("FoldedHeader2", headersColl[1].Name);
+			Assert.AreEqual("beginning\t\tend", headersColl[1].Value);
+			Assert.AreEqual("From", headersColl[2].Name);
+			Assert.AreEqual("<someone@somewhere.com>", headersColl[2].Value);
+			Assert.AreEqual("To", headersColl[3].Name);
+			Assert.AreEqual("<receiver@receiving.co.uk>", headersColl[3].Value);
+			Assert.AreEqual("FoldedHeader3", headersColl[4].Name);
+			Assert.AreEqual("line1\nstill line 1\t\tline2\rstill line 2", headersColl[4].Value);
+		}
+
+
+		/// <summary>
+		/// Checking the MantaStringReader class which subclasses the StringReader to
+		/// add the equivalent of .ReadLine() that only considers "\r\n" (CRLF) to be the
+		/// end of a line.  This is useful as Mime messages may contain "\r" or "\n" which isn't
+		/// intended to indicate the end of a line.
+		/// </summary>
+		[Test]
+		public void MantaStringReaderCheck()
+		{
+			StringReader msr = new StringReader("line 1\r\nline 2\rstill line 2\r\nline 3\nstill line 3");
+
+			Assert.AreEqual("line 1", msr.ReadToCrLf());
+			Assert.AreEqual("line 2\rstill line 2", msr.ReadToCrLf());
+			Assert.AreEqual("line 3\nstill line 3", msr.ReadToCrLf());
 		}
 
 
