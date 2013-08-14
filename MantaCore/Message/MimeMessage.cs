@@ -58,10 +58,11 @@ namespace MantaMTA.Core.Message
 			// msgContentType.Value.Contains("boundary")
 			
 
-
-
-			
-			msg.BodyParts = DivideIntoBodyParts(bodyChunk, msgContentType.Boundary);
+			// If no boundary, then there's just the one BodyPart in the content.
+			if (string.IsNullOrWhiteSpace(msgContentType.Boundary))
+				msg.BodyParts = new BodyPart[] { CreateBodyPart(msg.Headers, bodyChunk) };
+			else
+				msg.BodyParts = DivideIntoBodyParts(bodyChunk, msgContentType.Boundary);
 
 			return msg;
 		}
@@ -129,7 +130,6 @@ namespace MantaMTA.Core.Message
 		/// <returns>A MimeMessageBodyPart represented by <paramref name="content"/>.</returns>
 		private static BodyPart CreateBodyPart(string content)
 		{
-			BodyPart bp = new BodyPart();
 			string headersChunk;
 			string bodyChunk;
 
@@ -141,8 +141,24 @@ namespace MantaMTA.Core.Message
 			// Get the key values from the headers that indicate how to handle this BodyPart.
 
 			MessageHeaderCollection headers = GetMessageHeaders(headersChunk);
+			BodyPart bp = CreateBodyPart(headers, bodyChunk);
+
+			return bp;
+		}
+
+
+		/// <summary>
+		/// Takes a collection of headers and a string of body content and creates a BodyPart from them.
+		/// </summary>
+		/// <param name="headers">A collection of headers relating to the content contained in <paramref name="bodyChunk"/>.</param>
+		/// <param name="bodyChunk">A string of content for a BodyPart.</param>
+		/// <returns>A BodyPart as represented by the headers and body content supplied.</returns>
+		private static BodyPart CreateBodyPart(MessageHeaderCollection headers, string bodyChunk)
+		{
 			MessageHeader tempHeader = null;
-			
+
+			BodyPart bp = new BodyPart();
+
 
 			tempHeader = headers.GetFirst("Content-Transfer-Encoding");
 			if (tempHeader != null)
@@ -166,11 +182,9 @@ namespace MantaMTA.Core.Message
 				// Default is specified in RFCs as "text/plain; charset=us-ascii".
 				bp.ContentType = new ContentType("text/plain; charset=us-ascii");
 
-
-
-
-
 			
+
+
 			if (bp.ContentType.MediaType.StartsWith("multipart/"))
 				// This bodypart is just a container for more bodyparts.
 				bp.BodyParts = DivideIntoBodyParts(bodyChunk, bp.ContentType.Boundary);

@@ -318,9 +318,20 @@ namespace MantaEventsConsole
 			do
 			{
 				// Loop through and process all the files we've picked up.
-				Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => FileHandler(f, fileProcessor, logger)));
-				// foreach (FileInfo f in files)
-				//	FileHandler(f, fileProcessor, logger);
+				Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => 
+				{
+					try
+					{
+						FileHandler(f, fileProcessor, logger);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("** Error processing file: {0}", f.Name);
+						Console.Write("** Press Enter to continue...");
+						Console.ReadLine();
+					}
+				}));
+
 
 
 				// Get any new files that have turned up.

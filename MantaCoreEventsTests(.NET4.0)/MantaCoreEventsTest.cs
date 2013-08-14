@@ -392,7 +392,9 @@ Diagnostic-Code: smtp;554-5.2.2 mailbox full
 		}
 
 
-
+		/// <summary>
+		/// Check we can unfold email headers and separate headers and body.
+		/// </summary>
 		[Test]
 		public void SplitHeadersAndBody()
 		{
@@ -434,19 +436,14 @@ Diagnostic-Code: smtp;554-5.2.2 mailbox full
 
 
 		/// <summary>
-		/// Checking the MantaStringReader class which subclasses the StringReader to
-		/// add the equivalent of .ReadLine() that only considers "\r\n" (CRLF) to be the
-		/// end of a line.  This is useful as Mime messages may contain "\r" or "\n" which isn't
-		/// intended to indicate the end of a line.
+		/// Check that we can parse a MIME message that only has a single bodypart so no boundaries.
 		/// </summary>
 		[Test]
-		public void MantaStringReaderCheck()
+		public void ParseMimeMessageWithSingleBodyPart()
 		{
-			StringReader msr = new StringReader("line 1\r\nline 2\rstill line 2\r\nline 3\nstill line 3");
+			string emailContent = string.Format("MIME-Version: 1.0{0}Content-Type: text/plain;{0}\tcharset=\"ISO-8859-1\"{0}Content-Transfer-Encoding: quoted-printableFrom: <someone@somewhere.com>{0}To: <recipient@receiver.co.uk>{0}Subject: my subject{0}{0}Hello, this is the email.{0}{0}Here's a second line of content.{0}", MtaParameters.NewLine);
 
-			Assert.AreEqual("line 1", msr.ReadToCrLf());
-			Assert.AreEqual("line 2\rstill line 2", msr.ReadToCrLf());
-			Assert.AreEqual("line 3\nstill line 3", msr.ReadToCrLf());
+			MimeMessage msg = MimeMessage.Parse(emailContent);
 		}
 
 
@@ -535,6 +532,23 @@ Content-Transfer-Encoding: Quoted-printable
 			Assert.AreEqual(TransferEncoding.Base64, bodyPart.BodyParts[1].TransferEncoding);
 			Assert.AreEqual(@"    ... base64-encoded image data goes here....
 ", bodyPart.BodyParts[1].EncodedBody);
+		}
+
+
+		/// <summary>
+		/// Checking the StringReader extension method .ReadToCrLf() works.
+		/// Gives us the equivalent of .ReadLine() that only considers "\r\n" (CRLF) to be the
+		/// end of a line.  This is useful as Mime messages may contain "\r" or "\n" which isn't
+		/// intended to indicate the end of a line.
+		/// </summary>
+		[Test]
+		public void StringReaderReadToCrLfExtensionMethodCheck()
+		{
+			StringReader msr = new StringReader("line 1\r\nline 2\rstill line 2\r\nline 3\nstill line 3");
+
+			Assert.AreEqual("line 1", msr.ReadToCrLf());
+			Assert.AreEqual("line 2\rstill line 2", msr.ReadToCrLf());
+			Assert.AreEqual("line 3\nstill line 3", msr.ReadToCrLf());
 		}
 	}
 }
