@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Mime;
 using System.Text;
+using MantaMTA.Core.Message;
 
 namespace MantaMTA.Core.Message
 {
@@ -39,7 +40,7 @@ namespace MantaMTA.Core.Message
 			msg.Headers = GetMessageHeaders(headersChunk);
 
 			// Check the email is a MIME message.
-			if (msg.Headers.GetFirst("MIME-Version") == null)
+			if (msg.Headers.GetFirstOrDefault("MIME-Version") == null)
 			{
 				// TODO BenC (2013-07-25): Think this just means there's a single, plain text body part
 				// so we add code here to handle it.
@@ -51,7 +52,7 @@ namespace MantaMTA.Core.Message
 
 			// Get the boundary of the message and use that to chop up the content, then loop through each
 			// of those chunks looking for bodyparts within each.
-			ContentType msgContentType = new ContentType(msg.Headers.GetFirst("Content-Type").Value);
+			ContentType msgContentType = new ContentType(msg.Headers.GetFirstOrDefault("Content-Type").Value);
 
 			// Content-Type: multipart/alternative; differences=Content-Type;
 			//  boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
@@ -160,7 +161,7 @@ namespace MantaMTA.Core.Message
 			BodyPart bp = new BodyPart();
 
 
-			tempHeader = headers.GetFirst("Content-Transfer-Encoding");
+			tempHeader = headers.GetFirstOrDefault("Content-Transfer-Encoding");
 			if (tempHeader != null)
 				bp.TransferEncoding = IdentifyTransferEncoding(tempHeader.Value);
 			else
@@ -169,7 +170,7 @@ namespace MantaMTA.Core.Message
 
 
 
-			tempHeader = headers.GetFirst("Content-Type");
+			tempHeader = headers.GetFirstOrDefault("Content-Type");
 			if (tempHeader != null)
 			{
 				bp.ContentType = new ContentType(tempHeader.Value);

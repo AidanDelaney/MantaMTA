@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace MantaMTA.Core.Events
+namespace MantaMTA.Core
 {
 	/// <summary>
 	/// Extension methods for the StringReader class.

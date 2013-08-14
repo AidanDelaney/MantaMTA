@@ -80,6 +80,7 @@
     <Compile Include="Events\EventsFileHandler.cs" />
     <Compile Include="Events\EventsManager.cs" />
     <Compile Include="Events\SmtpStatusCodes.cs" />
+    <Compile Include="ExtensionMethods.cs" />
     <Compile Include="IStopRequired.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Message\BodyPart.cs" />

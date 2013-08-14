@@ -472,7 +472,7 @@ namespace MantaMTA.Core.Events
 			try
 			{
 				// Look for abuse report
-				MimeMessageBodyPart abuseReport = message.BodyParts.SingleOrDefault(bp => bp.ContentType.MediaType.Equals("message/feedback-report", StringComparison.OrdinalIgnoreCase));
+				BodyPart abuseReport = message.BodyParts.SingleOrDefault(bp => bp.ContentType.MediaType.Equals("message/feedback-report", StringComparison.OrdinalIgnoreCase));
 				if (abuseReport != null)
 				{
 					string abuseReportBody = abuseReport.GetDecodedBody();
