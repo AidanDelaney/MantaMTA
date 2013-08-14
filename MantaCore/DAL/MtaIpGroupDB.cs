@@ -13,7 +13,7 @@ namespace MantaMTA.Core.DAL
 		/// <returns></returns>
 		public static MtaIpAddress.MtaIPGroup GetMtaIpGroup(int id)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"

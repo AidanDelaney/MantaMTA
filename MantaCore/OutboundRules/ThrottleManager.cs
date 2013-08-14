@@ -160,7 +160,7 @@ namespace MantaMTA.Core.OutboundRules
 
 				mxSndHist.IntervalMaxMessages = maxMessages;
 				mxSndHist.IntervalMinutes = maxMessagesIntervalMinute;
-				mxSndHist.IntervalValuesNeedRecalcTimestamp = DateTime.UtcNow.AddMinutes(5);
+				mxSndHist.IntervalValuesNeedRecalcTimestamp = DateTime.UtcNow.AddMinutes(MtaParameters.MTA_CACHE_MINUTES);
 			}
 
 			if (sndHistory.Count < mxSndHist.IntervalMaxMessages)

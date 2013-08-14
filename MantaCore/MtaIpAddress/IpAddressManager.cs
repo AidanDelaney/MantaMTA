@@ -43,7 +43,7 @@ namespace MantaMTA.Core.MtaIpAddress
 		private static void LoadIpAddresses()
 		{
 			if (_ipAddresses != null &&
-				_lastGotIpAddresses.AddMinutes(5) > DateTime.UtcNow)
+				_lastGotIpAddresses.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 				return;
 
 			_outboundIpAddresses = null;
@@ -98,6 +98,11 @@ namespace MantaMTA.Core.MtaIpAddress
 		}
 
 		/// <summary>
+		/// Object used to lock inside the GetMtaIPGroup method.
+		/// </summary>
+		private static object _MtaIPGroupSyncLock = new object();
+
+		/// <summary>
 		/// Gets the specfied MTA IP Group
 		/// </summary>
 		/// <param name="id">ID of the group to get.</param>
@@ -105,24 +110,38 @@ namespace MantaMTA.Core.MtaIpAddress
 		public static MtaIPGroup GetMtaIPGroup(int id)
 		{
 			MtaIPGroup group = null;
+
+			// Try and get IPGroup from the in memory collection.
 			if (_ipGroups.TryGetValue(id, out group))
 			{
-				// Only cache IP Groups for 5 minutes.
-				if(group.CreatedTimestamp.AddMinutes(5) > DateTime.UtcNow)
+				// Only cache IP Groups for N minutes.
+				if (group.CreatedTimestamp.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 					return group;
 			}
 
-			group = DAL.MtaIpGroupDB.GetMtaIpGroup(id);
+			// We need to goto the database to get the group. Lock!
+			lock (_MtaIPGroupSyncLock)
+			{
+				// Check that something else didn't already load from the database.
+				// If it did then we can just return that.
+				_ipGroups.TryGetValue(id, out group);
+				if (group != null && group.CreatedTimestamp.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
+					return group;
 
-			// Group doesn't exist, so don't try and get it's IPs
-			if (group == null)
-				return null;
+				// Get group from the database.
+				group = DAL.MtaIpGroupDB.GetMtaIpGroup(id);
 
-			group.IpAddresses = DAL.MtaIpAddressDB.GetMtaIpGroupIps(id);
+				// Group doesn't exist, so don't try and get it's IPs
+				if (group == null)
+					return null;
 
-			_ipGroups.TryAdd(id, group);
+				// Got the group, go get it's IPs.
+				group.IpAddresses = DAL.MtaIpAddressDB.GetMtaIpGroupIps(id);
 
-			return group;
+				// Add the group to collection, so others can use it.
+				_ipGroups.TryAdd(id, group);
+				return group;
+			}
 		}
 	}
 }

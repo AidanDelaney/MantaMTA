@@ -48,6 +48,10 @@ namespace MantaMTA.Core.Enums
 		/// <summary>
 		/// Message was throttled.
 		/// </summary>
-		Throttled = 5
+		Throttled = 5,
+		/// <summary>
+		/// Message was discarded in queue.
+		/// </summary>
+		Discarded = 6
 	}
 }

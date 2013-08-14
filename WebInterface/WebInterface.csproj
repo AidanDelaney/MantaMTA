@@ -110,6 +110,7 @@
   <ItemGroup>
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SendsController.cs" />
+    <Compile Include="Controllers\StatsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -120,6 +121,9 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
+    <Content Include="Resources\Chart-min.js" />
+    <Content Include="Resources\jquery-1.10.1.min.js" />
+    <Content Include="Resources\manta-logo.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -132,7 +136,6 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
-    <Folder Include="Resources\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
@@ -151,6 +154,24 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Sends\Active.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Stats\Index.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MantaCore\MantaCore.csproj">
+      <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
+      <Name>MantaCore</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Sends\Pause.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Sends\Discard.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Sends\Resume.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

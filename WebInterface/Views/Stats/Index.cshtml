@@ -1,0 +1,122 @@
+﻿@{
+    ViewBag.Title = "index";
+    Layout = "~/Views/_Layout.cshtml";
+}
+@using System.Net.NetworkInformation;
+@using System.IO;
+
+<script type="text/javascript">
+	$('.nav a[href="/stats"]').parent().addClass('active')
+</script>
+
+<h2>File System</h2>
+<table class="table table-striped">
+	<tr>
+		<th>Directory</th>
+		<th>Files</th>
+		<th>Used</th>
+		<td>Drive Free</td>
+	</tr>
+	<tr>
+		<td>Queue</td>
+		<td>@Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_QUEUEFOLDER, "*.*", SearchOption.AllDirectories).Length</td>
+		<td>@(Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_QUEUEFOLDER, "*.*", SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length) / 1024 / 1024)Mb</td>
+		<td>@(new DriveInfo(MantaMTA.Core.MtaParameters.MTA_QUEUEFOLDER.Substring(0,1)).AvailableFreeSpace / 1024 / 1024)Mb</td>
+	</tr>
+	<tr>
+		<td>Drop</td>
+		<td>@Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_DROPFOLDER, "*.*", SearchOption.AllDirectories).Length</td>
+		<td>@(Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_DROPFOLDER, "*.*", SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length) / 1024 / 1024)Mb</td>
+		<td>@(new DriveInfo(MantaMTA.Core.MtaParameters.MTA_DROPFOLDER.Substring(0,1)).AvailableFreeSpace / 1024 / 1024)Mb</td>
+	</tr>
+	<tr>
+		<td>Log</td>
+		<td>@Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER, "*.*", SearchOption.AllDirectories).Length</td>
+		<td>@(Directory.GetFiles(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER, "*.*", SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length) / 1024 / 1024)Mb</td>
+		<td>@(new DriveInfo(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER.Substring(0,1)).AvailableFreeSpace / 1024 / 1024)Mb</td>
+	</tr>
+</table>
+
+<h2>Total Connections</h2>
+<table class="table table-striped">
+	<tr>
+		<th>Inbound</th>
+		<th>Outbound</th>
+	</tr>
+	<tr>
+		<td>@Model[0].Count</td>
+		<td>@Model[1].Count</td>
+	</tr>
+</table>
+
+<h2>Inbound Connections</h2>
+@if(((List<TcpConnectionInformation>)Model[0]).Count > 0)
+{
+	<table class="table table-striped">
+		<tr>
+			<th>Hostname</th>
+			<th>IP Address</th>
+			<th>Connections</th>
+		</tr>
+		
+		@foreach (IGrouping<IPAddress, TcpConnectionInformation> group in ((List<TcpConnectionInformation>)Model[0]).GroupBy(tcp => tcp.RemoteEndPoint.Address))
+		{
+		<tr>
+			<td>@{
+			try
+			{
+						<span>@Dns.GetHostEntry(group.Key).HostName</span>
+			}
+			catch (Exception)
+			{
+						<span>@group.Key</span>
+			}
+				}
+			</td>
+			<td>@group.Key</td>
+			<td>@group.Count()</td>
+		</tr>
+		}
+		
+	</table>
+}
+else
+{
+	<h5>-</h5>
+}
+
+<h2>Outbound Connections</h2>
+@if (((List<TcpConnectionInformation>)Model[1]).Count > 0)
+{
+<table class="table table-striped">
+	<tr>
+		<th>Hostname</th>
+		<th>IP Address</th>
+		<th>Connections</th>
+	</tr>
+	
+	@foreach (IGrouping<IPAddress, TcpConnectionInformation> group in ((List<TcpConnectionInformation>)Model[1]).GroupBy(tcp => tcp.RemoteEndPoint.Address))
+ {
+	 <tr>
+		<td>@{
+	 try
+	 {
+									<span>@Dns.GetHostEntry(group.Key).HostName</span>
+	 }
+	 catch (Exception)
+	 {
+									<span>@group.Key</span>
+	 }
+			}
+		</td>
+		<td>@group.Key</td>
+		<td>@group.Count()</td>
+	</tr>
+ }
+	
+</table>
+}
+else
+{
+	<h5>-</h5>
+}

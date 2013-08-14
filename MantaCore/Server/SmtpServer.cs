@@ -243,7 +243,7 @@ namespace MantaMTA.Core.Server
 								continue;
 							}
 						}
-						
+
 						string mailFrom = string.Empty;
 						try
 						{
@@ -311,8 +311,16 @@ namespace MantaMTA.Core.Server
 						}
 						else
 						{
-
-							// Message to be delivered locally.
+							// Message to be delivered locally. Make sure mailbox is abuse/postmaster or feedback loop.
+							if (!rcptTo.User.Equals("abuse", StringComparison.OrdinalIgnoreCase) &&
+								!rcptTo.User.Equals("postmaster", StringComparison.OrdinalIgnoreCase) &&
+								!rcptTo.User.StartsWith("return-", StringComparison.OrdinalIgnoreCase) &&
+								!DAL.FeedbackLoopEmailAddressDB.IsFeedbackLoopEmailAddress(rcptTo.Address))
+							{
+								await smtpStream.WriteLineAsync("550 Unknown mailbox");
+								continue;
+							}
+							
 							mailTransaction.MessageDestination = Enums.MessageDestination.Self;
 						}
 
@@ -373,7 +381,20 @@ namespace MantaMTA.Core.Server
 							DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
 
 						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
-						mailTransaction.Save();
+						try
+						{
+							mailTransaction.Save();
+						}
+						catch (SendDiscardingException)
+						{
+							smtpStream.WriteLine("554 Send Discarding.");
+							continue;
+						}
+						catch (Exception)
+						{
+							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");
+							continue;
+						}
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;

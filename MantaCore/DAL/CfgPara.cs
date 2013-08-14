@@ -84,11 +84,36 @@ namespace MantaMTA.Core.DAL
 		}
 
 		/// <summary>
+		/// Gets the amount of days to keep SMTP log files from the database.
+		/// </summary>
+		internal static int GetDaysToKeepSmtpLogsFor()
+		{
+			return (int)GetColumnValue("cfg_para_maxDaysToKeepSmtpLogs");
+		}
+
+		/// <summary>
 		/// Gets the connection receive timeout in seconds from the database.
 		/// </summary>
 		public static int GetReceiveTimeout()
 		{
 			return (int)GetColumnValue("cfg_para_receiveTimeout");
+		}
+
+		/// <summary>
+		/// Gets the return path domain.
+		/// </summary>
+		public static string GetReturnPathDomain()
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT [dmn].cfg_localDomain_domain
+FROM man_cfg_localDomain as [dmn]
+WHERE [dmn].cfg_localDomain_id = (SELECT TOP 1 [para].cfg_para_returnPathDomain_id FROM man_cfg_para as [para])";
+				conn.Open();
+				return cmd.ExecuteScalar().ToString();
+			}
 		}
 
 		/// <summary>
@@ -100,13 +125,21 @@ namespace MantaMTA.Core.DAL
 		}
 
 		/// <summary>
+		/// Gets the URL to post events to from the database.
+		/// </summary>
+		public static string GetEventForwardingHttpPostUrl()
+		{
+			return GetColumnValue("cfg_para_eventForwardingHttpPostUrl").ToString();
+		}
+
+		/// <summary>
 		/// ExecuteScalar getting value of colName in man_cfg_para
 		/// </summary>
 		/// <param name="colName"></param>
 		/// <returns></returns>
 		private static object GetColumnValue(string colName)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"

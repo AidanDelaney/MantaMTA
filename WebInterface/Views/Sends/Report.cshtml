@@ -17,7 +17,7 @@
 			}],
 			datasets: [
 				{
-					fillColor: "green",
+					fillColor: "rgba(0,255,0,0.2)",
 					strokeColor: "green",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -26,7 +26,7 @@
 				},
 				{
 					//fillColor: "rgba(151,187,205,0.5)",
-					fillColor: "red",
+					fillColor: "rgba(255,0,0,0.2)",
 					strokeColor: "red",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -35,7 +35,7 @@
 				},
 				{
 					//fillColor: "rgba(151,187,205,0.5)",
-					fillColor: "blue",
+					fillColor: "rgba(0,0,255,0.2)",
 					strokeColor: "blue",
 					data: [@foreach (System.Data.DataRow row in Model[1].Tables[0].Rows)
 			{
@@ -47,9 +47,11 @@
 
 		}
 
-
-		var myLine = new Chart(document.getElementById("chart").getContext("2d")).Bar(barChartData);
-
+		var myLine = null;
+		if(@Model[1].Tables[0].Rows.Count < 2)
+			myLine = new Chart(document.getElementById('chart').getContext('2d')).Bar(barChartData);
+		else
+			myLine = new Chart(document.getElementById('chart').getContext('2d')).Line(barChartData);
 	});
 </script>
 <canvas id="chart" height="450" width="960"></canvas>
@@ -86,6 +88,9 @@
 					case 5:
 						@:<span class='text-muted'>Throttled</span>
 						break;
+					case 6:
+						@:<span class='text-error'>Discarded</span>
+						break;
 					default:
 						@:unknown
 						break;
@@ -94,7 +99,7 @@
 				<td>
 					<blockquote style="margin:0px;">
 						@row[5]
-						<small>@(string.IsNullOrEmpty(row[6].ToString())?"localhost":row[6])</small>
+						<small>@(string.IsNullOrEmpty(row[6].ToString()) ? "localhost" : row[6])</small>
 					</blockquote>
 				</td>
 				<td><strong>@row[8]</strong><br /><small class="muted">@row[7]</small></td>

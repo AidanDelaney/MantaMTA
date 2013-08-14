@@ -12,7 +12,7 @@ namespace MantaMTA.Core.DAL
 		/// </summary>
 		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"

@@ -101,14 +101,14 @@ namespace MantaMTA.Core.OutboundRules
 				MatchedMxPattern tmp;
 				if (this.TryGetValue(ipAddress.IPAddress.ToString(), out tmp))
 				{
-					if(tmp.MatchedUtc.AddMinutes(5) < DateTime.UtcNow)
+					if(tmp.MatchedUtc.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) < DateTime.UtcNow)
 						return tmp;
 				}
 				else
 				{
 					if (this.TryGetValue(string.Empty, out tmp))
 					{
-						if (tmp.MatchedUtc.AddMinutes(5) > DateTime.UtcNow)
+						if (tmp.MatchedUtc.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 							return tmp;
 					}
 				}
@@ -156,7 +156,7 @@ namespace MantaMTA.Core.OutboundRules
 			MatchedMxPattern matchedPattern = matchedPatterns.GetMatchedMxPattern(ipAddress);
 
 			if (matchedPattern != null &&
-				matchedPattern.MatchedUtc.AddMinutes(5) > DateTime.UtcNow)
+				matchedPattern.MatchedUtc.AddMinutes(MtaParameters.MTA_CACHE_MINUTES) > DateTime.UtcNow)
 				// Found a valid cached pattern ID so return it.
 				return matchedPattern.MxPatternID;
 
@@ -199,7 +199,7 @@ namespace MantaMTA.Core.OutboundRules
 				else if (pattern.Type == OutboundMxPatternType.Regex)
 				{
 					// Pattern is Regex so just need to do an IsMatch
-					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase))
+					if (Regex.IsMatch(record.Host, pattern.Value, RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture))
 					{
 						// Found pattern match.
 						if (pattern.LimitedToOutboundIpAddressID.HasValue)
@@ -222,6 +222,7 @@ namespace MantaMTA.Core.OutboundRules
 
 			// Should have been found by default at least, but hasn't.
 			Logging.Fatal("No MX Pattern Rules! Default Deleted?");
+			MantaCoreEvents.InvokeMantaCoreStopping();
 			Environment.Exit(0);
 			return -1;
 		}

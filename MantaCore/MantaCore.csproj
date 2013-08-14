@@ -39,7 +39,9 @@
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,26 +51,41 @@
   <ItemGroup>
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
+    <Compile Include="Client\QueueManager.cs" />
     <Compile Include="Client\ServiceNotAvailableManager.cs" />
     <Compile Include="Client\MessageSender.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />
     <Compile Include="DAL\DataRetrieval.cs" />
+    <Compile Include="DAL\EventDB.cs" />
+    <Compile Include="DAL\FeedbackLoopEmailAddressDB.cs" />
+    <Compile Include="DAL\MantaDB.cs" />
     <Compile Include="DAL\MtaIpAddressDB.cs" />
     <Compile Include="DAL\MtaIpGroupDB.cs" />
     <Compile Include="DAL\MtaMessageDB.cs" />
     <Compile Include="DAL\MtaTransaction.cs" />
     <Compile Include="DAL\OutboundRuleDB.cs" />
-    <Compile Include="DAL\SendIdDB.cs" />
+    <Compile Include="DAL\SendDB.cs" />
     <Compile Include="DNS\DnsApiInterop.cs" />
     <Compile Include="DNS\DNSClasses.cs" />
     <Compile Include="DNS\DNSManager.cs" />
+    <Compile Include="Enums\SendStatus.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
+    <Compile Include="Events\BounceRulesClasses.cs" />
+    <Compile Include="Events\BounceRulesManager.cs" />
+    <Compile Include="Events\EventDB.cs" />
+    <Compile Include="Events\EventHttpForwarder.cs" />
+    <Compile Include="Events\EventsFileHandler.cs" />
+    <Compile Include="Events\EventsManager.cs" />
+    <Compile Include="Events\SmtpStatusCodes.cs" />
+    <Compile Include="IStopRequired.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Message\BodyPart.cs" />
+    <Compile Include="MantaCoreEvents.cs" />
     <Compile Include="Message\MimeMessage.cs" />
+    <Compile Include="Message\ReturnPathManager.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
     <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
@@ -77,10 +94,12 @@
     <Compile Include="OutboundRules\OutboundRuleManager.cs" />
     <Compile Include="OutboundRules\ThrottleManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SendID\SendIDClasses.cs" />
-    <Compile Include="SendID\SendIDManager.cs" />
+    <Compile Include="Sends\SendClasses.cs" />
+    <Compile Include="Sends\SendManager.cs" />
     <Compile Include="Server\SmtpServer.cs" />
     <Compile Include="Server\SmtpServerTransaction.cs" />
+    <Compile Include="ServiceContracts\ISendManager.cs" />
+    <Compile Include="ServiceContracts\ServiceContractManager.cs" />
     <Compile Include="Smtp\SmtpStreamHandler.cs" />
     <Compile Include="Smtp\SmtpTransactionLogger.cs" />
     <Compile Include="Message\MessageManager.cs" />
@@ -92,6 +111,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MantaEventTypes\MantaEventTypes.csproj">
+      <Project>{030eccbf-bec0-4e6b-8260-7286b043b5c6}</Project>
+      <Name>MantaEventTypes</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

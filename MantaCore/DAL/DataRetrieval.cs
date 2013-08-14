@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 
 namespace MantaMTA.Core.DAL
 {
-	internal class DataRetrieval
+	public class DataRetrieval
 	{
 		/// <summary>
 		/// Used for methods that create new Business Objects and fill them with data.
@@ -14,7 +14,7 @@ namespace MantaMTA.Core.DAL
 		/// Audience, etc.</typeparam>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		internal delegate ObjectType CreateObjectMethod<ObjectType>(IDataRecord record);
+		public delegate ObjectType CreateObjectMethod<ObjectType>(IDataRecord record);
 
 
 		/// <summary>
@@ -27,7 +27,7 @@ namespace MantaMTA.Core.DAL
 		/// <param name="record">Database record containing values to copy to the Business Object
 		/// provided by <paramref name="obj"/>.</param>
 		/// <returns></returns>
-		internal delegate void FillObjectMethod<ObjectType>(ObjectType obj, IDataRecord record);
+		public delegate void FillObjectMethod<ObjectType>(ObjectType obj, IDataRecord record);
 
 
 		/// <summary>
@@ -42,7 +42,7 @@ namespace MantaMTA.Core.DAL
 		/// <returns>If a database record is not found by executing <paramref name="command"/>,
 		/// null is returned.  If a database record does exist, an instantied object with
 		/// values set from the retrieved database record is returned.</returns>
-		internal static ObjectType GetSingleObjectFromDatabase<ObjectType>(SqlCommand command, CreateObjectMethod<ObjectType> createObjectMethod)
+		public static ObjectType GetSingleObjectFromDatabase<ObjectType>(SqlCommand command, CreateObjectMethod<ObjectType> createObjectMethod)
 		{
 			// BenC (2011-01-07): Set "obj" to null by calling default() with its type.
 			// For reference types this'll be null, for value types it'll be zero.
@@ -82,7 +82,7 @@ namespace MantaMTA.Core.DAL
 		/// from a retrieved database record into the object provided by <paramref name="obj"/>.</param>
 		/// <returns>true if a database record was retrieved and used to fill the Business Object provided
 		/// in <paramref name="obj"/>, else false.</returns>
-		internal static bool FillSingleObjectFromDatabase<ObjectType>(SqlCommand command, ObjectType obj, FillObjectMethod<ObjectType> fillObjectMethod)
+		public static bool FillSingleObjectFromDatabase<ObjectType>(SqlCommand command, ObjectType obj, FillObjectMethod<ObjectType> fillObjectMethod)
 		{
 			bool toReturn = false;
 
@@ -105,7 +105,7 @@ namespace MantaMTA.Core.DAL
 		}
 
 
-		internal static List<ObjectType> GetCollectionFromDatabase<ObjectType>(SqlCommand command, CreateObjectMethod<ObjectType> createObjectMethod)
+		public static List<ObjectType> GetCollectionFromDatabase<ObjectType>(SqlCommand command, CreateObjectMethod<ObjectType> createObjectMethod)
 		{
 			List<ObjectType> collection = new List<ObjectType>();
 
@@ -132,7 +132,7 @@ namespace MantaMTA.Core.DAL
 	/// Provides a set of extension methods for the IDataRecord class adding 
 	/// support for calling the Get* methods with a column name as well.
 	/// </summary>
-	internal static class IDataRecordExtensions
+	public static class IDataRecordExtensions
 	{
 		/// <summary>
 		/// Gets the value of the specified column as a Boolean.

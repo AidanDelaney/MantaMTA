@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
 
 namespace MantaMTA.Core
@@ -13,7 +13,12 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// New line as should be used in emails.
 		/// </summary>
-		internal const string NewLine = "\r\n";
+		public const string NewLine = "\r\n";
+
+		/// <summary>
+		/// The time in minutes of how long stuff should be cached in memory for.
+		/// </summary>
+		internal const int MTA_CACHE_MINUTES = 5;
 
 		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.
@@ -34,57 +39,107 @@ namespace MantaMTA.Core
 		/// Drop folder, for incoming messages.
 		/// This should be in config.
 		/// </summary>
-		internal static string MTA_DROPFOLDER
+		public static string MTA_DROPFOLDER
 		{
 			get
 			{
-				if(string.IsNullOrEmpty(_MtaDropFolder))
+				if (_MtaDropFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaDropFolder = DAL.CfgPara.GetDropFolder();
 					Directory.CreateDirectory(_MtaDropFolder);
+					_MtaDropFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaDropFolder;
 			}
 		}
 		private static string _MtaDropFolder { get; set; }
+		private static DateTime _MtaDropFolderLoadTime = DateTime.MinValue;
+
+		/// <summary>
+		/// Drop folder for abuse@
+		/// </summary>
+		internal static string AbuseDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "abuse");
+			}
+		}
+
+		/// <summary>
+		/// Drop folder for email bounces.
+		/// </summary>
+		internal static string BounceDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "bounce");
+			}
+		}
+
+		/// <summary>
+		/// Drop folder for feedback loop emails.
+		/// </summary>
+		internal static string FeedbackLoopDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "feedback");
+			}
+		}
+
+		/// <summary>
+		/// Drop folder for postmaster@
+		/// </summary>
+		internal static string PostmasterDropFolder
+		{
+			get
+			{
+				return Path.Combine(MTA_DROPFOLDER, "postmaster");
+			}
+		}
 
 		/// <summary>
 		/// Queue folder, for messages to be sent.
 		/// </summary>
-		internal static string MTA_QUEUEFOLDER
+		public static string MTA_QUEUEFOLDER
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(_MtaQueueFolder))
+				if (_MtaQueueFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaQueueFolder = DAL.CfgPara.GetQueueFolder();
 					Directory.CreateDirectory(_MtaQueueFolder);
+					_MtaQueueFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaQueueFolder;
 			}
 		}
 		private static string _MtaQueueFolder { get; set; }
+		private static DateTime _MtaQueueFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// Log foler, where SMTP Transaction logs will go.
 		/// This should be in config.
 		/// </summary>
-		internal static string MTA_LOGFOLDER
+		public static string MTA_SMTP_LOGFOLDER
 		{
 			get
 			{
-				if (string.IsNullOrEmpty(_MtaDropFolder))
+				if (_MtaLogFolderLoadTime < DateTime.UtcNow)
 				{
 					_MtaLogFolder = DAL.CfgPara.GetLogFolder();
 					Directory.CreateDirectory(_MtaLogFolder);
+					_MtaLogFolderLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 
 				return _MtaLogFolder;
 			}
 		}
 		private static string _MtaLogFolder { get; set; }
+		private static DateTime _MtaLogFolderLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// List of domains to accept messages for drop folder.
@@ -94,12 +149,34 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_LocalDomains == null)
+				if (_LocalDomainsLoadTime < DateTime.UtcNow)
+				{
 					_LocalDomains = DAL.CfgLocalDomains.GetLocalDomainsArray();
+					_LocalDomainsLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 				return _LocalDomains;
 			}
 		}
 		private static string[] _LocalDomains { get; set; }
+		private static DateTime _LocalDomainsLoadTime = DateTime.MinValue;
+
+		/// <summary>
+		/// The domain that return paths should use.
+		/// </summary>
+		public static string ReturnPathDomain
+		{
+			get
+			{
+				if (_ReturnPathDomainLoadTime < DateTime.UtcNow)
+				{
+					_ReturnPathDomain = DAL.CfgPara.GetReturnPathDomain();
+					_ReturnPathDomainLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+				}
+				return _ReturnPathDomain;
+			}
+		}
+		private static string _ReturnPathDomain = string.Empty;
+		private static DateTime _ReturnPathDomainLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// List of IP addresses to allow relaying for.
@@ -108,12 +185,16 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_IPsToAllowRelaying == null)
+				if (_IPsToAllowRelayingLoadTime < DateTime.UtcNow)
+				{
 					_IPsToAllowRelaying = DAL.CfgRelayingPermittedIP.GetRelayingPermittedIPAddresses();
+					_IPsToAllowRelayingLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+				}
 				return _IPsToAllowRelaying;
 			}
 		}
 		private static string[] _IPsToAllowRelaying { get; set; }
+		private static DateTime _IPsToAllowRelayingLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// The time in minutes between send retries.
@@ -122,13 +203,17 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if(_MtaRetryInterval == -1)
+				if (_MtaRetryIntervalLoadTime < DateTime.UtcNow)
+				{
 					_MtaRetryInterval = DAL.CfgPara.GetRetryIntervalMinutes();
+					_MtaRetryIntervalLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 
 				return _MtaRetryInterval;
 			}
 		}
 		private static int _MtaRetryInterval = -1;
+		private static DateTime _MtaRetryIntervalLoadTime = DateTime.MinValue;
 
 		/// <summary>
 		/// The maximum time in minutes that a message can be in the queue.
@@ -137,13 +222,17 @@ namespace MantaMTA.Core
 		{
 			get
 			{
-				if (_MtaMaxTimeInQueue == -1)
+				if (_MtaMaxTimeInQueueLoadTime < DateTime.UtcNow)
+				{
 					_MtaMaxTimeInQueue = DAL.CfgPara.GetMaxTimeInQueueMinutes();
+					_MtaMaxTimeInQueueLoadTime = DateTime.UtcNow.AddMinutes(5);
+				}
 
 				return _MtaMaxTimeInQueue;
 			}
 		}
 		private static int _MtaMaxTimeInQueue = -1;
+		private static DateTime _MtaMaxTimeInQueueLoadTime = DateTime.MinValue;
 
 		internal static class Client
 		{
@@ -161,13 +250,17 @@ namespace MantaMTA.Core
 			{
 				get
 				{
-					if (_ConnectionIdleTimeoutInterval == -1)
+					if (_ConnectionIdleTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_ConnectionIdleTimeoutInterval = DAL.CfgPara.GetClientIdleTimeout();
+						_ConnectionIdleTimeoutIntervalLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _ConnectionIdleTimeoutInterval;
 				}
 			}
 			private static int _ConnectionIdleTimeoutInterval = -1;
+			private static DateTime _ConnectionIdleTimeoutIntervalLoadTime = DateTime.MinValue;
 
 			/// <summary>
 			/// The time in seconds for connection read timeouts.
@@ -176,13 +269,17 @@ namespace MantaMTA.Core
 			{
 				get 
 				{
-					if (_ConnectionReceiveTimeoutInterval == -1)
+					if (_ConnectionReceiveTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_ConnectionReceiveTimeoutInterval = DAL.CfgPara.GetReceiveTimeout();
+						_ConnectionReceiveTimeoutIntervalLoadTime = _ConnectionReceiveTimeoutIntervalLoadTime.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _ConnectionReceiveTimeoutInterval;
 				}
 			}
 			public static int _ConnectionReceiveTimeoutInterval = -1;
+			private static DateTime _ConnectionReceiveTimeoutIntervalLoadTime = DateTime.MinValue;
 
 
 			/// <summary>
@@ -192,13 +289,51 @@ namespace MantaMTA.Core
 			{
 				get 
 				{
-					if (_connectionSendTimeoutInterval == -1)
+					if (_connectionSendTimeoutIntervalLoadTime < DateTime.UtcNow)
+					{
 						_connectionSendTimeoutInterval = DAL.CfgPara.GetSendTimeout();
+						_connectionSendTimeoutIntervalLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
 
 					return _connectionSendTimeoutInterval;
 				}
 			}
 			private static int _connectionSendTimeoutInterval = -1;
+			private static DateTime _connectionSendTimeoutIntervalLoadTime = DateTime.MinValue;
 		}
+
+		/// <summary>
+		/// The amount of days to keep SMTP logs for before deleting them.
+		/// </summary>
+		internal static int DaysToKeepSmtpLogsFor
+		{
+			get
+			{
+				if (_DaysToKeepSmtpLogsFor == -1)
+					_DaysToKeepSmtpLogsFor = DAL.CfgPara.GetDaysToKeepSmtpLogsFor();
+				return _DaysToKeepSmtpLogsFor;
+			}
+		}
+		private static int _DaysToKeepSmtpLogsFor = -1;
+
+		/// <summary>
+		/// The URL to post Manta Events (abuse/bounce) to.
+		/// </summary>
+		public static Uri EventForwardingHttpPostUrl
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(_EventForwardingHttpPostUrl))
+					_EventForwardingHttpPostUrl = DAL.CfgPara.GetEventForwardingHttpPostUrl();
+
+				return new Uri(_EventForwardingHttpPostUrl);
+			}
+		}
+		private static string _EventForwardingHttpPostUrl = string.Empty;
 	}
+
+	/// <summary>
+	/// Should be thrown when a Send is in a discarding state and an attempt is made to queue a message to it.
+	/// </summary>
+	public class SendDiscardingException : Exception { }
 }

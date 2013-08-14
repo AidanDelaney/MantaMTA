@@ -13,7 +13,7 @@ namespace MantaMTA.Core.DAL
 		/// <returns></returns>
 		internal static OutboundMxPatternCollection GetOutboundRulePatterns()
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -31,7 +31,7 @@ ORDER BY rle_mxPattern_id DESC"; // Order descending so default -1 is always at 
 		/// <returns></returns>
 		internal static OutboundRuleCollection GetOutboundRules()
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"

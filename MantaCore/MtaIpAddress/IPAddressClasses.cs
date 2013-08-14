@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
@@ -33,6 +34,14 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// If true the IP address can be used for sending.
 		/// </summary>
 		public bool IsSmtpOutbound { get; set; }
+
+		/// <summary>
+		/// Holds the information regarding how often this IP has been used. 
+		/// This is used for load balancing the IPs in a pool, it is never saved to the database.
+		/// string = mx record hostname (lowercase).
+		/// int = count of times used.
+		/// </summary>
+		internal ConcurrentDictionary<string, int> SendsCounter = new ConcurrentDictionary<string, int>();
 
 		/// <summary>
 		/// 

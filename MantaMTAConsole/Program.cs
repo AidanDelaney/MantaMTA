@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.ExceptionServices;
 using MantaMTA.Core;
 using MantaMTA.Core.Client;
+using MantaMTA.Core.Events;
 using MantaMTA.Core.MtaIpAddress;
 using MantaMTA.Core.Server;
 
@@ -19,6 +20,9 @@ namespace MantaMTA.Console
 				Logging.Warn("", e.Exception);
 			};
 
+			// Start the send manager service.
+			MantaMTA.Core.Sends.SendManager.Instance.StartService();
+
 			MtaIpAddressCollection ipAddresses = IpAddressManager.GetIPsForListeningOn();
 
 			// Array will hold all instances of SmtpServer, one for each port we will be listening on.
@@ -32,8 +36,10 @@ namespace MantaMTA.Console
 					smtpServers.Add(new SmtpServer(ipAddress.IPAddress, MtaParameters.ServerListeningPorts[i]));
 			}
 
-			// Start the SMTP Client
-			MessageSender.Start();
+			// Start the SMTP Client.
+			MessageSender.Instance.Start();
+			// Start the events (bounce/abuse) handler.
+			EventsFileHandler.Instance.Start();
 			
 			bool quit = false;
 			while (!quit)
@@ -44,11 +50,13 @@ namespace MantaMTA.Console
 			}
 
 			// Need to wait while servers & client shutdown.
-			MessageSender.Stop();
+			MantaCoreEvents.InvokeMantaCoreStopping();
 			for (int i = 0; i < smtpServers.Count; i++)
 				(smtpServers[i] as SmtpServer).Dispose();
 
 			Logging.Info("MTA Stopped");
+			System.Console.WriteLine("Press any key to continue");
+			System.Console.ReadKey(true);
 		}
 	}
 }

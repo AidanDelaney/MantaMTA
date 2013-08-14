@@ -1,4 +1,5 @@
 CREATE TABLE [dbo].[man_cfg_localDomain](
+	[cfg_localDomain_id] [int] IDENTITY(1,1) NOT NULL,
 	[cfg_localDomain_domain] [nvarchar](255) COLLATE Latin1_General_CI_AS NOT NULL,
 	[cfg_localDomain_name] [nvarchar](50) COLLATE Latin1_General_CI_AS NULL,
 	[cfg_localDomain_description] [nvarchar](250) COLLATE Latin1_General_CI_AS NULL

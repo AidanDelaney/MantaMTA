@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using MantaMTA.Core.ServiceContracts;
 
 namespace WebInterface.Controllers
 {
@@ -24,6 +25,31 @@ namespace WebInterface.Controllers
 			return View(GetSendListDataSet(true));
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sendIID">Send Internal ID</param>
+		/// <returns></returns>
+		public ActionResult Pause(string sendIID)
+		{
+			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
+			sendManager.Pause(Int32.Parse(sendIID));
+			return View();
+		}
+
+		public ActionResult Discard(string sendIID)
+		{
+			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
+			sendManager.Discard(Int32.Parse(sendIID));
+			return View();
+		}
+
+		public ActionResult Resume(string sendIID)
+		{
+			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
+			sendManager.Resume(Int32.Parse(sendIID));
+			return View();
+		}
 		
 		public ActionResult Report(string sendID)
 		{
@@ -39,7 +65,7 @@ FROM man_mta_transaction as [tran]
 JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
 JOIN man_mta_send as [snd] on [snd].mta_send_internalId = [msg].mta_send_internalId
 LEFT JOIN man_ip_ipAddress as [ip] on [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
-WHERE mta_transactionStatus_id < 4
+WHERE (mta_transactionStatus_id < 4 OR mta_transactionStatus_id = 6)
 AND [snd].mta_send_id = @sndID
 ORDER BY [tran].mta_transaction_timestamp DESC";
 				cmd.Parameters.AddWithValue("@sndID", sendID);
@@ -52,11 +78,11 @@ ORDER BY [tran].mta_transaction_timestamp DESC";
 SELECT *
 FROM
 (select 
-	CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)) + ' ' +
-	CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)) + ':' +
-	CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)) as 'Date', 
+	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date', 
 	count(*) as 'Sent',
 	4 as 'status'
 from man_mta_transaction as [tran]
@@ -77,15 +103,15 @@ UNION
 from man_mta_transaction as [tran]
 join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
 join man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-where mta_transactionStatus_id = 2
+where (mta_transactionStatus_id = 2 OR mta_transactionStatus_id = 6)
 and [snd].mta_send_id = @sndID
 GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp))
 UNION (select 
-	CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)) + ' ' +
-	CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)) + ':' +
-	CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)) as 'Date', 
+	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
+	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date',
 	count(*) as 'Failed',
 	1 as 'Status'
 from man_mta_transaction as [tran]
@@ -109,6 +135,8 @@ ORDER BY [Date] ASC
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT [snd].mta_send_id as 'SendID',
+[snd].mta_send_internalId as 'InternalSendID',
+[snd].mta_sendStatus_id as 'SendStatus',
 [snd].mta_send_createdTimestamp as 'Started',
 (SELECT COUNT(*) FROM man_mta_msg as [msg] WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Messages',
 (SELECT COUNT(*) FROM man_mta_queue as [queue] 
@@ -121,7 +149,8 @@ SELECT [snd].mta_send_id as 'SendID',
 (SELECT COUNT(*) FROM man_mta_transaction as [tran]
 	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
 	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 2) as 'Failed',
+	AND ([tran].mta_transactionStatus_id = 2
+	OR [tran].mta_transactionStatus_id = 6)) as 'Failed',
 (SELECT COUNT(*) FROM man_mta_transaction as [tran]
 	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
 	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId

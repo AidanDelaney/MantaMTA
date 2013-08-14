@@ -52,7 +52,7 @@ namespace MantaMTA.Core.Tests
 					string result = smtp.ReadLineAsync().Result;
 					sendLine("HELO localhost", "250");
 					sendLine("MAIL FROM: <local@localhost>", "250");
-					sendLine("RCPT TO: <local@localhost>", "250");
+					sendLine("RCPT TO: <postmaster@localhost>", "250");
 					sendLine("DATA", "354");
 					smtp.WriteLine("Hello", false);
 					sendLine(".", "250");

@@ -72,9 +72,10 @@ namespace MantaMTA.Core.Client.BO
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
 			base.RcptTo = message.RcptTo;
+			base.InternalSendID = message.InternalSendID;
 
 			QueuedTimestampUtc = queuedTimestampUtc;
-			AttemptSendAfterUtc = AttemptSendAfterUtc;
+			AttemptSendAfterUtc = attemptSendAfterUtc;
 			_IsPickUpLocked = isPickUpLocked;
 			DataPath = dataPath;
 			IPGroupID = ipGroupID;
@@ -106,6 +107,29 @@ namespace MantaMTA.Core.Client.BO
 		public void HandleDeliveryFail(string failMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
+			// Send fails to Manta.Core.Events
+			try
+			{
+				for (int i = 0; i < base.RcptTo.Length; i++)
+					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID);
+			}
+			catch (Exception)
+			{
+
+			}
+			MtaMessageDB.Delete(this);
+			DeleteMessageData();
+		}
+
+		/// <summary>
+		/// This method handles failer of devlivery.
+		/// Logs failer
+		/// Deletes queued data
+		/// </summary>
+		/// <param name="failMsg"></param>
+		public void HandleMessageDiscard()
+		{
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Discarded, string.Empty, null, null);
 			MtaMessageDB.Delete(this);
 			DeleteMessageData();
 		}

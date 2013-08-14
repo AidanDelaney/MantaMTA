@@ -45,6 +45,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Events.cs" />
+    <Compile Include="FeedbackLoopEmails.cs" />
+    <Compile Include="InboundEmails.cs" />
+    <Compile Include="BounceTests.cs" />
+    <Compile Include="QueueControl.cs" />
+    <Compile Include="ReturnPath.cs" />
+    <Compile Include="FeedbackLoopTests.cs" />
     <Compile Include="MimeMessageTests.cs" />
     <Compile Include="OutboundRules.cs" />
     <Compile Include="ServerTests.cs" />
@@ -62,6 +69,10 @@
     <ProjectReference Include="..\MantaCore\MantaCore.csproj">
       <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
       <Name>MantaCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MantaEventTypes\MantaEventTypes.csproj">
+      <Project>{030eccbf-bec0-4e6b-8260-7286b043b5c6}</Project>
+      <Name>MantaEventTypes</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
