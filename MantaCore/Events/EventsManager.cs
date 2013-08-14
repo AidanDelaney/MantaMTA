@@ -516,7 +516,7 @@ namespace MantaMTA.Core.Events
 
 				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = new Func<MessageHeaderCollection, bool>(delegate(MessageHeaderCollection headers)
 					{
-						MessageHeader returnPathHeader = headers.SingleOrDefault(s => s.Name.Equals("Return-Path", StringComparison.OrdinalIgnoreCase));
+						MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
 						if (returnPathHeader != null &&
 							!string.IsNullOrWhiteSpace(returnPathHeader.Value))
 						{
@@ -538,7 +538,7 @@ namespace MantaMTA.Core.Events
 							}
 						}
 
-						MessageHeader messageIdHeader = headers.SingleOrDefault(s => s.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase));
+						MessageHeader messageIdHeader = headers.GetFirstOrDefault("Message-ID");
 						if (messageIdHeader != null &&
 							messageIdHeader.Value.Length > 33)
 						{
@@ -571,7 +571,7 @@ namespace MantaMTA.Core.Events
 
 				// There isn't an abuse report or it doesn't contain the information we need.
 				// Check for any body parts with child messages.
-				MimeMessageBodyPart[] children = message.BodyParts.Where(bp => bp.HasChildMimeMessage).ToArray();
+				BodyPart[] children = message.BodyParts.Where(bp => bp.HasChildMimeMessage).ToArray();
 				if (children != null)
 				{
 					for (int i = 0; i < children.Length; i++)
