@@ -465,7 +465,7 @@ namespace MantaMTA.Core.Events
 		/// Looks through a feedback loop email looking for something to identify it as an abuse report and who it relates to.
 		/// If found, logs the event.
 		/// 
-		/// How to get the info depending on the ESP:
+		/// How to get the info depending on the ESP (and this is likely to be the best order to check for each too):
 		/// Abuse Report Original-Mail-From.										[Yahoo]
 		/// Message-ID from body part child with content-type of message/rfc822.	[AOL]
 		/// Return-Path in main message headers.									[Hotmail]
@@ -478,7 +478,7 @@ namespace MantaMTA.Core.Events
 				return EmailProcessingResult.ErrorContent;
 			try
 			{
-				// Step 1:
+				// Step 1: Yahoo! provide useable Abuse Reports (AOL's are all redacted).
 				//Look for abuse report
 				BodyPart abuseBodyPart = null;
 				string abuseReportBody;
@@ -590,15 +590,7 @@ namespace MantaMTA.Core.Events
 				);
 
 
-				// Step 2:
-				// Do a quick check that our email hasn't just been bounced to us.
-				if (checkForReturnPathHeaders(message.Headers))
-					return EmailProcessingResult.SuccessAbuse;
-
-
-				// Step 3:
-				// No abuse report found and not just our email bounced back to us, let's hunt
-				// though all child BodyParts for a return-path header...
+				// Step 2: AOL give redacted Abuse Reports but include the original email as a bodypart; find that.
 				BodyPart childMessageBodyPart;
 				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/rfc822", out childMessageBodyPart))
 				{
@@ -607,6 +599,11 @@ namespace MantaMTA.Core.Events
 						return EmailProcessingResult.SuccessAbuse;
 					}
 				}
+
+
+				// Step 3: Hotmail don't do Abuse Reports, they just return our email to us exactly as we sent it.
+				if (checkForReturnPathHeaders(message.Headers))
+					return EmailProcessingResult.SuccessAbuse;
 			}
 			catch (Exception) { }
 
