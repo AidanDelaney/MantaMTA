@@ -76,6 +76,7 @@ namespace MantaMTA.Core.Tests
 
 			MimeMessage msg = MimeMessage.Parse(emailContent);
 
+			Assert.AreEqual(5, msg.Headers.Count);
 			ContentType msgContentType = new ContentType(msg.Headers.GetFirstOrDefault("Content-Type").Value);
 			Assert.AreEqual("unique-boundary-1", msgContentType.Boundary);
 
@@ -85,6 +86,7 @@ namespace MantaMTA.Core.Tests
 			#region Check the first level of body parts.
 
 			bodyPart = msg.BodyParts[0];
+			Assert.AreEqual(0, bodyPart.Headers.Count);
 			Assert.AreEqual("text/plain", bodyPart.ContentType.MediaType);
 			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
 			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
@@ -94,8 +96,15 @@ no header fields were given and this is text,
 with charset US ASCII.  It could have been
 done with explicit typing as in the next part.]
 ", bodyPart.GetDecodedBody());
+			// Check that this BodyPart doesn't have a child MimeMessage inside it.
+			Assert.IsFalse(bodyPart.HasChildMimeMessage);
+			Assert.IsNull(bodyPart.ChildMimeMessage);
+
+
+
 
 			bodyPart = msg.BodyParts[1];
+			Assert.AreEqual(1, bodyPart.Headers.Count);
 			Assert.AreEqual("text/plain", bodyPart.ContentType.MediaType);
 			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
 			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
@@ -105,10 +114,12 @@ typing of body parts.
 ", bodyPart.GetDecodedBody());
 
 			bodyPart = msg.BodyParts[2];
+			Assert.AreEqual(1, bodyPart.Headers.Count);
 			Assert.AreEqual("multipart/mixed", bodyPart.ContentType.MediaType);
 
 
 			bodyPart = msg.BodyParts[3];
+			Assert.AreEqual(1, bodyPart.Headers.Count);
 			Assert.AreEqual("text/richtext", bodyPart.ContentType.MediaType);
 			Assert.AreEqual("us-ascii", bodyPart.ContentType.CharSet.ToLower());
 			Assert.AreEqual(TransferEncoding.SevenBit, bodyPart.TransferEncoding);
@@ -118,9 +129,12 @@ typing of body parts.
 <bigger><bigger>cool?</bigger></bigger>
 ", bodyPart.GetDecodedBody());
 
+
 			bodyPart = msg.BodyParts[4];
+			Assert.AreEqual(1, bodyPart.Headers.Count);
 			Assert.AreEqual("message/rfc822", bodyPart.ContentType.MediaType);
-			Assert.AreEqual(@"From: (mailbox in US-ASCII)
+			Assert.AreEqual(@"MIME-Version: 1.0
+From: (mailbox in US-ASCII)
 To: (address in US-ASCII)
 Subject: (subject in US-ASCII)
 Content-Type: Text/plain; charset=ISO-8859-1
@@ -129,22 +143,33 @@ Content-Transfer-Encoding: Quoted-printable
     ... Additional text in ISO-8859-1 goes here ...
 ", bodyPart.GetDecodedBody());
 
+			// Check we can get the child MimeMessage from inside this BodyPart.
+			Assert.IsTrue(bodyPart.HasChildMimeMessage);
+			Assert.IsTrue(bodyPart.ChildMimeMessage is MimeMessage);
+			Assert.AreEqual(6, bodyPart.ChildMimeMessage.Headers.Count);
+			Assert.AreEqual("(mailbox in US-ASCII)", bodyPart.ChildMimeMessage.Headers.GetFirstOrDefault("From").Value);
+
+
+
+
 			#endregion Check the first level of body parts.
 
 
 
 			// Check the multipart bodyPart.
 			bodyPart = msg.BodyParts[2];
+			Assert.AreEqual(1, bodyPart.Headers.Count);
 			Assert.AreEqual("unique-boundary-2", bodyPart.ContentType.Boundary);
 			Assert.AreEqual(2, bodyPart.BodyParts.Length);
 
-
+			Assert.AreEqual(2, bodyPart.BodyParts[0].Headers.Count);
 			Assert.AreEqual("audio/basic", bodyPart.BodyParts[0].ContentType.MediaType);
 			Assert.AreEqual(TransferEncoding.Base64, bodyPart.BodyParts[0].TransferEncoding);
 			Assert.AreEqual(@"    ... base64-encoded 8000 Hz single-channel
         mu-law-format audio data goes here....
 ", bodyPart.BodyParts[0].EncodedBody);
 
+			Assert.AreEqual(2, bodyPart.BodyParts[1].Headers.Count);
 			Assert.AreEqual("image/gif", bodyPart.BodyParts[1].ContentType.MediaType);
 			Assert.AreEqual(TransferEncoding.Base64, bodyPart.BodyParts[1].TransferEncoding);
 			Assert.AreEqual(@"    ... base64-encoded image data goes here....
@@ -167,8 +192,6 @@ Content-Transfer-Encoding: Quoted-printable
 			Assert.AreEqual("line 2\rstill line 2", msr.ReadToCrLf());
 			Assert.AreEqual("line 3\nstill line 3", msr.ReadToCrLf());
 		}
-
-
 
 		/// <summary>
 		/// Test what happens when a mime message is passed something it can't handle.

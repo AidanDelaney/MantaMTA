@@ -33,7 +33,7 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void SendMessage()
 		{
-			using (TransactionScope ts = CreateTransactionScopeObject())
+			using (CreateTransactionScopeObject())
 			{
 				using (SmtpServer s = new SmtpServer(8000))
 				{
@@ -67,7 +67,7 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void QueueMessage()
 		{
-			using (TransactionScope ts = CreateTransactionScopeObject())
+			using (CreateTransactionScopeObject())
 			{
 				using (SmtpServer s = new SmtpServer(8000))
 				{

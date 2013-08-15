@@ -159,6 +159,7 @@ namespace MantaMTA.Core.Message
 			MessageHeader tempHeader = null;
 
 			BodyPart bp = new BodyPart();
+			bp.Headers = headers;
 
 
 			tempHeader = headers.GetFirstOrDefault("Content-Transfer-Encoding");
@@ -277,7 +278,7 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		/// <param name="headersBlock">The raw headers as a string with long lines folded.</param>
 		/// <returns>The unfolded raw headers.</returns>
-		private static string UnfoldHeaders(string headersBlock)
+		public static string UnfoldHeaders(string headersBlock)
 		{
 			string str = headersBlock;
 
@@ -295,9 +296,9 @@ namespace MantaMTA.Core.Message
 				// Keep looping until we have gone through all of the lines in the header section.
 				while (line != null)
 				{
-					// If first char of line is not white space then we need to add a new line 
+					// If the line is blank or the first char is not white space then we need to add a new line 
 					// as there is no wrapping.
-					if (!char.IsWhiteSpace(line[0]))
+					if (line.Length == 0 || !char.IsWhiteSpace(line[0]))
 					{
 						// If sb is null then this is the first line so create the stringbuilder.
 						if (sb == null)

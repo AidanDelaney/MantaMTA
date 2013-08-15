@@ -1,6 +1,8 @@
 ﻿using System;
 using MantaMTA.Core.Events;
 using NUnit.Framework;
+using MantaMTA.Core.Message;
+using System.IO;
 
 namespace MantaMTA.Core.Tests
 {
@@ -152,6 +154,67 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual("some.user@hotmail.com", abuse.EmailAddress);
 				Assert.AreEqual("TestData", abuse.SendID);
 			}
+		}
+
+
+		[Test]
+		public void FindBodyPartsByType()
+		{
+			BodyPart[] bodyParts;
+			BodyPart foundBodyPart;
+
+
+			// Find a Delivery Report.
+			bodyParts = MimeMessage.Parse(System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd()).BodyParts;
+			Assert.IsTrue(EventsManager.Instance.FindFirstBodyPartByMediaType(bodyParts, "message/delivery-status", out foundBodyPart));
+			Assert.AreEqual(@"Reporting-MTA: dns;someserver.com
+Received-From-MTA: dns;mail.someserver.com
+Arrival-Date: Fri, 12 Jul 2013 10:09:28 +0000
+
+Original-Recipient: rfc822;someone@someserver.com
+Final-Recipient: rfc822;finalsomeone@someserver.com
+Action: failed
+Status: 5.2.2
+Diagnostic-Code: smtp;554-5.2.2 mailbox full
+
+", foundBodyPart.GetDecodedBody());
+
+
+
+
+			// Find some abuse reports.
+
+			// AOL use abuse reports (though all the values are redacted).
+			bodyParts = MimeMessage.Parse(FeedbackLoopEmails.AolAbuse).BodyParts;
+			Assert.IsTrue(EventsManager.Instance.FindFirstBodyPartByMediaType(bodyParts, "message/feedback-report", out foundBodyPart));
+			Assert.AreEqual(@"Feedback-Type: abuse
+User-Agent: AOL SComp
+Version: 0.1
+Received-Date: Mon,  1 Jul 2013 14:37:29 -0400 (EDT)
+Source-IP: 5.79.26.23
+Reported-Domain: snt3.net
+Redacted-Address: redacted
+Redacted-Address: redacted@
+
+", foundBodyPart.GetDecodedBody());
+
+			// Yahoo! use abuse reports.
+			bodyParts = MimeMessage.Parse(FeedbackLoopEmails.YahooAbuse).BodyParts;
+			Assert.IsTrue(EventsManager.Instance.FindFirstBodyPartByMediaType(bodyParts, "message/feedback-report", out foundBodyPart));
+			Assert.AreEqual(@"Feedback-Type: abuse
+User-Agent: Yahoo!-Mail-Feedback/1.0
+Version: 0.1
+Original-Mail-From: <return-some.user=yahoo.co.uk-1@colony101.co.uk>
+Original-Rcpt-To: some.user@yahoo.co.uk
+Received-Date: Sun, 24 Feb 2013 13:44:08 PST
+Reported-Domain: colony101.co.uk
+Authentication-Results: mta1126.mail.ir2.yahoo.com  from=colony101.co.uk; domainkeys=neutral (no sig);  from=colony101.co.uk; dkim=pass (ok)
+", foundBodyPart.GetDecodedBody());
+
+			// Hotmail's abuse emails don't contain a message/feedback-report BodyPart.
+			bodyParts = MimeMessage.Parse(FeedbackLoopEmails.HotmailAbuse).BodyParts;
+			Assert.IsFalse(EventsManager.Instance.FindFirstBodyPartByMediaType(bodyParts, "message/feedback-report", out foundBodyPart));
+			Assert.IsNull(foundBodyPart);
 		}
 	}
 }

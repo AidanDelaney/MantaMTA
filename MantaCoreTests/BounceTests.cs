@@ -352,7 +352,9 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 			Assert.AreEqual("1.222.333", re.Match("Text before 1.222.333 and text after 4.555.666 and more text after").Value);
 		}
 
-
+		/// <summary>
+		/// Check we can correctly process a NonDelivery Report.
+		/// </summary>
 		[Test]
 		public void NonDeliveryReport()
 		{
@@ -482,9 +484,9 @@ Diagnostic-Code: smtp;554 delivery error: dd This user doesn't have a yahoo.com 
 			string emailContent = System.IO.File.OpenText(@".\..\..\Many BodyParts - structure.eml").ReadToEnd();
 			MimeMessage msg = MimeMessage.Parse(emailContent);
 			
-			string deliveryReport = string.Empty;
+			BodyPart deliveryReportBodyPart;
 
-			Assert.IsTrue(EventsManager.Instance.FindDeliveryReport(msg.BodyParts, out deliveryReport));
+			Assert.IsTrue(EventsManager.Instance.FindFirstBodyPartByMediaType(msg.BodyParts, "message/delivery-status", out deliveryReportBodyPart));
 			Assert.AreEqual(@"Reporting-MTA: dns;someserver.com
 Received-From-MTA: dns;mail.someserver.com
 Arrival-Date: Fri, 12 Jul 2013 10:09:28 +0000
@@ -495,7 +497,7 @@ Action: failed
 Status: 5.2.2
 Diagnostic-Code: smtp;554-5.2.2 mailbox full
 
-", deliveryReport);
+", deliveryReportBodyPart.GetDecodedBody());
 		}
 	}
 }

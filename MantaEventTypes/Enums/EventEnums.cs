@@ -65,7 +65,7 @@ namespace MantaMTA.Core.Events
 		/// complaints created by each campaign. Continuing to send to an address that has complained about spam can 
 		/// have a negative effect on your deliverability.
 		/// </summary>
-		Abuse = 3
+		Abuse = 2
 	}
 
 

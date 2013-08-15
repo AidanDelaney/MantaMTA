@@ -84,11 +84,15 @@ namespace MantaMTA.Core.Events
 
 			BouncePair bouncePair;
 			string bounceMsg;
+			BodyPart deliveryReportBodyPart;
 			string deliveryReport = string.Empty;
 
-			if (FindDeliveryReport(msg.BodyParts, out deliveryReport))
+			if (FindFirstBodyPartByMediaType(msg.BodyParts, "message/delivery-status", out deliveryReportBodyPart))
 			{
 				// If we've got a delivery report, check it for info.
+
+				// Abuse report content may have long lines whitespace folded.
+				deliveryReport = MimeMessage.UnfoldHeaders(deliveryReportBodyPart.GetDecodedBody());
 			
 				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg))
 				{
@@ -113,7 +117,7 @@ namespace MantaMTA.Core.Events
 				bounceEvent.Message = bounceMsg;
 
 				// Write BounceEvent to DB.
-				// TODO
+				Save(bounceEvent);
 
 				return EmailProcessingResult.SuccessBounce;
 			}
@@ -151,7 +155,7 @@ namespace MantaMTA.Core.Events
 
 			using (StringReader sr = new StringReader(message))
 			{
-				string line = sr.ReadLine();
+				string line = sr.ReadToCrLf();
 
 				// While the string reader has stuff to read keep looping through each line.
 				while (!string.IsNullOrWhiteSpace(line) || sr.Peek() > -1)
@@ -179,7 +183,7 @@ namespace MantaMTA.Core.Events
 								break; // We've reached the end of the string!
 
 							// Read the next line.
-							line = sr.ReadLine();
+							line = sr.ReadToCrLf();
 
 							if (isSmtpResponse)
 							{
@@ -208,7 +212,7 @@ namespace MantaMTA.Core.Events
 
 						// If there is more of the string to read then read the next line, otherwise set line to string.empty.
 						if (sr.Peek() > -1)
-							line = sr.ReadLine();
+							line = sr.ReadToCrLf();
 						else
 							line = string.Empty;
 					}
@@ -385,36 +389,38 @@ namespace MantaMTA.Core.Events
 
 
 		/// <summary>
-		// Attempts to retrieve a delivery report that appears within a body part of an email.
+		// Attempts to find the first body part with the specified Media Type from a collection of BodyParts.
 		/// </summary>
 		/// <param name="bodyParts">An array of BodyParts to search within (including any child BodyParts).</param>
-		/// <param name="report">out.  If a delivery report is found, this will contain the content of it,
-		/// else string.Empty.</param>
+		/// <param name="mediaTypeToFind">The media type of the BodyPart to find, e.g. "message/delivery-status"
+		/// or "message/feedback-report".</param>
+		/// <param name="report">out.  If a BodyPart with a MediaType matching the value in <paramref name="mediaTypeToFind"/> is found,
+		/// this will contain the content of it, else string.Empty.</param>
 		/// <returns>true if a delivery report was found, else false.</returns>
-		internal bool FindDeliveryReport(BodyPart[] bodyParts, out string report)
+		internal bool FindFirstBodyPartByMediaType(BodyPart[] bodyParts, string mediaTypeToFind, out BodyPart foundBodyPart)
 		{
 			foreach (BodyPart bp in bodyParts)
 			{
-				if (bp.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase))
+				if (bp.ContentType.MediaType.Equals(mediaTypeToFind, StringComparison.OrdinalIgnoreCase))
 				{
 					// Found it!
-					report = bp.GetDecodedBody();
+					foundBodyPart = bp;
 					return true;
 				}
 				else if (bp.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
 				{
 					// Loop through the child body parts.
-					if (FindDeliveryReport(bp.BodyParts, out report))
+					if (FindFirstBodyPartByMediaType(bp.BodyParts, mediaTypeToFind, out foundBodyPart))
 						return true;
 				}
 				else
-					// Ignore this BodyPart.
+					// Ignore this BodyPart as it's not a container or the media type we're looking for.
 					continue;
 			}
 
 
-			// If we're still here, then we didn't find a delivery report.
-			report = string.Empty;
+			// If we're still here, then we didn't find a bodypart with the media type we're looking for.
+			foundBodyPart = null;
 			return false;
 		}
 
@@ -456,12 +462,13 @@ namespace MantaMTA.Core.Events
 
 
 		/// <summary>
-		/// Looks through a feedback look looking for a Manta-MTA return path. If found logs the event.
+		/// Looks through a feedback loop email looking for something to identify it as an abuse report and who it relates to.
+		/// If found, logs the event.
 		/// 
-		/// Look for return path in following order.
+		/// How to get the info depending on the ESP:
 		/// Abuse Report Original-Mail-From.										[Yahoo]
-		/// Return-Path from body part child with content-type of message/rfc822.	[AOL]
-		/// Return-Path in message headers.											[Hotmail]
+		/// Message-ID from body part child with content-type of message/rfc822.	[AOL]
+		/// Return-Path in main message headers.									[Hotmail]
 		/// </summary>
 		/// <param name="message">The feedback look email.</param>
 		public EmailProcessingResult ProcessFeedbackLoop(string content)
@@ -471,17 +478,25 @@ namespace MantaMTA.Core.Events
 				return EmailProcessingResult.ErrorContent;
 			try
 			{
-				// Look for abuse report
-				BodyPart abuseReport = message.BodyParts.SingleOrDefault(bp => bp.ContentType.MediaType.Equals("message/feedback-report", StringComparison.OrdinalIgnoreCase));
-				if (abuseReport != null)
+				// Step 1:
+				//Look for abuse report
+				BodyPart abuseBodyPart = null;
+				string abuseReportBody;
+
+				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/feedback-report", out abuseBodyPart))
 				{
-					string abuseReportBody = abuseReport.GetDecodedBody();
-					abuseReportBody = MessageManager.UnfoldHeaders(abuseReportBody);
+					// Found an abuse report body part to examine.
+
+					// Abuse report content may have long lines whitespace folded.
+					abuseReportBody = MimeMessage.UnfoldHeaders(abuseBodyPart.GetDecodedBody());
+
 					using (StringReader reader = new StringReader(abuseReportBody))
 					{
 						while (reader.Peek() > -1)
 						{
-							string line = reader.ReadLine();
+							string line = reader.ReadToCrLf();
+
+							// The original mail from value will be the return-path we'd set so we should be able to get all the values we need from that.
 							if (line.StartsWith("Original-Mail-From:", StringComparison.OrdinalIgnoreCase))
 							{
 								string tmp = line.Substring("Original-Mail-From: ".Length - 1);
@@ -514,6 +529,10 @@ namespace MantaMTA.Core.Events
 					}
 				}
 
+
+
+				
+				// Function to use against BodyParts to find a return-path header.
 				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = new Func<MessageHeaderCollection, bool>(delegate(MessageHeaderCollection headers)
 					{
 						MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
@@ -567,25 +586,27 @@ namespace MantaMTA.Core.Events
 						}
 
 						return false;
-					});
+					}
+				);
 
-				// There isn't an abuse report or it doesn't contain the information we need.
-				// Check for any body parts with child messages.
-				BodyPart[] children = message.BodyParts.Where(bp => bp.HasChildMimeMessage).ToArray();
-				if (children != null)
+
+				// Step 2:
+				// Do a quick check that our email hasn't just been bounced to us.
+				if (checkForReturnPathHeaders(message.Headers))
+					return EmailProcessingResult.SuccessAbuse;
+
+
+				// Step 3:
+				// No abuse report found and not just our email bounced back to us, let's hunt
+				// though all child BodyParts for a return-path header...
+				BodyPart childMessageBodyPart;
+				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/rfc822", out childMessageBodyPart))
 				{
-					for (int i = 0; i < children.Length; i++)
+					if (checkForReturnPathHeaders(childMessageBodyPart.Headers))
 					{
-						MimeMessage child = children[i].ChildMimeMessage;
-						if (checkForReturnPathHeaders(child.Headers))
-							return EmailProcessingResult.SuccessAbuse;
+						return EmailProcessingResult.SuccessAbuse;
 					}
 				}
-
-				// There wasn't any child bodyparts or they didn't contain the info we need.
-				// Look to see if our email has just been bounced to us.
-				if(checkForReturnPathHeaders(message.Headers))
-					return EmailProcessingResult.SuccessAbuse;
 			}
 			catch (Exception) { }
 

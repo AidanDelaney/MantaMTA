@@ -57,6 +57,7 @@ This is <bold><italic>richtext.</italic></bold>
 --unique-boundary-1
 Content-Type: message/rfc822
 
+MIME-Version: 1.0
 From: (mailbox in US-ASCII)
 To: (address in US-ASCII)
 Subject: (subject in US-ASCII)
