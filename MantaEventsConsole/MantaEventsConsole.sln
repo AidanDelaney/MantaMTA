@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaEventsConsole", "MantaEventsConsole.csproj", "{E61C3BDD-54B8-48F4-B4B9-88B0EA21D44B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaCore", "..\MantaCore\MantaCore.csproj", "{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,16 +23,6 @@ Global
 		{E61C3BDD-54B8-48F4-B4B9-88B0EA21D44B}.Release|Mixed Platforms.Build.0 = Release|x86
 		{E61C3BDD-54B8-48F4-B4B9-88B0EA21D44B}.Release|x86.ActiveCfg = Release|x86
 		{E61C3BDD-54B8-48F4-B4B9-88B0EA21D44B}.Release|x86.Build.0 = Release|x86
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

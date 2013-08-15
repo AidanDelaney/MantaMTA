@@ -61,7 +61,10 @@ namespace MantaEventsConsole
 
 
 			// Process anything that's currently waiting in the directories.
-			ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
+			// ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
+
+			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
+
 
 
 			sw.Stop();
@@ -72,9 +75,6 @@ namespace MantaEventsConsole
 			Console.WriteLine("Time taken: {0}", sw.Elapsed);
 			Console.ReadLine();
 			return;
-
-
-			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 
 
 
