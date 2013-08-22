@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,7 +101,7 @@ namespace MantaMTA.Core.Client
 								try
 								{
 									// Loop while there is a task message to send.
-									while (taskMessage != null)
+									while (taskMessage != null && !_IsStopping)
 									{
 										// Send the message.
 										await SendMessageAsync(taskMessage);
@@ -112,8 +113,11 @@ namespace MantaMTA.Core.Client
 								}
 								catch (Exception ex)
 								{
-									// Log if we can't send the message.
-									Logging.Debug("Failed to send message", ex);
+									if (!(ex is MaxConnectionsException))
+									{
+										// Log if we can't send the message.
+										Logging.Debug("Failed to send message", ex);
+									}
 								}
 								finally
 								{
@@ -204,6 +208,17 @@ namespace MantaMTA.Core.Client
 				return false;
 			}
 
+			string msgData = string.Empty;
+			try
+			{
+				msgData = msg.Data;
+			}
+			catch (Exception)
+			{
+				msg.HandleDeliveryFail("Email DATA file not found", null, null);
+				return false;
+			}
+
 			MailAddress rcptTo = msg.RcptTo[0];
 			MailAddress mailFrom = msg.MailFrom;
 
@@ -236,10 +251,13 @@ namespace MantaMTA.Core.Client
 			}
 
 
-			SmtpOutboundClient smtpClient = SmtpClientPool.Dequeue(sndIpAddress, (DNS.MXRecord[])noneThrottledMXs.ToArray(typeof(DNS.MXRecord)), 
+			SmtpOutboundClient smtpClient = SmtpClientPool.Dequeue(sndIpAddress, (DNS.MXRecord[])noneThrottledMXs.ToArray(typeof(DNS.MXRecord)),
 				delegate(string message)
 				{
 					msg.HandleDeliveryDeferral(message, sndIpAddress, null);
+				}, delegate()
+				{
+					msg.HandleServiceUnavailable(sndIpAddress);
 				});
 
 			// If no client was dequeued then we can't currently send.
@@ -273,7 +291,7 @@ namespace MantaMTA.Core.Client
 				await smtpClient.ExecHeloOrRsetAsync(handleSmtpError);
 				await smtpClient.ExecMailFromAsync(mailFrom, handleSmtpError);
 				await smtpClient.ExecRcptToAsync(rcptTo, handleSmtpError);
-				await smtpClient.ExecDataAsync(msg.Data, handleSmtpError);
+				await smtpClient.ExecDataAsync(msgData, handleSmtpError);
 				SmtpClientPool.Enqueue(smtpClient);
 				msg.HandleDeliverySuccess(sndIpAddress, smtpClient.MXRecord);
 					

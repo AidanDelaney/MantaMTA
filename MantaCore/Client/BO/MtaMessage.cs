@@ -76,7 +76,7 @@ namespace MantaMTA.Core.Client.BO
 			if (File.Exists(dataPath))
 				throw new IOException();
 
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.UtcNow, DateTime.UtcNow, false, dataPath, ipGroupID);
+			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.UtcNow, DateTime.UtcNow, false, dataPath, ipGroupID, 0);
 
 			using (StreamWriter writer = new StreamWriter(dataPath))
 			{

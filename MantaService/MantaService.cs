@@ -25,10 +25,10 @@ namespace MantaService
 		{
 			Logging.Info("Starting Manta MTA Service.");
 
-			AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs e)
+			/*AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs e)
 			{
 				Logging.Debug("", e.Exception);
-			};
+			};*/
 
 			AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
 			{

@@ -158,11 +158,14 @@ SELECT [snd].mta_send_id as 'SendID',
 (SELECT COUNT(*) FROM man_mta_transaction as [tran]
 	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
 	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 3) as 'Throttled',
+	AND [tran].mta_transactionStatus_id = 5) as 'Throttled',
 (SELECT COUNT(*) FROM man_mta_transaction as [tran]
 	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
 	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 4) as 'Delivered'
+	AND [tran].mta_transactionStatus_id = 4) as 'Delivered',
+(SELECT COUNT(*) FROM man_mta_transaction as [tran]
+	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
+	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Attempts'
 FROM man_mta_send as [snd]"
   + (onlyActive ? " WHERE [snd].mta_send_internalId IN (SELECT man_mta_msg.mta_send_internalId FROM man_mta_queue join man_mta_msg on man_mta_queue.mta_msg_id = man_mta_msg.mta_msg_id) " : string.Empty)
   +	" ORDER BY [snd].mta_send_createdTimestamp DESC";

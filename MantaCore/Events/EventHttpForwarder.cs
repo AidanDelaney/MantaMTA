@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -57,8 +58,17 @@ namespace MantaMTA.Core.Events
 				// Keep looping as long as the MTA is running.
 				while (!_IsStopping)
 				{
+					MantaEventCollection events = null;
 					// Get events for forwarding.
-					MantaEventCollection events = MantaMTA.Core.DAL.EventDB.GetEventsForForwarding(10);
+					try
+					{
+						events = MantaMTA.Core.DAL.EventDB.GetEventsForForwarding(10);
+					}
+					catch (SqlNullValueException) 
+					{ 
+						/* Todo: Fix this properly*/
+						events = new MantaEventCollection();
+					}
 
 					// If there are no events to forward sleep for a second and look again.
 					if (events.Count == 0)

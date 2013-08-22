@@ -136,7 +136,11 @@ UPDATE man_mta_queue
 SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
-SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
+SELECT (SELECT COUNT(*)
+		FROM man_mta_transaction as [tran]
+		WHERE [tran].mta_msg_id = [msg].mta_msg_id
+		AND [tran].mta_transactionStatus_id = 1) as 'DeferredCount',
+		[msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
 FROM man_mta_queue as [que]
 JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
@@ -176,7 +180,7 @@ UPDATE man_mta_queue
 SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
-SELECT [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
+SELECT 0 as 'DeferredCount', [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
 FROM man_mta_queue as [que]
 JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
@@ -237,7 +241,8 @@ WHERE mta_msg_id = @msgID";
 														 record.GetDateTime("mta_queue_attemptSendAfter"),
 														 record.GetBoolean("mta_queue_isPickupLocked"),
 														 record.GetString("mta_queue_dataPath"),
-														 record.GetInt32("ip_group_id"));
+														 record.GetInt32("ip_group_id"),
+														 record.GetInt32("DeferredCount"));
 			return qMsg;
 		}
 
