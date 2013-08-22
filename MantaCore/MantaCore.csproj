@@ -70,6 +70,7 @@
     <Compile Include="DNS\DnsApiInterop.cs" />
     <Compile Include="DNS\DNSClasses.cs" />
     <Compile Include="DNS\DNSManager.cs" />
+    <Compile Include="Enums\BounceParsingEnums.cs" />
     <Compile Include="Enums\SendStatus.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />

@@ -234,6 +234,34 @@ namespace MantaMTA.Core
 		private static int _MtaMaxTimeInQueue = -1;
 		private static DateTime _MtaMaxTimeInQueueLoadTime = DateTime.MinValue;
 
+
+		/// <summary>
+		/// Flag to indicate whether to retain succesfully processed bounce email files.  Used to see how bounces have been processed so
+		/// the processing code can be reviewed and Bounce Rules modified if necessary.
+		/// 
+		/// Files that result in an error when being processed are always kept.
+		/// 
+		/// If true, successfully processed bounce email files are kept in folders relating to how they were identified;
+		/// if false, they are immediately deleted.
+		/// </summary>
+		public static bool KeepBounceFiles
+		{
+			get
+			{
+				if (_keepBounceFilesLoadTime < DateTime.UtcNow)
+				{
+					_keepBounceFiles = DAL.CfgPara.GetKeepBounceFilesFlag();
+					_keepBounceFilesLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+				}
+
+				return _keepBounceFiles;
+			}
+		}
+		private static bool _keepBounceFiles = false;
+		private static DateTime _keepBounceFilesLoadTime = DateTime.MinValue;
+
+
+
 		internal static class Client
 		{
 			/// <summary>

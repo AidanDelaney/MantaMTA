@@ -12,8 +12,8 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.AolAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				EmailProcessingDetails processingDetails = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.AolAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetails.ProcessingResult);
 			}
 		}
 
@@ -22,8 +22,8 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.HotmailAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				EmailProcessingDetails processingDetails = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.HotmailAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetails.ProcessingResult);
 			}
 		}
 
@@ -32,8 +32,8 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.YahooAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				EmailProcessingDetails processingDetails = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.YahooAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetails.ProcessingResult);
 			}
 		}
 	}

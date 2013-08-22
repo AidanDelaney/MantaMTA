@@ -40,9 +40,6 @@
     <Reference Include="log4net">
       <HintPath>..\MantaCore\bin\Debug\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="MantaCore">
-      <HintPath>..\MantaCore\bin\Debug\MantaCore.dll</HintPath>
-    </Reference>
     <Reference Include="MantaEventTypes">
       <HintPath>..\MantaCore\bin\Debug\MantaEventTypes.dll</HintPath>
     </Reference>
@@ -92,6 +89,12 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MantaCore\MantaCore.csproj">
+      <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
+      <Name>MantaCore</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -4,12 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using MantaMTA.Core.Events;
 using CDO;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Net.Http;
 using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 
 namespace MantaEventsConsole
 {
@@ -17,11 +19,24 @@ namespace MantaEventsConsole
 	{
 		private static string RootDirectory = @"C:\temp\Manta\Drop\";
 
-		private static string DirectoryOfBounceEmails = "Return";
+		private static string DirectoryOfBounceEmails = "Return2";
 		private static string DirectoryOfFeedbackLoopEmails = "FeedbackLoops";
 
 		private static string SubdirectoryForProblemEmails = "UnableToProcess";
 
+
+
+		class EmailsProcessed : ConcurrentDictionary<EmailProcessingDetails, List<string>>
+		{
+			public void Add(EmailProcessingDetails details, string filename)
+			{
+				//this.AddOrUpdate(details, new List<string>(new string[] {filename}), (key, oldValue) => oldValue.ToArray()(filename));
+				this.AddOrUpdate(details, new List<string>(new string[] { filename }), (key, oldValue) => { oldValue.Add(filename); return oldValue; });
+			}
+		}
+
+
+		static EmailsProcessed ProcessedFiles = new EmailsProcessed();
 
 		static void Main(string[] args)
 		{
@@ -34,11 +49,11 @@ namespace MantaEventsConsole
 
 
 			Action<string> FeedbackLoopLogger = delegate(string msg) { Console.WriteLine("FeedbackLoop: {0}", msg); };
-			Action<string> FeedbackLoopProcessor = delegate(string content){ EventsManager.Instance.ProcessFeedbackLoop(content); };
+			Func<string, EmailProcessingDetails> FeedbackLoopProcessor = delegate(string content) { return EventsManager.Instance.ProcessFeedbackLoop(content); };
 
 
 			Action<string> BounceLogger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Action<string> BounceProcessor = delegate(string content) { EventsManager.Instance.ProcessBounceEmail(content); };
+			Func<string, EmailProcessingDetails> BounceProcessor = delegate(string content) { return EventsManager.Instance.ProcessBounceEmail(content); };
 
 
 			
@@ -61,19 +76,43 @@ namespace MantaEventsConsole
 
 
 			// Process anything that's currently waiting in the directories.
-			// ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
+			ProcessBounceFiles(Path.Combine(RootDirectory, DirectoryOfBounceEmails));
 
-			ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
-
-
-
-			sw.Stop();
+			// ProcessFeedbackLoopFiles(Path.Combine(RootDirectory, DirectoryOfFeedbackLoopEmails));
 
 			ShowBounceRuleStats();
 
+			sw.Stop();
+
 
 			Console.WriteLine("Time taken: {0}", sw.Elapsed);
+
+
+			Console.WriteLine("{0}How files were processed:{0}", Environment.NewLine);
+
+			foreach(KeyValuePair<EmailProcessingDetails, List<string>> d in ProcessedFiles.OrderByDescending(p => p.Value.Count))
+			{
+				Console.Write("{0:N0}\t{1}\t", d.Value.Count, d.Key.BounceIdentifier);
+
+				switch (d.Key.BounceIdentifier)
+				{
+					case MantaMTA.Core.Enums.BounceIdentifier.BounceRule:
+						Console.Write(d.Key.MatchingBounceRuleID.ToString());
+						break;
+
+					case MantaMTA.Core.Enums.BounceIdentifier.NdrCode:
+					case MantaMTA.Core.Enums.BounceIdentifier.SmtpCode:
+						Console.Write(d.Key.MatchingValue);
+						break;
+				}
+
+
+				Console.WriteLine();
+				
+			}
+
 			Console.ReadLine();
+
 			return;
 
 
@@ -112,9 +151,9 @@ namespace MantaEventsConsole
 		private static void ShowBounceRuleStats()
 		{
 			Console.WriteLine("Bounce Rules:");
-			foreach (BounceRule r in BounceRulesManager.BounceRules)
+			foreach (BounceRule r in BounceRulesManager.BounceRules.OrderByDescending(r => r.Hits))
 			{
-				Console.WriteLine("{0}: {1:N0}", r.Name, r.Hits);
+				Console.WriteLine("Hits:\t{0:N0}\t {1}) {2}", r.Hits, r.RuleID, r.Name);
 			}
 			Console.WriteLine();
 		}
@@ -276,7 +315,7 @@ namespace MantaEventsConsole
 		static void ProcessBounceFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("Bounce: {0}", msg); };
-			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessBounceEmail(content); });
+			Func<string, EmailProcessingDetails> Processor = new Func<string, EmailProcessingDetails>(delegate(string content) { return EventsManager.Instance.ProcessBounceEmail(content); });
 
 
 			DirectoryHandler(path, Processor, Logger);
@@ -290,7 +329,7 @@ namespace MantaEventsConsole
 		static void ProcessFeedbackLoopFiles(string path)
 		{
 			Action<string> Logger = delegate(string msg) { Console.WriteLine("FeedbackLoop: {0}", msg); };
-			Func<string, EmailProcessingResult> Processor = new Func<string, EmailProcessingResult>(delegate(string content) { return EventsManager.Instance.ProcessFeedbackLoop(content); });
+			Func<string, EmailProcessingDetails> Processor = new Func<string, EmailProcessingDetails>(delegate(string content) { return EventsManager.Instance.ProcessFeedbackLoop(content); });
 
 			DirectoryHandler(path, Processor, Logger);
 		}
@@ -303,7 +342,7 @@ namespace MantaEventsConsole
 		/// <param name="fileProcessor">A delegate method that will be used to process each file found in <paramref name="path"/>.</param>
 		/// <param name="logger">A delegate method that will be used to return information to an interface, e.g. to
 		/// display messages to a user.</param>
-		internal static void DirectoryHandler(string path, Func<string, EmailProcessingResult> fileProcessor, Action<string> logger)
+		internal static void DirectoryHandler(string path, Func<string, EmailProcessingDetails> fileProcessor, Action<string> logger)
 		{
 			// A filter to use when pulling out files to process; likely to be "*.eml".
 			string fileSearchPattern = "*.eml";
@@ -318,7 +357,8 @@ namespace MantaEventsConsole
 			do
 			{
 				// Loop through and process all the files we've picked up.
-				Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => 
+				//Parallel.ForEach<FileInfo>(files, new Action<FileInfo>(f => 
+				foreach(FileInfo f in files)
 				{
 					try
 					{
@@ -330,7 +370,8 @@ namespace MantaEventsConsole
 						Console.Write("** Press Enter to continue...");
 						Console.ReadLine();
 					}
-				}));
+				}
+				//));
 
 
 
@@ -347,10 +388,10 @@ namespace MantaEventsConsole
 		/// <summary>
 		/// FileHandler provides a standard way of processing a file such as a Bounce or FeedbackLoop email.
 		/// </summary>
-		internal static Action<FileInfo, Func<string, EmailProcessingResult>, Action<string>> FileHandler = new Action<FileInfo, Func<string, EmailProcessingResult>, Action<string>>(delegate(FileInfo f, Func<string, EmailProcessingResult> processor, Action<string> logger)
+		internal static Action<FileInfo, Func<string, EmailProcessingDetails>, Action<string>> FileHandler = new Action<FileInfo, Func<string, EmailProcessingDetails>, Action<string>>(delegate(FileInfo f, Func<string, EmailProcessingDetails> processor, Action<string> logger)
 		{
 			string content = string.Empty;
-			EmailProcessingResult result = EmailProcessingResult.Unknown;
+			EmailProcessingDetails processingDetails = new EmailProcessingDetails();
 
 			logger(String.Format("Processing: {0}", f.FullName));
 
@@ -372,18 +413,45 @@ namespace MantaEventsConsole
 			content = File.ReadAllText(f.FullName);
 
 			// Send the content to the delegate method that'll process its contents.
-			result = processor(content);
+			processingDetails = processor(content);
+
+			ProcessedFiles.Add(processingDetails, f.Name);
 
 
-			switch (result)
+
+			switch (processingDetails.ProcessingResult)
 			{
 				case EmailProcessingResult.SuccessAbuse:
+					 File.Move(f.FullName, Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", f.Name));
+					break;
+
 				case EmailProcessingResult.SuccessBounce:
 					// All good.  Nothing to do other than delete the file.
 					//File.Delete(f.FullName);
-					File.Move(f.FullName, Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", f.Name));
-					break;
 
+					string path = Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", processingDetails.BounceIdentifier.ToString());
+
+					switch (processingDetails.BounceIdentifier)
+					{
+						case MantaMTA.Core.Enums.BounceIdentifier.BounceRule:
+							path = Path.Combine(path, processingDetails.MatchingBounceRuleID.ToString());
+							break;
+
+						case MantaMTA.Core.Enums.BounceIdentifier.NdrCode:
+						case MantaMTA.Core.Enums.BounceIdentifier.SmtpCode:
+							path = Path.Combine(path, processingDetails.MatchingValue);
+							break;
+					}
+
+
+
+					Directory.CreateDirectory(path);
+
+					File.Move(f.FullName, Path.Combine(path, f.Name));
+
+					// File.Move(f.FullName, Path.Combine(Path.GetDirectoryName(f.FullName), "ProcessedSuccessfully", f.Name));
+					break;
+					 
 				case EmailProcessingResult.ErrorNoFile:
 					throw new FileNotFoundException("Failed to locate file to process: \"" + f.Name + "\".");
 

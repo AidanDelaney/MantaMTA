@@ -1,4 +1,5 @@
-﻿using MantaMTA.Core.Events;
+﻿using MantaMTA.Core.Enums;
+using MantaMTA.Core.Events;
 using MantaMTA.Core.Message;
 using NUnit.Framework;
 using System;
@@ -164,6 +165,7 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void NdrBounceProcessing()
 		{
+			EmailProcessingDetails processingDetails;
 			BouncePair actualBouncePair;
 			string bounceMessage;
 			bool returned;
@@ -177,11 +179,18 @@ Arrival-Date: Tue, 9 Oct 2012 19:02:10 +0100
 Final-Recipient: rfc822;some.user@colony101.co.uk
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 <some.user@colony101.co.uk>: Recipient address rejected: colony101.co.uk", out actualBouncePair, out bounceMessage);
+Diagnostic-Code: smtp;550 5.1.1 <some.user@colony101.co.uk>: Recipient address rejected: colony101.co.uk", out actualBouncePair, out bounceMessage, out processingDetails);
 			Assert.AreEqual(true, returned);
 			Assert.AreEqual(MantaBounceType.Hard, actualBouncePair.BounceType);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, actualBouncePair.BounceCode);
 			Assert.AreEqual(@"550 5.1.1 <some.user@colony101.co.uk>: Recipient address rejected: colony101.co.uk", bounceMessage);
+
+			Assert.AreEqual(EmailProcessingResult.SuccessBounce, processingDetails.ProcessingResult);
+			Assert.AreEqual(BounceIdentifier.NdrCode, processingDetails.BounceIdentifier);
+			Assert.AreEqual(0, processingDetails.MatchingBounceRuleID);
+			Assert.AreEqual("5.1.1", processingDetails.MatchingValue);
+
+
 
 
 
@@ -193,12 +202,16 @@ Arrival-Date: Tue, 9 Oct 2012 19:02:10 +0100
 
 Final-Recipient: rfc822;some.user@colony101.co.uk
 Action: failed
-Status: 5.1.1", out actualBouncePair, out bounceMessage);
+Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 			Assert.AreEqual(true, returned);
 			Assert.AreEqual(MantaBounceType.Hard, actualBouncePair.BounceType);
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, actualBouncePair.BounceCode);
-			// 
 			Assert.AreEqual("5.1.1", bounceMessage);
+
+			Assert.AreEqual(BounceIdentifier.NdrCode, processingDetails.BounceIdentifier);
+			Assert.AreEqual(0, processingDetails.MatchingBounceRuleID);
+			Assert.AreEqual("5.1.1", processingDetails.MatchingValue);
+
 		}
 
 		/// <summary>
@@ -208,52 +221,62 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 		public void BounceMessageParsing()
 		{
 			#region Test Data
+			// Be aware that any tests that use Bounce Rules may find that their RuleID values change.
 			var testData = new []
 			{ 
 				new 
-				{ 
+				{
 					Message = @"421 4.7.1 : (DYN:T1) http://postmaster.info.aol.com/errors/421dynt1.html", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.RateLimitedByReceivingMta }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.RateLimitedByReceivingMta },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = 3, MatchingValue = "DYN:T1" }
 				},
 				new 
-				{ 
+				{
 					Message = @"421 4.7.1 : (DYN:T2) some content", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = 12, MatchingValue =  "DYN:T2" }
 				},
 				new 
 				{ 
 					Message = @"421 4.7.1 Intrusion prevention active for [173.203.70.224][S]", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "4.7.1" }
 				},
 				new 
 				{ 
 					Message = @"450 4.1.1 <some.user@colony101.co.uk>: Recipient address rejected: unverified address: connect to mailgate.jtc65.co.uk[193.195.220.67]: Connection timed out", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress}
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress},
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "4.1.1" }
 				},
 				new 
 				{ 
 					Message = @"450 4.1.1 <some.user@colony101.co.uk>: Recipient address rejected: User unknown in virtual mailbox table", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = , BounceIdentifier = , MatchingBounceRuleID = , MatchingValue =  }
 				},
 				new 
 				{ 
 					Message = @"450 4.2.0 <some.user@colony101.co.uk>: Recipient address rejected: Greylisted", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = , BounceIdentifier = , MatchingBounceRuleID = , MatchingValue =  }
 				},
 				new 
 				{ 
 					Message = @"451 Requested action aborted: local error in processing (code: 11)", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.SmtpCode, MatchingBounceRuleID = 0, MatchingValue = "451" }
 				},
 				new 
 				{ 
 					Message = @"451 4.7.1 Access denied by DCC", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.General },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "4.7.1" }
 				},
 				new 
 				{ 
 					Message = @"551 You have sent an email to an address not recognised by our system. The email has been refused.", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.SmtpCode, MatchingBounceRuleID = 0, MatchingValue = "551" }
 				},
 				new 
 				{
@@ -261,15 +284,21 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 550-5.7.1 The line above says why the NorMAN mail gateways REJECTED this email.
 550-5.7.1 Please see <http://www.ncl.ac.uk/iss/support/security/NORMAN_reject>
 550 5.7.1 for a more detailed explanation.", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.SmtpCode, MatchingBounceRuleID = 0, MatchingValue = "5.7.1" }
 				},
 				new 
 				{ 
 					Message = @"421 4.7.0 [GL01] Message from (192.129.253.20) temporarily deferred - 4.16.50. Please refer to http://postmaster.yahoo.com/errors/postmaster-21.html", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = , MatchingValue = "421 4.7.0 [GL01]" }
 				}
 			};
 			#endregion
+
+
+			EmailProcessingDetails processingDetails;
+
 
 			for (int i = 0; i < testData.Length; i++)
 			{
@@ -280,11 +309,15 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage);
 				bool returned = false;
 				using (CreateTransactionScopeObject())
 				{
-					returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage);
+					returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage, out processingDetails);
 				}
 				Assert.IsTrue(returned, currentTestData.Message);
 				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceCode, bouncePair.BounceCode, currentTestData.Message);
 				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceType, bouncePair.BounceType, currentTestData.Message);
+
+				Assert.AreEqual(BounceIdentifier.NdrCode, processingDetails.BounceIdentifier);
+				Assert.AreEqual(0, processingDetails.MatchingBounceRuleID);
+				Assert.AreEqual("5.1.1", processingDetails.MatchingValue);
 			}
 		}
 

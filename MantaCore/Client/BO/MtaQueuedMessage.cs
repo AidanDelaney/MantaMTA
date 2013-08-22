@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
+using MantaMTA.Core.Events;
 
 namespace MantaMTA.Core.Client.BO
 {
@@ -99,8 +100,8 @@ namespace MantaMTA.Core.Client.BO
 		}
 
 		/// <summary>
-		/// This method handles failer of devlivery.
-		/// Logs failer
+		/// This method handles failure of delivery.
+		/// Logs failure
 		/// Deletes queued data
 		/// </summary>
 		/// <param name="failMsg"></param>
@@ -111,7 +112,10 @@ namespace MantaMTA.Core.Client.BO
 			try
 			{
 				for (int i = 0; i < base.RcptTo.Length; i++)
-					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID);
+				{
+					EmailProcessingDetails processingInfo = null;
+					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID, out processingInfo);
+				}
 			}
 			catch (Exception)
 			{

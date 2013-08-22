@@ -156,10 +156,15 @@ namespace MantaMTA.Core.Events
 			string endPart = ndrCode.Substring(firstDotPos);
 
 
-
+			// List of status codes as per RFC 3463 ().
+			//
 			// TODO BenC (2013-07-08): Needs refining/reviewing as just did a rough first pass through.
 			switch (endPart)
 			{
+				case ".0.0":	// "Other undefined Status".  Should be used for all errors for which only the class of the error is known.
+					bp.BounceCode = MantaBounceCode.BounceUnknown;
+					break;
+
 				case ".1.5":	// Destination mailbox address valid
 					bp.BounceCode = MantaBounceCode.NotABounce;
 					break;
@@ -201,8 +206,13 @@ namespace MantaMTA.Core.Events
 					bp.BounceCode = MantaBounceCode.UnableToConnect;
 					break;
 
-				/*case ".1.7":	// Bad sender's mailbox address syntax
+				case ".1.7":	// Bad sender's mailbox address syntax
 				case ".1.8":	// Bad sender's system address
+					bp.BounceCode = MantaBounceCode.ConfigurationErrorWithSendingAddress;
+					break;
+
+				// BenC (2013-08-21): Don't know why these are commented out (doesn't affect things as they're handled by default anyway), but leaving for now.
+				/*				
 				case ".5.1":	// Invalid command
 				case ".5.2":	// Syntax error
 				case ".5.3":	// Too many recipients
@@ -221,7 +231,8 @@ namespace MantaMTA.Core.Events
 				case ".7.4":	// Security features not supported
 				case ".7.5":	// Cryptographic failure
 				case ".7.6":	// Cryptographic algorithm not supported
-				case ".7.7":	// Message integrity failure*/
+				case ".7.7":	// Message integrity failure
+				*/
 				default:
 					// Do additional processing if no matches above.
 					bp.BounceCode = MantaBounceCode.General;

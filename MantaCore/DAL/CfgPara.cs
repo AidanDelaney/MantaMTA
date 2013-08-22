@@ -132,6 +132,16 @@ WHERE [dmn].cfg_localDomain_id = (SELECT TOP 1 [para].cfg_para_returnPathDomain_
 			return GetColumnValue("cfg_para_eventForwardingHttpPostUrl").ToString();
 		}
 
+
+		/// <summary>
+		/// Gets the a flag from the database that indicates whether to keep or delete successfully processed bounce email files.
+		/// Useful for Bounce Rule reviewing.
+		/// </summary>
+		public static bool GetKeepBounceFilesFlag()
+		{
+			return (bool)GetColumnValue("cfg_para_keepBounceFilesFlag");
+		}
+
 		/// <summary>
 		/// ExecuteScalar getting value of colName in man_cfg_para
 		/// </summary>

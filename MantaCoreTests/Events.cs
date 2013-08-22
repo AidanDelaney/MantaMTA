@@ -79,7 +79,10 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				bool result = EventsManager.Instance.ProcessSmtpResponseMessage("550 User Unknown", "some.user@colony101.co.uk", 1);
+				EmailProcessingDetails processingDetails;
+
+
+				bool result = EventsManager.Instance.ProcessSmtpResponseMessage("550 User Unknown", "some.user@colony101.co.uk", 1, out processingDetails);
 				Assert.IsTrue(result);
 
 				MantaEventCollection events = EventsManager.Instance.GetEvents();

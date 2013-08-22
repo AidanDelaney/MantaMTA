@@ -24,6 +24,9 @@ namespace MantaMTA.Core.Events
 
 					// Ensure the Rules are in the correct order.
 					_bounceRules = new BounceRulesCollection(_bounceRules.OrderBy(r => r.ExecutionOrder));
+
+					// Only set the LoadedTimestamp value after we're done assigning new values to _bounceRules.
+					_bounceRules.LoadedTimestampUtc = DateTime.UtcNow;
 				}
 
 				return _bounceRules;
