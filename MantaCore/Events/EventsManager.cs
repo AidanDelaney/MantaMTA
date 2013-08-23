@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Message;
+using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Events
 {
@@ -49,15 +50,15 @@ namespace MantaMTA.Core.Events
 		/// successfully processed or not.</returns>
 		public EmailProcessingDetails ProcessBounceEmail(string message)
 		{
-			EmailProcessingDetails bounceIdDetails = new EmailProcessingDetails();
+			EmailProcessingDetails bounceDetails = new EmailProcessingDetails();
 
 			MimeMessage msg = MimeMessage.Parse(message);
 
 			if (msg == null)
 			{
-				bounceIdDetails.ProcessingResult = EmailProcessingResult.ErrorContent;
-				bounceIdDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
-				return bounceIdDetails;
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorContent;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+				return bounceDetails;
 			}
 
 
@@ -65,9 +66,9 @@ namespace MantaMTA.Core.Events
 			MessageHeader returnPath = msg.Headers.GetFirstOrDefault("x-receiver");
 			if (returnPath == null)
 			{
-				bounceIdDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
-				bounceIdDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
-				return bounceIdDetails;
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
+				return bounceDetails;
 			}
 
 			string rcptTo = string.Empty;
@@ -76,9 +77,9 @@ namespace MantaMTA.Core.Events
 			if (!ReturnPathManager.TryDecode(returnPath.Value, out rcptTo, out internalSendID))
 			{
 				// Not a valid Return-Path so can't process.
-				bounceIdDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
-				bounceIdDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
-				return bounceIdDetails;
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
+				return bounceDetails;
 			}
 
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
@@ -108,7 +109,7 @@ namespace MantaMTA.Core.Events
 				// Abuse report content may have long lines whitespace folded.
 				deliveryReport = MimeMessage.UnfoldHeaders(deliveryReportBodyPart.GetDecodedBody());
 			
-				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg, out bounceIdDetails))
+				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg, out bounceDetails))
 				{
 					// Successfully parsed.
 					bounceEvent.BounceInfo = bouncePair;
@@ -117,8 +118,8 @@ namespace MantaMTA.Core.Events
 					// Write BounceEvent to DB.
 					Save(bounceEvent);
 
-					bounceIdDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
-					return bounceIdDetails;
+					bounceDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
+					return bounceDetails;
 				}
 			}
 
@@ -126,7 +127,7 @@ namespace MantaMTA.Core.Events
 
 			// We're still here so there was either no NDR part or nothing contained within it that we could
 			// interpret so have to check _all_ body parts for something useful.
-			if (FindBounceReason(msg.BodyParts, out bouncePair, out bounceMsg, out bounceIdDetails))
+			if (FindBounceReason(msg.BodyParts, out bouncePair, out bounceMsg, out bounceDetails))
 			{
 				bounceEvent.BounceInfo = bouncePair;
 				bounceEvent.Message = bounceMsg;
@@ -134,8 +135,8 @@ namespace MantaMTA.Core.Events
 				// Write BounceEvent to DB.
 				Save(bounceEvent);
 
-				bounceIdDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
-				return bounceIdDetails;
+				bounceDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
+				return bounceDetails;
 			}
 
 
@@ -147,9 +148,9 @@ namespace MantaMTA.Core.Events
 			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 			bounceEvent.Message = string.Empty;
 			
-			bounceIdDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
-			bounceIdDetails.ProcessingResult = EmailProcessingResult.Unknown;
-			return bounceIdDetails;
+			bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+			bounceDetails.ProcessingResult = EmailProcessingResult.Unknown;
+			return bounceDetails;
 		}
 
 

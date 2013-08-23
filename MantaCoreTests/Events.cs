@@ -1,4 +1,5 @@
-﻿using MantaMTA.Core.Events;
+﻿using MantaMTA.Core.Enums;
+using MantaMTA.Core.Events;
 using MantaMTA.Core.Message;
 using NUnit.Framework;
 using System;

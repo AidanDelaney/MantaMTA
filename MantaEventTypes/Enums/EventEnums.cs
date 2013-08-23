@@ -6,47 +6,6 @@ using System.Text;
 namespace MantaMTA.Core.Events
 {
 	/// <summary>
-	/// 
-	/// </summary>
-	public enum EmailProcessingResult
-	{
-		/// <summary>
-		/// Default value.
-		/// </summary>
-		Unknown = 0,
-		/// <summary>
-		/// Email successfully processed - was abuse.
-		/// </summary>
-		SuccessAbuse = 1,
-		/// <summary>
-		/// Email successfully processed - was a bounce.
-		/// </summary>
-		SuccessBounce = 2,
-		/// <summary>
-		/// Email successfully processed - wasn't an abuse or bounce email; likely to be junk.
-		/// </summary>
-		SuccessNoAction = 3,
-		/// <summary>
-		/// Error processing email - problem with content.
-		/// </summary>
-		ErrorContent = 4,
-		/// <summary>
-		/// Error processing email - file doesn't exist.
-		/// </summary>
-		ErrorNoFile = 5,
-		/// <summary>
-		/// Error processing email - no reason given.
-		/// </summary>
-		ErrorNoReason = 6,
-		/// <summary>
-		/// No return path was found as such we identify
-		/// email address or send.
-		/// </summary>
-		ErrorNoReturnPath = 7
-	}
-
-
-	/// <summary>
 	/// This identifies the type of an event.
 	/// </summary>
 	public enum MantaEventType : int

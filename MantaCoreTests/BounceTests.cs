@@ -185,7 +185,10 @@ Diagnostic-Code: smtp;550 5.1.1 <some.user@colony101.co.uk>: Recipient address r
 			Assert.AreEqual(MantaBounceCode.BadEmailAddress, actualBouncePair.BounceCode);
 			Assert.AreEqual(@"550 5.1.1 <some.user@colony101.co.uk>: Recipient address rejected: colony101.co.uk", bounceMessage);
 
-			Assert.AreEqual(EmailProcessingResult.SuccessBounce, processingDetails.ProcessingResult);
+			// BenC (2013-08-23): The ProcessingResult is not set by .ParseBounceMessage() as it's not intended to be called directly so have hardcoded NotYetSet here.
+			// Only reason it's being called directly is for unit testing.
+			Assert.AreEqual(EmailProcessingResult.NotYetSet, processingDetails.ProcessingResult);
+
 			Assert.AreEqual(BounceIdentifier.NdrCode, processingDetails.BounceIdentifier);
 			Assert.AreEqual(0, processingDetails.MatchingBounceRuleID);
 			Assert.AreEqual("5.1.1", processingDetails.MatchingValue);
@@ -223,7 +226,9 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 			#region Test Data
 			// Be aware that any tests that use Bounce Rules may find that their RuleID values change.
 			var testData = new []
-			{ 
+			{
+				// Commented out lots of these tests as they're looking at 4xx errors which aren't checked against the Bounce Rules, only 5xxs are.
+				/*
 				new 
 				{
 					Message = @"421 4.7.1 : (DYN:T1) http://postmaster.info.aol.com/errors/421dynt1.html", 
@@ -274,6 +279,13 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 				},
 				new 
 				{ 
+					Message = @"421 4.7.0 [GL01] Message from (192.129.253.20) temporarily deferred - 4.16.50. Please refer to http://postmaster.yahoo.com/errors/postmaster-21.html", 
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = 0, MatchingValue = "421 4.7.0 [GL01]" }
+				}
+				*/
+				new 
+				{ 
 					Message = @"551 You have sent an email to an address not recognised by our system. The email has been refused.", 
 					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress },
 					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.SmtpCode, MatchingBounceRuleID = 0, MatchingValue = "551" }
@@ -284,25 +296,18 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 550-5.7.1 The line above says why the NorMAN mail gateways REJECTED this email.
 550-5.7.1 Please see <http://www.ncl.ac.uk/iss/support/security/NORMAN_reject>
 550 5.7.1 for a more detailed explanation.", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.BadEmailAddress },
-					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.SmtpCode, MatchingBounceRuleID = 0, MatchingValue = "5.7.1" }
-				},
-				new 
-				{ 
-					Message = @"421 4.7.0 [GL01] Message from (192.129.253.20) temporarily deferred - 4.16.50. Please refer to http://postmaster.yahoo.com/errors/postmaster-21.html", 
-					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
-					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = 0, MatchingValue = "421 4.7.0 [GL01]" }
+					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Hard, BounceCode = MantaBounceCode.General },
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "5.7.1" }
 				}
 			};
 			#endregion
 
 
-			EmailProcessingDetails processingDetails;
-
 
 			for (int i = 0; i < testData.Length; i++)
 			{
 				var currentTestData = testData[i];
+				EmailProcessingDetails processingDetails;
 				BouncePair bouncePair;
 				string bounceMessage = string.Empty;
 
@@ -311,13 +316,24 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 				{
 					returned = EventsManager.Instance.ParseBounceMessage(currentTestData.Message, out bouncePair, out bounceMessage, out processingDetails);
 				}
+
 				Assert.IsTrue(returned, currentTestData.Message);
+
+				// Check the BouncePair values.
 				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceCode, bouncePair.BounceCode, currentTestData.Message);
 				Assert.AreEqual(currentTestData.ExpectedBouncePair.BounceType, bouncePair.BounceType, currentTestData.Message);
 
-				Assert.AreEqual(BounceIdentifier.NdrCode, processingDetails.BounceIdentifier);
-				Assert.AreEqual(0, processingDetails.MatchingBounceRuleID);
-				Assert.AreEqual("5.1.1", processingDetails.MatchingValue);
+
+
+				// Check the EmailProcessingDetails values.
+				Assert.AreEqual(currentTestData.ExpectedBounceProcessingDetails.BounceIdentifier, processingDetails.BounceIdentifier, currentTestData.Message);
+
+				// BenC (2013-08-23): The ProcessingResult is not set by .ParseBounceMessage() as it's not intended to be called directly so have hardcoded NotYetSet here.
+				// Only reason it's being called directly is for unit testing.
+				Assert.AreEqual(EmailProcessingResult.NotYetSet, processingDetails.ProcessingResult, currentTestData.Message);
+
+				Assert.AreEqual(currentTestData.ExpectedBounceProcessingDetails.MatchingBounceRuleID, processingDetails.MatchingBounceRuleID, currentTestData.Message);
+				Assert.AreEqual(currentTestData.ExpectedBounceProcessingDetails.MatchingValue, processingDetails.MatchingValue, currentTestData.Message);
 			}
 		}
 

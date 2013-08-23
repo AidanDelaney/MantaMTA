@@ -142,10 +142,17 @@ namespace MantaMTA.Core.Events
 	/// <summary>
 	/// Holds details relating to how an email was handled (e.g. a bounce or abuse report).  If it was a
 	/// bounce, information about how it was identified as a bounce is included.
-	/// 
-	/// </summary>
+	/// /// </summary>
 	public class EmailProcessingDetails
 	{
+		public EmailProcessingDetails()
+		{
+			// Start .ProcessingResult as NotYetSet as some methods use EmailProcessingDetails objects, but are too low
+			// level to set this property.
+			this.ProcessingResult = EmailProcessingResult.NotYetSet;
+		}
+
+
 		/// <summary>
 		/// Compares two EmailProcessingDetails objects to see if they are equal.
 		/// </summary>

@@ -1,5 +1,5 @@
-﻿using MantaMTA.Core.Events;
-using MantaMTA.Core.Message;
+﻿using MantaMTA.Core.Enums;
+using MantaMTA.Core.Events;
 using NUnit.Framework;
 
 namespace MantaMTA.Core.Tests
