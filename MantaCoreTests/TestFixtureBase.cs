@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Transactions;
@@ -30,6 +31,43 @@ namespace MantaMTA.Core.Tests
 		}
 
 
+		/// <summary>
+		/// Compares an enum to database records used to represent it.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="sqlQueryForEnumRecords"></param>
+		/// <param name="enumIdColumn"></param>
+		/// <param name="enumNameColumn"></param>
+		protected void CompareEnumToDatabaseRecords<T>(string sqlQueryForEnumRecords, string enumIdColumn, string enumNameColumn)
+		{
+			DataTable table = GetDataTable(sqlQueryForEnumRecords);
+
+			Assert.AreEqual(table.Rows.Count, Enum.GetValues(typeof(T)).Length, "The number of database records doesn't match the number of elements in the enum.");
+
+
+			// Check each enum element has a matching record.
+			foreach (var c in Enum.GetValues(typeof(T)))
+			{
+				bool foundRow = false;
+
+				// Find the enum value's database record.
+				foreach (DataRow r in table.Rows)
+				{
+					if ((int)r[enumIdColumn] == (int)c)
+					{
+						// Found the row.
+						foundRow = true;
+
+						Assert.AreEqual(c.ToString(), r[enumNameColumn].ToString());
+
+						break;
+					}
+				}
+
+
+				Assert.IsTrue(foundRow, "Failed to locate database record for enum value \"" + c + "\".");
+			}
+		}
 
 
 		/// <summary>
@@ -37,7 +75,7 @@ namespace MantaMTA.Core.Tests
 		/// </summary>
 		/// <param name="sqlQuery"></param>
 		/// <returns></returns>
-		internal static DataTable GetDataTable(string sqlQuery)
+		protected static DataTable GetDataTable(string sqlQuery)
 		{
 			DataTable data = new DataTable();
 
@@ -57,7 +95,13 @@ namespace MantaMTA.Core.Tests
 		}
 
 
-		private static SqlConnection GetSqlConnection(string instance, string dbName)
+		/// <summary>
+		/// Gets a SqlConnection object for the specified SQL Server instance and database.
+		/// </summary>
+		/// <param name="instance">Name of the SQL Server instance to connect to.</param>
+		/// <param name="dbName">Name of the database to connect to.</param>
+		/// <returns>A SqlConnection, open and ready for use.</returns>
+		protected static SqlConnection GetSqlConnection(string instance, string dbName)
 		{
 			SqlConnection connection = new SqlConnection(String.Format("server={0};database={1};trusted_connection=yes", instance, dbName));
 			connection.Open();

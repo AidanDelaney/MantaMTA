@@ -2,7 +2,6 @@
 using MantaMTA.Core.Message;
 using NUnit.Framework;
 using System;
-using System.Data;
 
 namespace MantaMTA.Core.Tests
 {
@@ -15,33 +14,7 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void MantaBounceCodeEnumDbValues()
 		{
-			DataTable table = GetDataTable("SELECT * FROM man_evn_bounceCode ORDER BY evn_bounceCode_id");
-
-			Assert.AreEqual(table.Rows.Count, Enum.GetValues(typeof(MantaBounceCode)).Length, "The number of database records doesn't match the number of elements in the enum.");
-			
-
-			// Check each enum element has a matching record.
-			foreach (MantaBounceCode c in Enum.GetValues(typeof(MantaBounceCode)))
-			{
-				bool foundRow = false;
-
-				// Find the enum value's database record.
-				foreach(DataRow r in table.Rows)
-				{
-					if ((int)r["evn_bounceCode_id"] == (int)c)
-					{
-						// Found the row.
-						foundRow = true;
-
-						Assert.AreEqual(c.ToString(), r["evn_bounceCode_name"].ToString());
-
-						break;
-					}
-				}
-
-
-				Assert.IsTrue(foundRow, "Failed to locate database record for enum value \"" + c + "\".");
-			}
+			CompareEnumToDatabaseRecords<MantaBounceCode>("SELECT * FROM man_evn_bounceCode ORDER BY evn_bounceCode_id", "evn_bounceCode_id", "evn_bounceCode_name");
 		}
 
 
@@ -51,33 +24,7 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void MantaBounceTypeEnumDbValues()
 		{
-			DataTable table = GetDataTable("SELECT * FROM man_evn_bounceType ORDER BY evn_bounceType_id");
-
-			Assert.AreEqual(table.Rows.Count, Enum.GetValues(typeof(MantaBounceType)).Length, "The number of database records doesn't match the number of elements in the enum.");
-
-
-			// Check each enum element has a matching record.
-			foreach (MantaBounceType c in Enum.GetValues(typeof(MantaBounceType)))
-			{
-				bool foundRow = false;
-
-				// Find the enum value's database record.
-				foreach (DataRow r in table.Rows)
-				{
-					if ((int)r["evn_bounceType_id"] == (int)c)
-					{
-						// Found the row.
-						foundRow = true;
-
-						Assert.AreEqual(c.ToString(), r["evn_bounceType_name"].ToString());
-
-						break;
-					}
-				}
-
-
-				Assert.IsTrue(foundRow, "Failed to locate database record for enum value \"" + c + "\".");
-			}
+			CompareEnumToDatabaseRecords<MantaBounceType>("SELECT * FROM man_evn_bounceType ORDER BY evn_bounceType_id", "evn_bounceType_id", "evn_bounceType_name");
 		}
 		
 
