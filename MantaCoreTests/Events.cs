@@ -1,14 +1,86 @@
-﻿using System;
-using MantaMTA.Core.Events;
-using NUnit.Framework;
+﻿using MantaMTA.Core.Events;
 using MantaMTA.Core.Message;
-using System.IO;
+using NUnit.Framework;
+using System;
+using System.Data;
 
 namespace MantaMTA.Core.Tests
 {
 	[TestFixture]
 	public class Events : TestFixtureBase
 	{
+		/// <summary>
+		/// For the MantaBounceCode enum, check that the values held in the database to represent an enum match those of the actual enum.
+		/// </summary>
+		[Test]
+		public void MantaBounceCodeEnumDbValues()
+		{
+			DataTable table = GetDataTable("SELECT * FROM man_evn_bounceCode ORDER BY evn_bounceCode_id");
+
+			Assert.AreEqual(table.Rows.Count, Enum.GetValues(typeof(MantaBounceCode)).Length, "The number of database records doesn't match the number of elements in the enum.");
+			
+
+			// Check each enum element has a matching record.
+			foreach (MantaBounceCode c in Enum.GetValues(typeof(MantaBounceCode)))
+			{
+				bool foundRow = false;
+
+				// Find the enum value's database record.
+				foreach(DataRow r in table.Rows)
+				{
+					if ((int)r["evn_bounceCode_id"] == (int)c)
+					{
+						// Found the row.
+						foundRow = true;
+
+						Assert.AreEqual(c.ToString(), r["evn_bounceCode_name"].ToString());
+
+						break;
+					}
+				}
+
+
+				Assert.IsTrue(foundRow, "Failed to locate database record for enum value \"" + c + "\".");
+			}
+		}
+
+
+		/// <summary>
+		/// For the MantaBounceType enum, check that the values held in the database to represent an enum match those of the actual enum.
+		/// </summary>
+		[Test]
+		public void MantaBounceTypeEnumDbValues()
+		{
+			DataTable table = GetDataTable("SELECT * FROM man_evn_bounceType ORDER BY evn_bounceType_id");
+
+			Assert.AreEqual(table.Rows.Count, Enum.GetValues(typeof(MantaBounceType)).Length, "The number of database records doesn't match the number of elements in the enum.");
+
+
+			// Check each enum element has a matching record.
+			foreach (MantaBounceType c in Enum.GetValues(typeof(MantaBounceType)))
+			{
+				bool foundRow = false;
+
+				// Find the enum value's database record.
+				foreach (DataRow r in table.Rows)
+				{
+					if ((int)r["evn_bounceType_id"] == (int)c)
+					{
+						// Found the row.
+						foundRow = true;
+
+						Assert.AreEqual(c.ToString(), r["evn_bounceType_name"].ToString());
+
+						break;
+					}
+				}
+
+
+				Assert.IsTrue(foundRow, "Failed to locate database record for enum value \"" + c + "\".");
+			}
+		}
+		
+
 		/// <summary>
 		/// Test ensures we can save a MantaBounceEvent to the database and get it back.
 		/// </summary>
@@ -108,9 +180,9 @@ namespace MantaMTA.Core.Tests
 			{
 				bool result = false;
 
-
+				EmailProcessingDetails processingDetails;
 				// Check an AOL response.
-				result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1);
+				result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550 5.1.1 <bobobobobobobobobobobob@aol.com>: Recipient address rejected: aol.com", "bobobobobobobobobobobob@aol.com", 1, out processingDetails);
 				Assert.IsTrue(result);
 
 
@@ -118,7 +190,7 @@ namespace MantaMTA.Core.Tests
 				result = EventsManager.Instance.ProcessSmtpResponseMessage(@"550-5.1.1 The email account that you tried to reach does not exist. Please try
 550-5.1.1 double-checking the recipient's email address for typos or
 550-5.1.1 unnecessary spaces. Learn more at
-550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 1);
+550 5.1.1 http://support.google.com/mail/bin/answer.py?answer=6596 g8si5593977eet.3 - gsmtp", "bobobobobobobobobobobob@gmail.com", 1, out processingDetails);
 				Assert.IsTrue(result);
 			}
 		}
@@ -129,8 +201,8 @@ namespace MantaMTA.Core.Tests
 		{
 			using (CreateTransactionScopeObject())
 			{
-				EmailProcessingResult result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.AolAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				EmailProcessingDetails processingDetail = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.AolAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetail.ProcessingResult);
 				MantaEventCollection events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(1, events.Count);
 				Assert.IsTrue(events[0] is MantaAbuseEvent);
@@ -139,8 +211,8 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual("TestData", abuse.SendID);
 
 
-				result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.YahooAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				processingDetail = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.YahooAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetail.ProcessingResult);
 				events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(2, events.Count);
 				Assert.IsTrue(events[1] is MantaAbuseEvent);
@@ -148,8 +220,8 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual("some.user@yahoo.co.uk", abuse.EmailAddress);
 				Assert.AreEqual("TestData", abuse.SendID);
 
-				result = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.HotmailAbuse);
-				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, result);
+				processingDetail = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.HotmailAbuse);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetail.ProcessingResult);
 				events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(3, events.Count);
 				Assert.IsTrue(events[2] is MantaAbuseEvent);

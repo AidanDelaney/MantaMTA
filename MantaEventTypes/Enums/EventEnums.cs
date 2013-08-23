@@ -146,8 +146,12 @@ namespace MantaMTA.Core.Events
 		/// </summary>
 		ConfigurationErrorWithSendingAddress = 56,
 		/// <summary>
-		/// The receiving MTA has blocked us.
+		/// The receiving MTA has blocked the IP address.  Contact them to have it removed.
 		/// </summary>
-		BlockedByReceivingMta = 57
+		PermanentlyBlockedByReceivingMta = 57,
+		/// <summary>
+		/// The receiving MTA has placed a temporary block on the IP address, but will automatically remove it after a short period.
+		/// </summary>
+		TemporarilyBlockedByReceivingMta = 58
 	}
 }

@@ -252,13 +252,13 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 				{ 
 					Message = @"450 4.1.1 <some.user@colony101.co.uk>: Recipient address rejected: User unknown in virtual mailbox table", 
 					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress },
-					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = , BounceIdentifier = , MatchingBounceRuleID = , MatchingValue =  }
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessAbuse, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "4.1.1" }
 				},
 				new 
 				{ 
 					Message = @"450 4.2.0 <some.user@colony101.co.uk>: Recipient address rejected: Greylisted", 
 					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress },
-					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = , BounceIdentifier = , MatchingBounceRuleID = , MatchingValue =  }
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessAbuse, BounceIdentifier = BounceIdentifier.NdrCode, MatchingBounceRuleID = 0, MatchingValue = "4.2.0" }
 				},
 				new 
 				{ 
@@ -291,7 +291,7 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 				{ 
 					Message = @"421 4.7.0 [GL01] Message from (192.129.253.20) temporarily deferred - 4.16.50. Please refer to http://postmaster.yahoo.com/errors/postmaster-21.html", 
 					ExpectedBouncePair = new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.ServiceUnavailable },
-					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = , MatchingValue = "421 4.7.0 [GL01]" }
+					ExpectedBounceProcessingDetails = new EmailProcessingDetails { ProcessingResult = EmailProcessingResult.SuccessBounce, BounceIdentifier = BounceIdentifier.BounceRule, MatchingBounceRuleID = 0, MatchingValue = "421 4.7.0 [GL01]" }
 				}
 			};
 			#endregion
@@ -395,9 +395,9 @@ Status: 5.1.1", out actualBouncePair, out bounceMessage, out processingDetails);
 			{
 				string emailContent = System.IO.File.OpenText(@".\..\..\NonDeliveryReport Test Email.eml").ReadToEnd();
 
-				EmailProcessingResult result = EventsManager.Instance.ProcessBounceEmail(emailContent);
+				EmailProcessingDetails processingDetail = EventsManager.Instance.ProcessBounceEmail(emailContent);
 
-				Assert.AreEqual(EmailProcessingResult.SuccessBounce, result);
+				Assert.AreEqual(EmailProcessingResult.SuccessBounce, processingDetail.ProcessingResult);
 				MantaEventCollection events = EventsManager.Instance.GetEvents();
 				Assert.AreEqual(1, events.Count);
 				Assert.IsTrue(events[0] is MantaBounceEvent);
@@ -498,8 +498,9 @@ Diagnostic-Code: smtp;554 delivery error: dd This user doesn't have a yahoo.com 
 			{
 				string bounceMessage = string.Empty;
 				BouncePair bouncePair;
+				EmailProcessingDetails processingDetails;
 
-				bool returned = EventsManager.Instance.ParseNdr(ndr, out bouncePair, out bounceMessage);
+				bool returned = EventsManager.Instance.ParseNdr(ndr, out bouncePair, out bounceMessage, out processingDetails);
 				Assert.IsTrue(returned);
 				Assert.AreEqual(expectedCode, bouncePair.BounceCode);
 				Assert.AreEqual(expectedType, bouncePair.BounceType);

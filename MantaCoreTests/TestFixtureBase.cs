@@ -1,4 +1,7 @@
-﻿using System.Transactions;
+﻿using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Transactions;
 
 namespace MantaMTA.Core.Tests
 {
@@ -24,6 +27,42 @@ namespace MantaMTA.Core.Tests
 			);
 
 			return ts;
+		}
+
+
+
+
+		/// <summary>
+		/// Runs a provided SQL query and returns a DataTable of the results.
+		/// </summary>
+		/// <param name="sqlQuery"></param>
+		/// <returns></returns>
+		internal static DataTable GetDataTable(string sqlQuery)
+		{
+			DataTable data = new DataTable();
+
+			// SqlConnection is provided "Open" so just use it.
+			using (SqlConnection connection = GetSqlConnection(".\\sql2008express", "MANTA_MTA"))
+			{
+				SqlCommand command = connection.CreateCommand();
+				command.CommandType = CommandType.Text;
+				command.CommandText = sqlQuery;
+
+				data.Load(command.ExecuteReader());
+
+				connection.Close();
+			}
+
+			return data;
+		}
+
+
+		private static SqlConnection GetSqlConnection(string instance, string dbName)
+		{
+			SqlConnection connection = new SqlConnection(String.Format("server={0};database={1};trusted_connection=yes", instance, dbName));
+			connection.Open();
+
+			return connection;
 		}
 	}
 }
