@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using MantaMTA.Core.DAL;
+using NUnit.Framework;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -80,7 +81,7 @@ namespace MantaMTA.Core.Tests
 			DataTable data = new DataTable();
 
 			// SqlConnection is provided "Open" so just use it.
-			using (SqlConnection connection = GetSqlConnection(".\\sql2008express", "MANTA_MTA"))
+			using (SqlConnection connection = MantaDB.GetSqlConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
 				command.CommandType = CommandType.Text;
@@ -92,21 +93,6 @@ namespace MantaMTA.Core.Tests
 			}
 
 			return data;
-		}
-
-
-		/// <summary>
-		/// Gets a SqlConnection object for the specified SQL Server instance and database.
-		/// </summary>
-		/// <param name="instance">Name of the SQL Server instance to connect to.</param>
-		/// <param name="dbName">Name of the database to connect to.</param>
-		/// <returns>A SqlConnection, open and ready for use.</returns>
-		protected static SqlConnection GetSqlConnection(string instance, string dbName)
-		{
-			SqlConnection connection = new SqlConnection(String.Format("server={0};database={1};trusted_connection=yes", instance, dbName));
-			connection.Open();
-
-			return connection;
 		}
 	}
 }
