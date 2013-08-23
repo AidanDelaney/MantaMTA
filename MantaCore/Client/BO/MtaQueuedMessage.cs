@@ -21,6 +21,10 @@ namespace MantaMTA.Core.Client.BO
 		/// </summary>
 		public DateTime AttemptSendAfterUtc { get; set; }
 		/// <summary>
+		/// The amount of times this message has been deferred.
+		/// </summary>
+		public int DeferredCount { get; set; }
+		/// <summary>
 		/// This should replicate the database value. It should never directly be messed with.
 		/// </summary>
 		private bool _IsPickUpLocked { get; set; }
@@ -65,10 +69,13 @@ namespace MantaMTA.Core.Client.BO
 		/// Create a Queued message object using the passed in parameters.
 		/// </summary>
 		/// <param name="message">The MtaMessage that this queued message should be based on.</param>
-		/// <param name="queuedTimestamp">The original queued timestamp.</param>
-		/// <param name="attemptSendAfter">The date time before which to no attempts should be made to send.</param>
+		/// <param name="queuedTimestampUtc">The original queued timestamp.</param>
+		/// <param name="attemptSendAfterUtc">The date time before which to no attempts should be made to send.</param>
 		/// <param name="isPickUpLocked">TRUE only if the field in database is also true.</param>
-		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestampUtc, DateTime attemptSendAfterUtc, bool isPickUpLocked, string dataPath, int ipGroupID)
+		/// <param name="dataPath">Path to the email file.</param>
+		/// <param name="ipGroupID">ID of the IP Group to send through.</param>
+		/// <param name="deferredCount">Ammount of times the message has been deferred.</param>
+		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestampUtc, DateTime attemptSendAfterUtc, bool isPickUpLocked, string dataPath, int ipGroupID, int deferredCount)
 		{
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
@@ -80,6 +87,7 @@ namespace MantaMTA.Core.Client.BO
 			_IsPickUpLocked = isPickUpLocked;
 			DataPath = dataPath;
 			IPGroupID = ipGroupID;
+			DeferredCount = deferredCount;
 		}
 
 		/// <summary>
@@ -160,11 +168,28 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="defMsg"></param>
 		public void HandleDeliveryDeferral(string defMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
 		{
-			// Log deferral
+			// Log the deferral.
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
+		
+			// This holds the maximum interval between send retries. Should be put in the database.
+			int maxInterval = 3 * 60;
+			
+			// Increase the defered count as the queued messages has been deferred.
+			DeferredCount++;
+
+			// Hold the minutes to wait until next retry.
+			double nextRetryInterval = MtaParameters.MtaRetryInterval;
+
+			// Increase the deferred wait interval by doubling for each retry.
+			for (int i = 1; i < DeferredCount; i++)
+					nextRetryInterval = nextRetryInterval * 2;
+
+			// If we have gone over the max interval then set to the max interval value.
+			if (nextRetryInterval > maxInterval)
+				nextRetryInterval = maxInterval;
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(MtaParameters.MtaRetryInterval);
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(nextRetryInterval);
 			MtaMessageDB.Save(this);
 		}
 
@@ -179,7 +204,7 @@ namespace MantaMTA.Core.Client.BO
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(MtaParameters.MtaRetryInterval);
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
 			MtaMessageDB.Save(this);
 		}
 
@@ -193,6 +218,20 @@ namespace MantaMTA.Core.Client.BO
 				File.Delete(this.DataPath);
 				this.DataPath = string.Empty;
 			}
+		}
+
+		/// <summary>
+		/// Handles a service unavailable event, should be same as defer but only wait 1 minute before next retry.
+		/// </summary>
+		/// <param name="sndIpAddress"></param>
+		internal void HandleServiceUnavailable(MtaIpAddress.MtaIpAddress ipAddress)
+		{
+			// Log deferral
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
+
+			// Set next retry time and release the lock.
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+			MtaMessageDB.Save(this);
 		}
 	}
 

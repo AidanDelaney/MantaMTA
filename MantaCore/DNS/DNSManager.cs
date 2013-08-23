@@ -67,7 +67,7 @@ namespace MantaMTA.Core.DNS
 			for (int i = 0; i < mxRecords.Length; i++)
 			{
 				string[] split = records[i].Split(new char[]{','});
-				mxRecords[i] = new MXRecord(split[1], uint.Parse(split[0]), uint.Parse(split[2]));
+				mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
 			}
 
 			_Records.TryAdd(domain, mxRecords);

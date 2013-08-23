@@ -15,7 +15,7 @@ namespace MantaMTA.Core.DNS
 		/// <summary>
 		/// The preference of the MX
 		/// </summary>
-		public uint Preference { get; set; }
+		public int Preference { get; set; }
 
 		/// <summary>
 		/// The TTL seconds
@@ -39,7 +39,7 @@ namespace MantaMTA.Core.DNS
 			}
 		}
 
-		public MXRecord(string host, uint preference, uint ttl)
+		public MXRecord(string host, int preference, uint ttl)
 		{
 			this.Host = host;
 			this.Preference = preference;

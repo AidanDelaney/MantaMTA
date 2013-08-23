@@ -372,4 +372,10 @@ namespace MantaMTA.Core
 	/// Should be thrown when a Send is in a discarding state and an attempt is made to queue a message to it.
 	/// </summary>
 	public class SendDiscardingException : Exception { }
+
+	/// <summary>
+	/// Exception is thrown when an email is picked up for sending but there are no connections available and
+	/// cannot attempt to create another as we've hit the maximum.
+	/// </summary>
+	public class MaxConnectionsException : Exception { }
 }

@@ -13,10 +13,10 @@
 			<th>Started</th>
 			<th>Messages</th>
 			<th>Waiting</th>
-			<th>Deferred</th>
 			<th>Failed</th>
-			<th>Throttled</th>
 			<th>Delivered</th>
+			<th>Deferred</th>
+			<th>Throttled</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -42,10 +42,10 @@
 		<td>@row[3]</td>
 		<td>@(((int)row[4]).ToString("N0"))</td>
 		<td class="text-warning">@(((int)row[5]).ToString("N0"))</td>
-		<td class='text-info'>@(((int)row[6]).ToString("N0"))</td>
 		<td class='text-error'>@(((int)row[7] + (int)row[8]).ToString("N0"))</td>
-		<td class="muted">@(((int)row[9]).ToString("N0"))</td>
 		<td class='text-success'>@(((int)row[10]).ToString("N0"))</td>
+		<td class='text-info'>@(((100d/(int)row[11])*(int)row[6]).ToString("N1"))%</td>
+		<td class='muted'>@(((100d/(int)row[11])*(int)row[9]).ToString("N1"))%</td>
 		<td>
 			@if ((MantaMTA.Core.Enums.SendStatus)row[2] != MantaMTA.Core.Enums.SendStatus.Paused){
 				<a href="/sends/pause?sendIID=@row[1]" class="btn btn-warning">Pause</a>

@@ -413,6 +413,8 @@ namespace MantaMTA.Core.Server
 			finally
 			{
 				// Client has issued QUIT command or connecion lost.
+				if(client.GetStream() != null)
+					client.GetStream().Close();
 				client.Close();
 			}
 

@@ -104,17 +104,17 @@ namespace MantaMTA.Core.Smtp
 					// the maximum connections then we can create a new connection otherwise
 					// we are maxed out so return null.
 					if (maximumConnections <= (currentConnections + _ConnectionAttemptsInProgress))
-						return null;
+						throw new MaxConnectionsException();
 
 				
 					// Limit the amount of connection attempts or experiance massive delays 30s+ for client.connect()
 					if (_ConnectionAttemptsInProgress >= SmtpClientQueue.MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS)
 					{
-						Logging.Debug("Cannot attempt to create new connection.");
-						return null;
+						//Logging.Debug("Cannot attempt to create new connection.");
+						throw new MaxConnectionsException();
 					}
-
-					Logging.Debug("Attempting to create new connection.");
+					
+					//Logging.Debug("Attempting to create new connection.");
 					_ConnectionAttemptsInProgress++;
 				}
 			}
@@ -135,6 +135,9 @@ namespace MantaMTA.Core.Smtp
 				smtpClient = null;
 				if (ex is SocketException)
 					throw ex;
+
+				if (ex is AggregateException && ex.InnerException is System.IO.IOException)
+					throw new SocketException();
 			}
 			finally
 			{
@@ -173,7 +176,7 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="deferalAction">The action to be called if service is unavalible or we are unable to 
 		/// connect to any of the MX's in the MX records.</param>
 		/// <returns>SmtpOutboundClient or Null.</returns>
-		public static SmtpOutboundClient Dequeue(MtaIpAddress.MtaIpAddress ipAddress, MXRecord[] mxs, Action<string> deferalAction)
+		public static SmtpOutboundClient Dequeue(MtaIpAddress.MtaIpAddress ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction)
 		{
 			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(ipAddress.IPAddress.ToString(), new SmtpClientMxRecords());
 			SmtpOutboundClient smtpClient = null;
@@ -190,7 +193,8 @@ namespace MantaMTA.Core.Smtp
 					// lowest preference  not move on to the others.
 					if (ServiceNotAvailableManager.IsServiceUnavailable(ipAddress.IPAddress.ToString(), mxs[i].Host))
 					{
-						deferalAction("Service unavailable");
+						//deferalAction("Service unavailable");
+						serviceUnavailableAction();
 						return null;
 					}
 
@@ -211,11 +215,12 @@ namespace MantaMTA.Core.Smtp
 					}
 
 					// Nothing was in the queue or all queued items timed out.
-					return clientQueue.CreateNewConnection(ipAddress, mxs[i]);					
+					smtpClient = clientQueue.CreateNewConnection(ipAddress, mxs[i]);
+					return smtpClient;
 				}
-				catch (SocketException ex)
+				catch (SocketException)
 				{
-					Logging.Warn("Failed to connect to " + mxs[i].Host, ex);
+					Logging.Warn("Failed to connect to " + mxs[i].Host);
 
 					// If we fail to connect to an MX then don't try again for at least a minute.
 					ServiceNotAvailableManager.Add(ipAddress.IPAddress.ToString(), mxs[i].Host, DateTime.UtcNow);
