@@ -250,7 +250,15 @@ namespace MantaMTA.Core
 			{
 				if (_keepBounceFilesLoadTime < DateTime.UtcNow)
 				{
-					_keepBounceFiles = DAL.CfgPara.GetKeepBounceFilesFlag();
+					bool newFlag = DAL.CfgPara.GetKeepBounceFilesFlag();
+
+					if (newFlag != _keepBounceFiles)
+					{
+						// Log that there was a change so we're aware that bounce files are being kept.
+						Logging.Info("Bounce Files are " + (newFlag ? "now" : "no longer") + " being kept.");
+					}
+
+					_keepBounceFiles = newFlag;
 					_keepBounceFilesLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
 				}
 

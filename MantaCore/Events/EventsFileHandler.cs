@@ -226,17 +226,17 @@ namespace MantaMTA.Core.Events
 								switch (processingDetails.BounceIdentifier)
 								{
 									case MantaMTA.Core.Enums.BounceIdentifier.BounceRule:
-										keepPath = Path.Combine(path, processingDetails.MatchingBounceRuleID.ToString());
+										keepPath = Path.Combine(keepPath, processingDetails.MatchingBounceRuleID.ToString());
 										break;
 
 									case MantaMTA.Core.Enums.BounceIdentifier.NdrCode:
 									case MantaMTA.Core.Enums.BounceIdentifier.SmtpCode:
-										keepPath = Path.Combine(path, processingDetails.MatchingValue);
+										keepPath = Path.Combine(keepPath, processingDetails.MatchingValue);
 										break;
 								}
 
 
-								Directory.CreateDirectory(path);
+								Directory.CreateDirectory(keepPath);
 
 								File.Move(f.FullName, Path.Combine(keepPath, f.Name));
 							}
