@@ -5,7 +5,7 @@ CREATE TABLE [dbo].[man_mta_queue](
 	[mta_queue_isPickupLocked] [bit] NOT NULL,
 	[mta_queue_dataPath] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[ip_group_id] [int] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 

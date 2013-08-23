@@ -3,7 +3,7 @@ CREATE TABLE [dbo].[man_evn_bounceEvent](
 	[evn_bounceCode_id] [int] NOT NULL,
 	[evn_bounceType_id] [int] NOT NULL,
 	[evn_bounceEvent_message] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 

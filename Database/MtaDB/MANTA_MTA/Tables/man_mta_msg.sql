@@ -3,7 +3,7 @@ CREATE TABLE [dbo].[man_mta_msg](
 	[mta_send_internalId] [int] NOT NULL,
 	[mta_msg_rcptTo] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[mta_msg_mailFrom] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 
