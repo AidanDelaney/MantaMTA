@@ -80,12 +80,13 @@ namespace MantaMTA.Core.Tests
 		{
 			DataTable data = new DataTable();
 
-			// SqlConnection is provided "Open" so just use it.
 			using (SqlConnection connection = MantaDB.GetSqlConnection())
 			{
 				SqlCommand command = connection.CreateCommand();
 				command.CommandType = CommandType.Text;
 				command.CommandText = sqlQuery;
+
+				connection.Open();
 
 				data.Load(command.ExecuteReader());
 
