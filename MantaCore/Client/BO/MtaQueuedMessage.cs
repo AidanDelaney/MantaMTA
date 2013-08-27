@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
+using MantaMTA.Core.Events;
 
 namespace MantaMTA.Core.Client.BO
 {
@@ -107,8 +108,8 @@ namespace MantaMTA.Core.Client.BO
 		}
 
 		/// <summary>
-		/// This method handles failer of devlivery.
-		/// Logs failer
+		/// This method handles failure of delivery.
+		/// Logs failure
 		/// Deletes queued data
 		/// </summary>
 		/// <param name="failMsg"></param>
@@ -119,7 +120,10 @@ namespace MantaMTA.Core.Client.BO
 			try
 			{
 				for (int i = 0; i < base.RcptTo.Length; i++)
-					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID);
+				{
+					EmailProcessingDetails processingInfo = null;
+					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID, out processingInfo);
+				}
 			}
 			catch (Exception)
 			{
@@ -217,13 +221,13 @@ namespace MantaMTA.Core.Client.BO
 		}
 
 		/// <summary>
-		/// Handles a service unavailable event, should be same as deffer but only wait 1 minute before next retry.
+		/// Handles a service unavailable event, should be same as defer but only wait 1 minute before next retry.
 		/// </summary>
 		/// <param name="sndIpAddress"></param>
 		internal void HandleServiceUnavailable(MtaIpAddress.MtaIpAddress ipAddress)
 		{
 			// Log deferral
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, "Service Unavalible", ipAddress, null);
+			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);

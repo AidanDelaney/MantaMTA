@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MantaMTA.Core.Enums;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -63,7 +64,7 @@ namespace MantaMTA.Core.Events
 		}
 
 		/// <summary>
-		/// Lock is used to prevent more than one abuse/fbl processor tasks from starting
+		/// Lock is used to prevent more than one abuse/fbl processor task from starting
 		/// at the same time.
 		/// </summary>
 		private static object _Lock = new object();
@@ -83,6 +84,11 @@ namespace MantaMTA.Core.Events
 		/// be processed are placed.
 		/// </summary>
 		private const string _SubdirectoryForProblemEmails = "UnableToProcess";
+
+		/// <summary>
+		/// This is the name of the subdirectory where bounce emails are placed when the MtaParameters.KeepBounceFiles flag is set to true.
+		/// </summary>
+		private const string _SubdirectoryForProcessedBounceEmails = "SuccessfullyProcessed";
 
 		/// <summary>
 		/// Filesystem watcher callback for Bounced Emails directory.
@@ -165,7 +171,7 @@ namespace MantaMTA.Core.Events
 		/// <param name="fileProcessor">A delegate method that will be used to process each file found in <paramref name="path"/>.</param>
 		/// <param name="logger">A delegate method that will be used to return information to an interface, e.g. to
 		/// display messages to a user.</param>
-		private void DirectoryHandler(string path, Func<string, EmailProcessingResult> fileProcessor)
+		private void DirectoryHandler(string path, Func<string, EmailProcessingDetails> fileProcessor)
 		{
 			// A filter to use when pulling out files to process; likely to be "*.eml".
 			string fileSearchPattern = "*.eml";
@@ -195,15 +201,52 @@ namespace MantaMTA.Core.Events
 
 					string content = File.ReadAllText(f.FullName);
 
-					// Send the content to the delegate method that'll process its contents.
-					EmailProcessingResult result = fileProcessor(content);
 
-					switch (result)
+
+					// Send the content to the delegate method that'll process its contents.
+					EmailProcessingDetails processingDetails = fileProcessor(content);
+
+					switch (processingDetails.ProcessingResult)
 					{
 						case EmailProcessingResult.SuccessAbuse:
-						case EmailProcessingResult.SuccessBounce:
 							// All good.  Nothing to do other than delete the file.
 							File.Delete(f.FullName);
+							break;
+
+						case EmailProcessingResult.SuccessBounce:
+
+							// To enable reviewing of bounce emails and how Manta has processed them, a flag can be set that
+							// keeps processed files.  Files that result in an error when being processed are always kept.
+							if (MtaParameters.KeepBounceFiles)
+							{
+								// Retain files.
+
+
+								string keepPath = Path.Combine(Path.GetDirectoryName(f.FullName), _SubdirectoryForProcessedBounceEmails, processingDetails.BounceIdentifier.ToString());
+
+								switch (processingDetails.BounceIdentifier)
+								{
+									case MantaMTA.Core.Enums.BounceIdentifier.BounceRule:
+										keepPath = Path.Combine(keepPath, processingDetails.MatchingBounceRuleID.ToString());
+										break;
+
+									case MantaMTA.Core.Enums.BounceIdentifier.NdrCode:
+									case MantaMTA.Core.Enums.BounceIdentifier.SmtpCode:
+										keepPath = Path.Combine(keepPath, processingDetails.MatchingValue);
+										break;
+								}
+
+
+								Directory.CreateDirectory(keepPath);
+
+								File.Move(f.FullName, Path.Combine(keepPath, f.Name));
+							}
+							else
+							{
+								// All good.  Nothing to do other than delete the file.
+								File.Delete(f.FullName);
+							}
+
 							break;
 
 						case EmailProcessingResult.ErrorNoFile:

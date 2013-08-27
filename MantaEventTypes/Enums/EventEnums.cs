@@ -6,47 +6,6 @@ using System.Text;
 namespace MantaMTA.Core.Events
 {
 	/// <summary>
-	/// 
-	/// </summary>
-	public enum EmailProcessingResult
-	{
-		/// <summary>
-		/// Default value.
-		/// </summary>
-		Unknown = 0,
-		/// <summary>
-		/// Email successfully processed - was abuse.
-		/// </summary>
-		SuccessAbuse = 1,
-		/// <summary>
-		/// Email successfully processed - was a bounce.
-		/// </summary>
-		SuccessBounce = 2,
-		/// <summary>
-		/// Email successfully processed - wasn't an abuse or bounce email; likely to be junk.
-		/// </summary>
-		SuccessNoAction = 3,
-		/// <summary>
-		/// Error processing email - problem with content.
-		/// </summary>
-		ErrorContent = 4,
-		/// <summary>
-		/// Error processing email - file doesn't exist.
-		/// </summary>
-		ErrorNoFile = 5,
-		/// <summary>
-		/// Error processing email - no reason given.
-		/// </summary>
-		ErrorNoReason = 6,
-		/// <summary>
-		/// No return path was found as such we identify
-		/// email address or send.
-		/// </summary>
-		ErrorNoReturnPath = 7
-	}
-
-
-	/// <summary>
 	/// This identifies the type of an event.
 	/// </summary>
 	public enum MantaEventType : int
@@ -65,7 +24,7 @@ namespace MantaMTA.Core.Events
 		/// complaints created by each campaign. Continuing to send to an address that has complained about spam can 
 		/// have a negative effect on your deliverability.
 		/// </summary>
-		Abuse = 3
+		Abuse = 2
 	}
 
 
@@ -85,7 +44,7 @@ namespace MantaMTA.Core.Events
 		Hard = 1,
 		/// <summary>
 		/// A soft bounce is an error condition, which if it continues, the email address should be considered 
-		/// invalid. An example is a "DNS Failure" (code 21) bounce message. This can happen because the domain 
+		/// invalid. An example is a "DNS Failure" (MantaBounceCode 21) bounce message. This can happen because the domain 
 		/// name no longer exists, or this could happen because the DNS registration expired and will be renewed
 		/// tomorrow, or there was a temporary DNS lookup error. If the "DNS failure" messages persist, then we 
 		/// know the address is bad.
@@ -110,12 +69,15 @@ namespace MantaMTA.Core.Events
 		/// </summary>
 		Unknown = 0,
 		/// <summary>
-		/// Not actually a bounce.
+		/// Not actually a bounce.  Gives code processing a bounce a way of finding that it's not actually looking at a bounce, e.g. when finding a 
 		/// </summary>
 		NotABounce = 1,
+		/// <summary>
+		/// There is no email account for the email address specified.
+		/// </summary>
 		BadEmailAddress = 11,
 		General = 20,
-		DNSFailure = 21,
+		DnsFailure = 21,
 		MailboxFull = 22,
 		MessageSizeTooLarge = 23,
 		UnableToConnect = 29,
@@ -125,11 +87,11 @@ namespace MantaMTA.Core.Events
 		/// </summary>
 		BounceUnknown = 40,
 		/// <summary>
-		/// 
+		/// Sending server appears on a blocking list.
 		/// </summary>
 		KnownSpammer = 51,
 		/// <summary>
-		/// 
+		/// The content of the email has been identified as spam.
 		/// </summary>
 		SpamDetected = 52,
 		AttachmentDetected = 53,
@@ -137,6 +99,18 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// Used when a receiving MTA has indicated we're sending too many emails to them.
 		/// </summary>
-		RateLimitedByReceivingMta = 55
+		RateLimitedByReceivingMta = 55,
+		/// <summary>
+		/// Indicates the receiving server reported an error with the sending address provided by Manta.
+		/// </summary>
+		ConfigurationErrorWithSendingAddress = 56,
+		/// <summary>
+		/// The receiving MTA has blocked the IP address.  Contact them to have it removed.
+		/// </summary>
+		PermanentlyBlockedByReceivingMta = 57,
+		/// <summary>
+		/// The receiving MTA has placed a temporary block on the IP address, but will automatically remove it after a short period.
+		/// </summary>
+		TemporarilyBlockedByReceivingMta = 58
 	}
 }

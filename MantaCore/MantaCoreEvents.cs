@@ -25,11 +25,11 @@ namespace MantaMTA.Core
 		{
 			Logging.Debug("InvokeMantaCoreStopping Started.");
 
-			// Loop through the things that need stopping and stop them:)
+			// Loop through the things that need stopping and stop them :)
 			for (int i = 0; i < _StopRequiredTasks.Count; i++)
 				_StopRequiredTasks[i].Stop();
 
-			Logging.Debug("InvokeMantaCoreStopping Finnished.");
+			Logging.Debug("InvokeMantaCoreStopping Finished.");
 		}
 	}
 }

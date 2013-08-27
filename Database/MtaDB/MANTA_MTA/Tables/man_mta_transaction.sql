@@ -5,7 +5,7 @@ CREATE TABLE [dbo].[man_mta_transaction](
 	[mta_transactionStatus_id] [int] NOT NULL,
 	[mta_transaction_serverResponse] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[mta_transaction_serverHostname] [nvarchar](max) COLLATE Latin1_General_CI_AS NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 

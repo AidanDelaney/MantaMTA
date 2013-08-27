@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[man_evn_bounceRule](
 	[evn_bounceRule_criteria] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[evn_bounceRule_mantaBounceType] [int] NOT NULL,
 	[evn_bounceRule_mantaBounceCode] [int] NOT NULL
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+) ON [PRIMARY]
 
 GO
 

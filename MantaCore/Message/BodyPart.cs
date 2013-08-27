@@ -4,12 +4,21 @@ using System.Text;
 
 namespace MantaMTA.Core.Message
 {
-	public class MimeMessageBodyPart
+	/// <summary>
+	/// A single part of a MimeMessage that contains part of the content.  This could be
+	/// simply a container for other BodyParts or actual meaningful content as in plain text,
+	/// HTML code, an image, etc.
+	/// </summary>
+	public class BodyPart
 	{
 		/// <summary>
-		/// Holds the boundry
+		/// All the headers for this BodyPart.
 		/// </summary>
-		public string Boundry { get; set; }
+		public MessageHeaderCollection Headers { get; set; }
+		/// <summary>
+		/// Holds the boundary
+		/// </summary>
+		public string Boundary { get; set; }
 		/// <summary>
 		/// The content type of the body part.
 		/// </summary>
@@ -19,26 +28,29 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		public TransferEncoding TransferEncoding { get; set; }
 		/// <summary>
-		/// The Transfer encoded body
+		/// The Transfer encoded body - might not be legible without being decoded (so call
+		/// GetDecodedBody() to have that appropriately decoded).
 		/// </summary>
 		public string EncodedBody { get; set; }
-
 		/// <summary>
-		/// If true then this body part contains a MIME Message
+		/// A collection of MimeMessageBodyPart objects that make up the email.
+		/// </summary>
+		public BodyPart[] BodyParts{ get; set; }
+		/// <summary>
+		/// If true then this body part contains a MIME Message.
 		/// </summary>
 		public bool HasChildMimeMessage
 		{
 			get
 			{
-				if (ContentType == null)
+				if (ContentType == null || string.IsNullOrWhiteSpace(ContentType.MediaType))
 					return false;
 
 				return ContentType.MediaType.Equals("message/rfc822", StringComparison.OrdinalIgnoreCase);
 			}
 		}
-
 		/// <summary>
-		/// Child message or null
+		/// Returns a child MIME Message if one exists, else null.
 		/// </summary>
 		public MimeMessage ChildMimeMessage
 		{
@@ -50,19 +62,14 @@ namespace MantaMTA.Core.Message
 				return MimeMessage.Parse(this.GetDecodedBody());
 			}
 		}
-
-		public MimeMessageBodyPart()
-		{
-			TransferEncoding = TransferEncoding.Unknown;
-		}
-
 		/// <summary>
 		/// Get this Body Part decoded.
 		/// </summary>
 		/// <returns>Body part body with Transport Encoding decoded.</returns>
 		public string GetDecodedBody()
 		{
-			string tmp = EncodedBody.Trim();
+			string tmp = EncodedBody;
+
 			if (TransferEncoding == TransferEncoding.Base64)
 			{
 				tmp = UTF8Encoding.Default.GetString(Convert.FromBase64String(tmp));

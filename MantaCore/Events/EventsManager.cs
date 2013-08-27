@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Message;
+using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Events
 {
@@ -41,22 +42,34 @@ namespace MantaMTA.Core.Events
 
 
 		/// <summary>
-		/// Examines an email to try identify detailed bounce information from it.
+		/// Examines an email to try to identify detailed bounce information from it.
 		/// </summary>
+		/// <param name="filename">Path and filename of the file being processed.</param>
 		/// <param name="message">The entire text content for an email (headers and body).</param>
 		/// <returns>An EmailProcessingResult value indicating whether the the email was
 		/// successfully processed or not.</returns>
-		public EmailProcessingResult ProcessBounceEmail(string message)
+		public EmailProcessingDetails ProcessBounceEmail(string message)
 		{
+			EmailProcessingDetails bounceDetails = new EmailProcessingDetails();
+
 			MimeMessage msg = MimeMessage.Parse(message);
 
 			if (msg == null)
-				return EmailProcessingResult.ErrorContent;
+			{
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorContent;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+				return bounceDetails;
+			}
+
 
 			// "x-receiver" should contain what Manta originally set as the "return-path" when sending.
 			MessageHeader returnPath = msg.Headers.GetFirstOrDefault("x-receiver");
 			if (returnPath == null)
-				return EmailProcessingResult.ErrorNoReturnPath;
+			{
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
+				return bounceDetails;
+			}
 
 			string rcptTo = string.Empty;
 			int internalSendID = 0;
@@ -64,63 +77,80 @@ namespace MantaMTA.Core.Events
 			if (!ReturnPathManager.TryDecode(returnPath.Value, out rcptTo, out internalSendID))
 			{
 				// Not a valid Return-Path so can't process.
-				return EmailProcessingResult.SuccessNoAction;
+				bounceDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
+				bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.UnknownReturnPath;
+				return bounceDetails;
 			}
 
 			MantaBounceEvent bounceEvent = new MantaBounceEvent();
 			bounceEvent.EmailAddress = rcptTo;
 			bounceEvent.SendID = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID).ID;
 
-			// Might be good to get the DateTime found in the email at a later point.
+			// TODO: Might be good to get the DateTime found in the email.
 			bounceEvent.EventTime = DateTime.UtcNow;
 
-			// These properties are both down to what SMTP code we find, if any.
+			// These properties are both set according to the SMTP code we find, if any.
 			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
 			bounceEvent.EventType = MantaEventType.Bounce;
 
 			// First, try to find a NonDeliveryReport body part as that's the proper way for an MTA
 			// to tell us there was an issue sending the email.
-			IEnumerable<MimeMessageBodyPart> ndrBodies = msg.BodyParts.Where(b => b.ContentType.MediaType.Equals("message/delivery-status", StringComparison.OrdinalIgnoreCase));
 
-			foreach(MimeMessageBodyPart b in ndrBodies)
+			BouncePair bouncePair;
+			string bounceMsg;
+			BodyPart deliveryReportBodyPart;
+			string deliveryReport = string.Empty;
+
+			if (FindFirstBodyPartByMediaType(msg.BodyParts, "message/delivery-status", out deliveryReportBodyPart))
 			{
-				BouncePair bp;
-				string bMsg = string.Empty;
+				// If we've got a delivery report, check it for info.
 
-				// Successfully parsed?
-				if (ParseNdr(b.GetDecodedBody(), out bp, out bMsg))
-				{
-					bounceEvent.BounceInfo = bp;
-					bounceEvent.Message = bMsg;
-
-					// Write BounceEvent to DB.
-					Save(bounceEvent);
-
-					return EmailProcessingResult.SuccessBounce;
-				}
-			}
-
-
-			// No NDR part, have to to this the manual way and check _all_ content.
-			foreach (MimeMessageBodyPart b in msg.BodyParts)
-			{
-				BouncePair bp;
-				string bMsg = string.Empty;
-
-				if (ParseBounceMessage(b.GetDecodedBody(), out bp, out bMsg))
-				{
-					bounceEvent.BounceInfo = bp;
-					bounceEvent.Message = bMsg;
-
-					// Write BounceEvent to DB.
-					Save(bounceEvent);
-
-					return EmailProcessingResult.SuccessBounce;
-				}
-			}
+				// Abuse report content may have long lines whitespace folded.
+				deliveryReport = MimeMessage.UnfoldHeaders(deliveryReportBodyPart.GetDecodedBody());
 			
-			return EmailProcessingResult.Unknown;
+				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg, out bounceDetails))
+				{
+					// Successfully parsed.
+					bounceEvent.BounceInfo = bouncePair;
+					bounceEvent.Message = bounceMsg;
+
+					// Write BounceEvent to DB.
+					Save(bounceEvent);
+
+					bounceDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
+					return bounceDetails;
+				}
+			}
+
+
+
+			// We're still here so there was either no NDR part or nothing contained within it that we could
+			// interpret so have to check _all_ body parts for something useful.
+			if (FindBounceReason(msg.BodyParts, out bouncePair, out bounceMsg, out bounceDetails))
+			{
+				bounceEvent.BounceInfo = bouncePair;
+				bounceEvent.Message = bounceMsg;
+
+				// Write BounceEvent to DB.
+				Save(bounceEvent);
+
+				bounceDetails.ProcessingResult = EmailProcessingResult.SuccessBounce;
+				return bounceDetails;
+			}
+
+
+
+
+
+			// Nope - no clues relating to why the bounce occurred.
+			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
+			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
+			bounceEvent.Message = string.Empty;
+			
+			bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+			bounceDetails.ProcessingResult = EmailProcessingResult.Unknown;
+			return bounceDetails;
 		}
 
 
@@ -132,8 +162,11 @@ namespace MantaMTA.Core.Events
 		/// <param name="bounceCode"></param>
 		/// <param name="bounceMessage"></param>
 		/// <returns></returns>
-		internal bool ParseNdr(string message, out BouncePair bouncePair, out string bounceMessage)
+		internal bool ParseNdr(string message, out BouncePair bouncePair, out string bounceMessage, out EmailProcessingDetails bounceIdentification)
 		{
+			bounceIdentification = new EmailProcessingDetails();
+
+
 			// Check for the Diagnostic-Code as hopefully contains more information about the error.
 			const string DiagnosticCodeFieldName = "Diagnostic-Code: ";
 			const string StatusFieldName = "Status: ";
@@ -145,7 +178,7 @@ namespace MantaMTA.Core.Events
 
 			using (StringReader sr = new StringReader(message))
 			{
-				string line = sr.ReadLine();
+				string line = sr.ReadToCrLf();
 
 				// While the string reader has stuff to read keep looping through each line.
 				while (!string.IsNullOrWhiteSpace(line) || sr.Peek() > -1)
@@ -173,7 +206,7 @@ namespace MantaMTA.Core.Events
 								break; // We've reached the end of the string!
 
 							// Read the next line.
-							line = sr.ReadLine();
+							line = sr.ReadToCrLf();
 
 							if (isSmtpResponse)
 							{
@@ -202,7 +235,7 @@ namespace MantaMTA.Core.Events
 
 						// If there is more of the string to read then read the next line, otherwise set line to string.empty.
 						if (sr.Peek() > -1)
-							line = sr.ReadLine();
+							line = sr.ReadToCrLf();
 						else
 							line = string.Empty;
 					}
@@ -215,7 +248,7 @@ namespace MantaMTA.Core.Events
 			// Diagnostic-Code
 			if (!string.IsNullOrWhiteSpace(diagnosticCode.ToString()))
 			{
-				if (ParseSmtpDiagnosticCode(diagnosticCode.ToString(), out bouncePair, out bounceMessage))
+				if (ParseSmtpDiagnosticCode(diagnosticCode.ToString(), out bouncePair, out bounceMessage, out bounceIdentification))
 				{
 					return true;
 				}
@@ -232,6 +265,9 @@ namespace MantaMTA.Core.Events
 				{
 					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(m.Value);
 					bounceMessage = m.Value;
+
+					bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NdrCode;
+					bounceIdentification.MatchingValue = m.Value;
 					return true;
 				}
 			}
@@ -241,7 +277,7 @@ namespace MantaMTA.Core.Events
 
 			// If we've not already returned from this method, then we're still looking for an explanation
 			// for the bounce so parse the entire message as a string.
-			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
+			if (ParseBounceMessage(message, out bouncePair, out bounceMessage, out bounceIdentification))
 				return true;
 			
 
@@ -250,6 +286,10 @@ namespace MantaMTA.Core.Events
 			bouncePair.BounceType = MantaBounceType.Unknown;
 			bouncePair.BounceCode = MantaBounceCode.Unknown;
 			bounceMessage = string.Empty;
+
+			bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+			bounceIdentification.MatchingValue = string.Empty;
+
 			return false;
 		}
 
@@ -263,16 +303,18 @@ namespace MantaMTA.Core.Events
 		/// <param name="bounceMessage">out.  The message found that indicated a Bounce or string.Empty if it wasn't
 		/// found to indicate a bounce.</param>
 		/// <returns>true if a bounce was positively identified, else false.</returns>
-		internal bool ParseSmtpDiagnosticCode(string message, out BouncePair bouncePair, out string bounceMessage)
+		internal bool ParseSmtpDiagnosticCode(string message, out BouncePair bouncePair, out string bounceMessage, out EmailProcessingDetails bounceIdentification)
 		{
 			// Remove "smtp;[possible whitespace]" if it appears at the beginning of the message.
 			if (message.StartsWith("smtp;", StringComparison.OrdinalIgnoreCase))
 				message = message.Substring("smtp;".Length).Trim();
 
-			if (ParseBounceMessage(message, out bouncePair, out bounceMessage))
+			if (ParseBounceMessage(message, out bouncePair, out bounceMessage, out bounceIdentification))
 				return true;
 
-			
+
+			bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+
 			return false;
 		}
 
@@ -284,12 +326,14 @@ namespace MantaMTA.Core.Events
 		/// <param name="rcptTo">The email address that was being sent to.</param>
 		/// <param name="internalSendID">The internal Manta SendID.</param>
 		/// <returns>True if a bounce was found and recorded, false if not.</returns>
-		internal bool ProcessSmtpResponseMessage(string response, string rcptTo, int internalSendID)
+		internal bool ProcessSmtpResponseMessage(string response, string rcptTo, int internalSendID, out EmailProcessingDetails bounceIdentification)
 		{
+			bounceIdentification = new EmailProcessingDetails();
+
 			BouncePair bouncePair = new BouncePair();
 			string bounceMessage = string.Empty;
 
-			if (ParseBounceMessage(response, out bouncePair, out bounceMessage))
+			if (ParseBounceMessage(response, out bouncePair, out bounceMessage, out bounceIdentification))
 			{
 				// Were able to find the bounce so create the bounce event.
 				MantaBounceEvent bounceEvent = new MantaBounceEvent
@@ -312,7 +356,12 @@ namespace MantaMTA.Core.Events
 				return true;
 			}
 
+
+
 			// Couldn't identify the bounce.
+
+			bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+
 			return false;
 		}
 
@@ -325,8 +374,12 @@ namespace MantaMTA.Core.Events
 		/// <param name="bouncePair">out.</param>
 		/// <param name="bounceMessage">out.</param>
 		/// <returns>true if a positive match in <paramref name="message"/> was found indicating a bounce, else false.</returns>
-		internal bool ParseBounceMessage(string message, out BouncePair bouncePair, out string bounceMessage)
+		internal bool ParseBounceMessage(string message, out BouncePair bouncePair, out string bounceMessage, out EmailProcessingDetails bounceIdentification)
 		{
+			bounceIdentification = new EmailProcessingDetails();
+
+
+
 			// Check all Bounce Rules for a match.
 			foreach (BounceRule r in BounceRulesManager.BounceRules)
 			{
@@ -336,6 +389,11 @@ namespace MantaMTA.Core.Events
 					bouncePair.BounceType = r.BounceTypeIndicated;
 					bouncePair.BounceCode = r.BounceCodeIndicated;
 					bounceMessage = message;
+
+					bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.BounceRule;
+					bounceIdentification.MatchingBounceRuleID = r.RuleID;
+					bounceIdentification.MatchingValue = r.Criteria;
+
 					return true;
 				}
 			}
@@ -356,14 +414,23 @@ namespace MantaMTA.Core.Events
 				if (match.Groups["NdrCode"].Success && match.Groups["NdrCode"].Length > 0)
 				{
 					bouncePair = BounceRulesManager.Instance.ConvertNdrCodeToMantaBouncePair(match.Groups["NdrCode"].Value);
-					if (bouncePair.BounceCode != MantaBounceCode.General)
+					if (bouncePair.BounceType != MantaBounceType.Unknown)
+					{
+						bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NdrCode;
+						bounceIdentification.MatchingValue = match.Groups["NdrCode"].Value;
+
 						return true;
+					}
 				}
 
 				// Try the SMTP code as there wasn't an NDR.
 				if (match.Groups["SmtpCode"].Success && match.Groups["SmtpCode"].Length > 0)
 				{
 					bouncePair = BounceRulesManager.Instance.ConvertSmtpCodeToMantaBouncePair(Int32.Parse(match.Groups["SmtpCode"].Value));
+
+					bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.SmtpCode;
+					bounceIdentification.MatchingValue = match.Groups["SmtpCode"].Value;
+
 					return true;
 				}
 			}
@@ -374,36 +441,133 @@ namespace MantaMTA.Core.Events
 			bouncePair.BounceType = MantaBounceType.Unknown;
 			bounceMessage = string.Empty;
 
+			bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+			bounceIdentification.MatchingValue = string.Empty;
+
 			return false;
 		}
 
+
 		/// <summary>
-		/// Looks through a feedback look looking for a Manta-MTA return path. If found logs the event.
+		// Attempts to find the first body part with the specified Media Type from a collection of BodyParts.
+		/// </summary>
+		/// <param name="bodyParts">An array of BodyParts to search within (including any child BodyParts).</param>
+		/// <param name="mediaTypeToFind">The media type of the BodyPart to find, e.g. "message/delivery-status"
+		/// or "message/feedback-report".</param>
+		/// <param name="report">out.  If a BodyPart with a MediaType matching the value in <paramref name="mediaTypeToFind"/> is found,
+		/// this will contain the content of it, else string.Empty.</param>
+		/// <returns>true if a delivery report was found, else false.</returns>
+		internal bool FindFirstBodyPartByMediaType(BodyPart[] bodyParts, string mediaTypeToFind, out BodyPart foundBodyPart)
+		{
+			foreach (BodyPart bp in bodyParts)
+			{
+				if (bp.ContentType.MediaType.Equals(mediaTypeToFind, StringComparison.OrdinalIgnoreCase))
+				{
+					// Found it!
+					foundBodyPart = bp;
+					return true;
+				}
+				else if (bp.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
+				{
+					// Loop through the child body parts.
+					if (FindFirstBodyPartByMediaType(bp.BodyParts, mediaTypeToFind, out foundBodyPart))
+						return true;
+				}
+				else
+					// Ignore this BodyPart as it's not a container or the media type we're looking for.
+					continue;
+			}
+
+
+			// If we're still here, then we didn't find a bodypart with the media type we're looking for.
+			foundBodyPart = null;
+			return false;
+		}
+
+
+		/// <summary>
+		/// Attempts to find and process the reason an email bounced by digging through all body parts.
+		/// </summary>
+		/// <param name="bodyParts">Array of BodyParts to dig through; may include child body parts.</param>
+		/// <param name="bouncePair">out.  A BouncePair object containing details of the bounce (if a reason was found).</param>
+		/// <param name="bounceMessage">out.  The text to use as the reason found why the bounce occurred.</param>
+		/// <returns>true if a reason was found, else false.</returns>
+		internal bool FindBounceReason(BodyPart[] bodyParts, out BouncePair bouncePair, out string bounceMessage, out EmailProcessingDetails bounceIdentification)
+		{
+			foreach(BodyPart b in bodyParts)
+			{
+				if (b.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
+				{
+					// Just a container for other body parts so check them.
+					if (FindBounceReason(b.BodyParts, out bouncePair, out bounceMessage, out bounceIdentification))
+						return true;
+				}
+				else if (b.ContentType.MediaType.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
+				{
+					// Only useful to examine text/plain body parts (so not "image/gif" etc).
+					if (ParseBounceMessage(b.GetDecodedBody(), out bouncePair, out bounceMessage, out bounceIdentification))
+						return true;
+				}
+				// else
+				//	Console.WriteLine("\tSkipped bodypart \"" + b.ContentType.MediaType + "\".");
+			}
+
+
+			// Still here so haven't found anything useful.
+			bouncePair.BounceCode = MantaBounceCode.Unknown;
+			bouncePair.BounceType = MantaBounceType.Unknown;
+			bounceMessage = string.Empty;
+
+			bounceIdentification = new EmailProcessingDetails();
+			bounceIdentification.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
+
+			return false;
+		}
+
+
+		/// <summary>
+		/// Looks through a feedback loop email looking for something to identify it as an abuse report and who it relates to.
+		/// If found, logs the event.
 		/// 
-		/// Look for return path in following order.
+		/// How to get the info depending on the ESP (and this is likely to be the best order to check for each too):
 		/// Abuse Report Original-Mail-From.										[Yahoo]
-		/// Return-Path from body part child with content-type of message/rfc822.	[AOL]
-		/// Return-Path in message headers.											[Hotmail]
+		/// Message-ID from body part child with content-type of message/rfc822.	[AOL]
+		/// Return-Path in main message headers.									[Hotmail]
 		/// </summary>
 		/// <param name="message">The feedback look email.</param>
-		public EmailProcessingResult ProcessFeedbackLoop(string content)
+		public EmailProcessingDetails ProcessFeedbackLoop(string content)
 		{
+			EmailProcessingDetails processingDetails = new EmailProcessingDetails();
+
+
 			MimeMessage message = MimeMessage.Parse(content);
 			if (message == null)
-				return EmailProcessingResult.ErrorContent;
+			{
+				processingDetails.ProcessingResult = EmailProcessingResult.ErrorContent;
+				return processingDetails;
+			}
+
 			try
 			{
-				// Look for abuse report
-				MimeMessageBodyPart abuseReport = message.BodyParts.SingleOrDefault(bp => bp.ContentType.MediaType.Equals("message/feedback-report", StringComparison.OrdinalIgnoreCase));
-				if (abuseReport != null)
+				// Step 1: Yahoo! provide useable Abuse Reports (AOL's are all redacted).
+				//Look for abuse report
+				BodyPart abuseBodyPart = null;
+				string abuseReportBody;
+
+				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/feedback-report", out abuseBodyPart))
 				{
-					string abuseReportBody = abuseReport.GetDecodedBody();
-					abuseReportBody = MessageManager.UnfoldHeaders(abuseReportBody);
+					// Found an abuse report body part to examine.
+
+					// Abuse report content may have long lines whitespace folded.
+					abuseReportBody = MimeMessage.UnfoldHeaders(abuseBodyPart.GetDecodedBody());
+
 					using (StringReader reader = new StringReader(abuseReportBody))
 					{
 						while (reader.Peek() > -1)
 						{
-							string line = reader.ReadLine();
+							string line = reader.ReadToCrLf();
+
+							// The original mail from value will be the return-path we'd set so we should be able to get all the values we need from that.
 							if (line.StartsWith("Original-Mail-From:", StringComparison.OrdinalIgnoreCase))
 							{
 								string tmp = line.Substring("Original-Mail-From: ".Length - 1);
@@ -423,7 +587,9 @@ namespace MantaMTA.Core.Events
 											EventType = MantaEventType.Abuse, 
 											SendID = (snd == null ? string.Empty : snd.ID) 
 										});
-										return EmailProcessingResult.SuccessAbuse;
+
+										processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
+										return processingDetails;
 									}
 								}
 								catch (Exception)
@@ -436,9 +602,13 @@ namespace MantaMTA.Core.Events
 					}
 				}
 
+
+
+				
+				// Function to use against BodyParts to find a return-path header.
 				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = new Func<MessageHeaderCollection, bool>(delegate(MessageHeaderCollection headers)
 					{
-						MessageHeader returnPathHeader = headers.SingleOrDefault(s => s.Name.Equals("Return-Path", StringComparison.OrdinalIgnoreCase));
+						MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
 						if (returnPathHeader != null &&
 							!string.IsNullOrWhiteSpace(returnPathHeader.Value))
 						{
@@ -460,7 +630,7 @@ namespace MantaMTA.Core.Events
 							}
 						}
 
-						MessageHeader messageIdHeader = headers.SingleOrDefault(s => s.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase));
+						MessageHeader messageIdHeader = headers.GetFirstOrDefault("Message-ID");
 						if (messageIdHeader != null &&
 							messageIdHeader.Value.Length > 33)
 						{
@@ -489,30 +659,35 @@ namespace MantaMTA.Core.Events
 						}
 
 						return false;
-					});
+					}
+				);
 
-				// There isn't an abuse report or it doesn't contain the information we need.
-				// Check for any body parts with child messages.
-				MimeMessageBodyPart[] children = message.BodyParts.Where(bp => bp.HasChildMimeMessage).ToArray();
-				if (children != null)
+
+				// Step 2: AOL give redacted Abuse Reports but include the original email as a bodypart; find that.
+				BodyPart childMessageBodyPart;
+				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/rfc822", out childMessageBodyPart))
 				{
-					for (int i = 0; i < children.Length; i++)
+					if (checkForReturnPathHeaders(childMessageBodyPart.Headers))
 					{
-						MimeMessage child = children[i].ChildMimeMessage;
-						if (checkForReturnPathHeaders(child.Headers))
-							return EmailProcessingResult.SuccessAbuse;
+						processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
+						return processingDetails;
 					}
 				}
 
-				// There wasn't any child bodyparts or they didn't contain the info we need.
-				// Look to see if our email has just been bounced to us.
-				if(checkForReturnPathHeaders(message.Headers))
-					return EmailProcessingResult.SuccessAbuse;
+
+				// Step 3: Hotmail don't do Abuse Reports, they just return our email to us exactly as we sent it.
+				if (checkForReturnPathHeaders(message.Headers))
+				{
+					processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
+					return processingDetails;
+				}
 			}
 			catch (Exception) { }
 
 			Logging.Debug("Failed to find return path!");
-			return EmailProcessingResult.ErrorNoReturnPath;
+
+			processingDetails.ProcessingResult = EmailProcessingResult.ErrorNoReturnPath;
+			return processingDetails;
 		}
 
 		/// <summary>

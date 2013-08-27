@@ -70,6 +70,7 @@
     <Compile Include="DNS\DnsApiInterop.cs" />
     <Compile Include="DNS\DNSClasses.cs" />
     <Compile Include="DNS\DNSManager.cs" />
+    <Compile Include="Enums\BounceParsingEnums.cs" />
     <Compile Include="Enums\SendStatus.cs" />
     <Compile Include="Enums\SmtpTransactionMime.cs" />
     <Compile Include="Enums\SmtpTransactionEnums.cs" />
@@ -80,11 +81,12 @@
     <Compile Include="Events\EventsFileHandler.cs" />
     <Compile Include="Events\EventsManager.cs" />
     <Compile Include="Events\SmtpStatusCodes.cs" />
+    <Compile Include="ExtensionMethods.cs" />
     <Compile Include="IStopRequired.cs" />
     <Compile Include="Logging.cs" />
+    <Compile Include="Message\BodyPart.cs" />
     <Compile Include="MantaCoreEvents.cs" />
     <Compile Include="Message\MimeMessage.cs" />
-    <Compile Include="Message\MimeMessageBodyPart.cs" />
     <Compile Include="Message\ReturnPathManager.cs" />
     <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
     <Compile Include="MtaIpAddress\IpAddressManager.cs" />
