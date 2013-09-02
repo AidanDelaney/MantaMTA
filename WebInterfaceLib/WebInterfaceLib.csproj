@@ -40,11 +40,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DAL\Sends.cs" />
-    <Compile Include="DAL\Transaction.cs" />
-    <Compile Include="DAL\VirtualMTA.cs" />
+    <Compile Include="DAL\SendDB.cs" />
+    <Compile Include="DAL\TransactionDB.cs" />
+    <Compile Include="DAL\VirtualMtaDB.cs" />
     <Compile Include="Model\BounceInfo.cs" />
-    <Compile Include="DAL\IpTransaction.cs" />
+    <Compile Include="DAL\VirtualMtaTransactionDB.cs" />
     <Compile Include="Model\SendInfo.cs" />
     <Compile Include="Model\SendSpeedInfo.cs" />
     <Compile Include="Model\SendTransaction.cs" />

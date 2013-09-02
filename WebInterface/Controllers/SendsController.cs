@@ -15,8 +15,8 @@ namespace WebInterface.Controllers
         // GET: /Sends/
         public ActionResult Index(int page = 1, int pageSize = 10)
         {
-			SendInfoCollection sends = WebInterfaceLib.DAL.Sends.GetSends(pageSize, page);
-			int pages = (int)Math.Ceiling(WebInterfaceLib.DAL.Sends.GetSendsCount() / Convert.ToDouble(pageSize));
+			SendInfoCollection sends = WebInterfaceLib.DAL.SendDB.GetSends(pageSize, page);
+			int pages = (int)Math.Ceiling(WebInterfaceLib.DAL.SendDB.GetSendsCount() / Convert.ToDouble(pageSize));
 			return View(new SendsModel(sends, page, pages));
         }
 
@@ -24,7 +24,7 @@ namespace WebInterface.Controllers
 		// GET: /Queue/
 		public ActionResult Queue()
 		{
-			SendInfoCollection sends = WebInterfaceLib.DAL.Sends.GetSendsInProgress();
+			SendInfoCollection sends = WebInterfaceLib.DAL.SendDB.GetSendsInProgress();
 			return View(new SendsModel(sends, 1, 1));
 		}
 
@@ -32,7 +32,7 @@ namespace WebInterface.Controllers
 		// GET: /Sends/Overview?sendID=
 		public ActionResult Overview(string sendID)
 		{
-			SendInfo send = WebInterfaceLib.DAL.Sends.GetSend(sendID);
+			SendInfo send = WebInterfaceLib.DAL.SendDB.GetSend(sendID);
 			return View(new SendReportOverview(send));
 		}
 
@@ -40,23 +40,23 @@ namespace WebInterface.Controllers
 		// GET: /Sends/VirtualMTA?sendID=
 		public ActionResult VirtualMTA(string sendID)
 		{
-			return View(new SendReportVirtualMta(WebInterfaceLib.DAL.VirtualMTA.GetSendVirtualMTAStats(sendID), sendID));
+			return View(new SendReportVirtualMta(WebInterfaceLib.DAL.VirtualMtaDB.GetSendVirtualMTAStats(sendID), sendID));
 		}
 
 		//
 		// GET: /Sends/Bounces?sendID=
 		public ActionResult Bounces(string sendID, int page = 1, int pageSize = 25)
 		{
-			int bounceCount = WebInterfaceLib.DAL.Transaction.GetBounceCount(sendID);
+			int bounceCount = WebInterfaceLib.DAL.TransactionDB.GetBounceCount(sendID);
 			int pageCount = (int)Math.Ceiling(bounceCount / Convert.ToDouble(pageSize));
-			return View(new SendReportBounces(WebInterfaceLib.DAL.Transaction.GetBounceInfo(sendID, page, pageSize), sendID, page, pageCount));
+			return View(new SendReportBounces(WebInterfaceLib.DAL.TransactionDB.GetBounceInfo(sendID, page, pageSize), sendID, page, pageCount));
 		}
 
 		//
 		// GET: /Sends/Speed?sendID=
 		public ActionResult Speed(string sendID)
 		{
-			return View(new SendReportSpeed(WebInterfaceLib.DAL.Transaction.GetSendSpeedInfo(sendID), sendID));
+			return View(new SendReportSpeed(WebInterfaceLib.DAL.TransactionDB.GetSendSpeedInfo(sendID), sendID));
 		}
 
 		//

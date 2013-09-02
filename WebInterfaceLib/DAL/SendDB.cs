@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -9,11 +8,15 @@ using WebInterfaceLib.Model;
 
 namespace WebInterfaceLib.DAL
 {
-	public static class Sends
+	public static class SendDB
 	{
+		/// <summary>
+		/// Get a count of all the sends in the MantaMTA database.
+		/// </summary>
+		/// <returns>Count of all Sends.</returns>
 		public static int GetSendsCount()
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT COUNT(*) FROM man_mta_send";
@@ -22,9 +25,15 @@ namespace WebInterfaceLib.DAL
 			}
 		}
 
+		/// <summary>
+		/// Gets a page sends information.
+		/// </summary>
+		/// <param name="pageSize">Size of the page to get.</param>
+		/// <param name="pageNum">The page to get.</param>
+		/// <returns>SendInfoCollection of the data page.</returns>
 		public static SendInfoCollection GetSends(int pageSize, int pageNum)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT TOP 10 [sorted].*,
@@ -43,6 +52,10 @@ ORDER BY RowNum ASC";
 			}
 		}
 
+		/// <summary>
+		/// Gets all of the sends with messages waiting to be sent.
+		/// </summary>
+		/// <returns>SendInfoCollection of all relevent sends.</returns>
 		public static SendInfoCollection GetSendsInProgress()
 		{
 			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
@@ -90,10 +103,10 @@ WHERE [snd].mta_send_id = @sndID";
 		}
 
 		/// <summary>
-		/// 
+		/// Creates a send info object filled with data from the data record.
 		/// </summary>
-		/// <param name="record"></param>
-		/// <returns></returns>
+		/// <param name="record">Where to get the data to fill object from.</param>
+		/// <returns>A populated SendInfo object.</returns>
 		private static SendInfo CreateAndFillSendInfo(IDataRecord record)
 		{
 			SendInfo sInfo = new SendInfo

@@ -1,15 +1,33 @@
 ﻿
 namespace WebInterfaceLib.Model
 {
+	/// <summary>
+	/// Holds information abount a Virtual MTA and what it has done in a send.
+	/// </summary>
 	public class VirtualMtaSendInfo : MantaMTA.Core.MtaIpAddress.MtaIpAddress
 	{
+		/// <summary>
+		/// The amount of messages accepted by a remote MX.
+		/// </summary>
 		public int Accepted { get; set; }
+
+		/// <summary>
+		/// The amount of messages rejected by a remote MX.
+		/// </summary>
 		public int Rejected { get; set; }
+
+		/// <summary>
+		/// The amount of attempts to send a message that where throttled by MantaMTA.
+		/// </summary>
 		public int Throttled { get; set; }
+
+		/// <summary>
+		/// The amount of attempts to send a message that where deferred by the remote MX.
+		/// </summary>
 		public int Deferred { get; set; }
 
 		/// <summary>
-		/// 
+		/// The amount of attempts to send messages that where made.
 		/// </summary>
 		private int Attempts
 		{
@@ -20,7 +38,7 @@ namespace WebInterfaceLib.Model
 		}
 
 		/// <summary>
-		/// 
+		/// The percentage of attempts that where accepted.
 		/// </summary>
 		public double AcceptedPercent
 		{
@@ -33,7 +51,7 @@ namespace WebInterfaceLib.Model
 		}
 
 		/// <summary>
-		/// 
+		/// The percentage of attempts that where deferred by the remote MX.
 		/// </summary>
 		public double DeferredPercent
 		{
@@ -46,7 +64,7 @@ namespace WebInterfaceLib.Model
 		}
 
 		/// <summary>
-		/// 
+		/// The percentage of attempts that where throttled by MantaMTA.
 		/// </summary>
 		public double ThrottledPercent
 		{
@@ -59,7 +77,7 @@ namespace WebInterfaceLib.Model
 		}
 
 		/// <summary>
-		/// 
+		/// The percentage of attempts that where rejected by the remote MX.
 		/// </summary>
 		public double RejectedPercent
 		{

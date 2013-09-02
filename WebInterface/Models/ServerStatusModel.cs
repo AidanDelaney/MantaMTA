@@ -6,6 +6,9 @@ using System.Web;
 
 namespace WebInterface.Models
 {
+	/// <summary>
+	/// Model for the server status page.
+	/// </summary>
 	public class ServerStatusModel
 	{
 		public ServerStatusDirectoryInfo QueueDir = new ServerStatusDirectoryInfo(MantaMTA.Core.MtaParameters.MTA_QUEUEFOLDER);
@@ -13,9 +16,20 @@ namespace WebInterface.Models
 		public ServerStatusDirectoryInfo DropDir = new ServerStatusDirectoryInfo(MantaMTA.Core.MtaParameters.MTA_DROPFOLDER);
 	}
 
+	/// <summary>
+	/// A server status directory forms part of the server status page model.
+	/// It gets information about a directory.
+	/// </summary>
 	public class ServerStatusDirectoryInfo
 	{
+		/// <summary>
+		/// Path of the directory.
+		/// </summary>
 		public string Path { get; set; }
+
+		/// <summary>
+		/// Amount of files in the directory.
+		/// </summary>
 		public int FileCount
 		{
 			get
@@ -24,6 +38,10 @@ namespace WebInterface.Models
 			}
 		}
 
+		/// <summary>
+		/// Gets the used space of the directory.
+		/// Formatted like : 1 Kb, 1 Mb, 1 Gb
+		/// </summary>
 		public string UsedSpace
 		{
 			get
@@ -48,6 +66,10 @@ namespace WebInterface.Models
 			}
 		}
 
+		/// <summary>
+		/// Gets the free space of the directory's root partition.
+		/// Formatted like : 1 Kb, 1 Mb, 1 Gb
+		/// </summary>
 		public string FreeSpace
 		{
 			get
@@ -73,11 +95,20 @@ namespace WebInterface.Models
 			}
 		}
 
+		/// <summary>
+		/// Constructor.
+		/// </summary>
+		/// <param name="path">The path to the directory.</param>
 		public ServerStatusDirectoryInfo(string path)
 		{
 			Path = path;
 		}
 
+		/// <summary>
+		/// Calculates the size of all the files in a directory and any sub directories.
+		/// </summary>
+		/// <param name="folder"></param>
+		/// <returns></returns>
 		private float CalculateDirectorySize(string folder)
 		{
 			float folderSize = 0.0f;

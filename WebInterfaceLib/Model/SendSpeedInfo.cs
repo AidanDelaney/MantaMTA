@@ -5,12 +5,17 @@ using System.Linq;
 
 namespace WebInterfaceLib.Model
 {
+	/// <summary>
+	/// Holds speed information about a send.
+	/// </summary>
 	public class SendSpeedInfo : List<SendSpeedInfoItem>
 	{
 		public SendSpeedInfo() { }
 		public SendSpeedInfo(IEnumerable<SendSpeedInfoItem> collection) : base(collection) { }
 
-		private DateTime[] _Dates = null;
+		/// <summary>
+		/// An array of all of the timestamps that make up the send speed info.
+		/// </summary>
 		public DateTime[] Dates
 		{
 
@@ -30,7 +35,15 @@ namespace WebInterfaceLib.Model
 				return _Dates;
 			}
 		}
+		private DateTime[] _Dates = null;
 
+		/// <summary>
+		/// Gets the speed data for a timestamp.
+		/// </summary>
+		/// <param name="timestamp">The timestamp to get data for.</param>
+		/// <param name="accepted">returns the accepted rate.</param>
+		/// <param name="failed">returns the failed rate.</param>
+		/// <param name="deferred">returns the deferred rate.</param>
 		public void GetDataPoints(DateTime timestamp, out int accepted, out int failed, out int deferred)
 		{
 			SendSpeedInfo subItems = new SendSpeedInfo(from i in this where i.Timestamp == timestamp select i);
@@ -53,11 +66,24 @@ namespace WebInterfaceLib.Model
 		}
 	}
 
-
+	/// <summary>
+	/// Information about a sends speed.
+	/// </summary>
 	public class SendSpeedInfoItem
 	{
+		/// <summary>
+		/// The status this item relates to.
+		/// </summary>
 		public TransactionStatus Status { get; set; }
+
+		/// <summary>
+		/// The timestamp this item represents.
+		/// </summary>
 		public DateTime Timestamp { get; set; }
+
+		/// <summary>
+		/// The ammount of times this status happened in the timestamp for a send.
+		/// </summary>
 		public int Count { get; set; }
 	}
 }

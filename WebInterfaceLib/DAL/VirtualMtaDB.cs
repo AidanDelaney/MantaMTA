@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MantaMTA.Core.DAL;
 using WebInterfaceLib.Model;
 
 namespace WebInterfaceLib.DAL
 {
-	public static class VirtualMTA
+	public static class VirtualMtaDB
 	{
+		/// <summary>
+		/// Gets information about VirtualMTA sends for the specified send.
+		/// </summary>
+		/// <param name="sendID">ID of the send to get information for.</param>
+		/// <returns>Information about the usage of each VirtualMTA in the send.</returns>
 		public static VirtualMtaSendInfo[] GetSendVirtualMTAStats(string sendID)
 		{
 			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
@@ -46,6 +46,11 @@ WHERE [ip].ip_ipAddress_id IN (SELECT * FROM @usedIpAddressIds)";
 			}
 		}
 
+		/// <summary>
+		/// Creates a VirtualMtaSendInfo object and fills it with data from the data record.
+		/// </summary>
+		/// <param name="record">Record to get the data from.</param>
+		/// <returns>A VirtualMtaSendInfo object filled with data from the data record.</returns>
 		public static VirtualMtaSendInfo CreateAndFillVirtualMtaSendInfo(IDataRecord record)
 		{
 			VirtualMtaSendInfo vinfo = new VirtualMtaSendInfo();

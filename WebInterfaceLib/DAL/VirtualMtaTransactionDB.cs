@@ -1,15 +1,19 @@
-﻿using System.Configuration;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using MantaMTA.Core.DAL;
 using WebInterfaceLib.Model;
 
 namespace WebInterfaceLib.DAL
 {
-	public static class IpTransaction
+	public static class VirtualMtaTransactionDB
 	{
+		/// <summary>
+		/// Gets a summary of a virtual MTAs transaction history.
+		/// </summary>
+		/// <param name="ipAddressId"></param>
+		/// <returns></returns>
 		public static SendTransactionSummaryCollection GetSendSummaryForIpAddress(int ipAddressId)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT mta_transactionStatus_id, COUNT(*) AS 'Count'
@@ -21,6 +25,11 @@ GROUP BY mta_transactionStatus_id";
 			}
 		}
 
+		/// <summary>
+		/// Creates a SendTransactionSummary from the DataRecord.
+		/// </summary>
+		/// <param name="record">The record of the data.</param>
+		/// <returns>A filled SendTransactionSummary object.</returns>
 		private static SendTransactionSummary CreateAndFillSendTransactionSummaryFromRecord(System.Data.IDataRecord record)
 		{
 			return new SendTransactionSummary((MantaMTA.Core.Enums.TransactionStatus)record.GetInt32("mta_transactionStatus_id"), record.GetInt32("count"));

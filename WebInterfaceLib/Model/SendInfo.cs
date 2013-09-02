@@ -53,16 +53,49 @@ namespace WebInterfaceLib.Model
 		}
 	}
 
+	/// <summary>
+	/// Information about a send.
+	/// </summary>
 	public class SendInfo : Send
 	{
+		/// <summary>
+		/// The total messages that this send has.
+		/// </summary>
 		public int TotalMessages { get; set; }
+
+		/// <summary>
+		/// The amount of messages that have been accepted by remote MXs.
+		/// </summary>
 		public int Accepted { get; set; }
+
+		/// <summary>
+		/// Amount of messages that have been rejected by remote MXs.
+		/// </summary>
 		public int Rejected { get; set; }
+
+		/// <summary>
+		/// Amount of messages waiting to be sent.
+		/// </summary>
 		public int Waiting { get; set; }
+
+		/// <summary>
+		/// Amount of times that an attempt to send has been throttled.
+		/// </summary>
 		public int Throttled { get; set; }
+
+		/// <summary>
+		/// Amount of times that attempts to send messages have been deferred by remote MXs.
+		/// </summary>
 		public int Deferred { get; set; }
+
+		/// <summary>
+		/// Timestamp of the last transaction. NULL if no transactions.
+		/// </summary>
 		public DateTime? LastTransactionTimestamp { get; set; }
 
+		/// <summary>
+		/// The amount of attempts to send messages that have been made.
+		/// </summary>
 		public int Attempts
 		{
 			get
@@ -71,6 +104,9 @@ namespace WebInterfaceLib.Model
 			}
 		}
 
+		/// <summary>
+		/// Percentage of attempts to send that where deferred.
+		/// </summary>
 		public double DeferredPercent
 		{
 			get
@@ -81,6 +117,10 @@ namespace WebInterfaceLib.Model
 			}
 		}
 
+
+		/// <summary>
+		/// Percentage of attempts to send that where throttled.
+		/// </summary>
 		public double ThrottledPercent
 		{
 			get
@@ -91,6 +131,10 @@ namespace WebInterfaceLib.Model
 			}
 		}
 
+		/// <summary>
+		/// The "Active Time" for the send.
+		/// Active time is the Time between the send being created and the last transaction time.
+		/// </summary>
 		public string SendTimeString
 		{
 			get
@@ -113,6 +157,10 @@ namespace WebInterfaceLib.Model
 			}
 		}
 
+
+		/// <summary>
+		/// Constructor sets defaults.
+		/// </summary>
 		public SendInfo()
 		{
 			this.Accepted = 0;

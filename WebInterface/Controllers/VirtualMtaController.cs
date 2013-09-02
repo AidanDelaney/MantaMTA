@@ -20,7 +20,7 @@ namespace WebInterface.Controllers
 				summary.Add(new VirtualMTASummary 
 				{ 
 					IpAddress = address, 
-					SendTransactionSummaryCollection = WebInterfaceLib.DAL.IpTransaction.GetSendSummaryForIpAddress(address.ID)
+					SendTransactionSummaryCollection = WebInterfaceLib.DAL.VirtualMtaTransactionDB.GetSendSummaryForIpAddress(address.ID)
 				});
 			}
 			return View(new VirtualMtaPageModel { VirtualMTASummaryCollection = summary.ToArray(), IpGroups = ipGroups });

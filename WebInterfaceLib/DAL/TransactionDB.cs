@@ -1,22 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
 using WebInterfaceLib.Model;
 
 namespace WebInterfaceLib.DAL
 {
-	public static class Transaction
+	public static class TransactionDB
 	{
+		/// <summary>
+		/// Gets information about the speed of a send.
+		/// </summary>
+		/// <param name="sendID">ID of the send to get speed information about.</param>
+		/// <returns>SendSpeedInfo</returns>
 		public static SendSpeedInfo GetSendSpeedInfo(string sendID)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -36,6 +37,11 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 			}
 		}
 
+		/// <summary>
+		/// Creates a SendSpeedInfoItem object and fills it with data from the data record.
+		/// </summary>
+		/// <param name="record">Contains the data to use for filling.</param>
+		/// <returns>A SendSpeedInfoItem object filled with data from the record.</returns>
 		private static SendSpeedInfoItem CreateAndFillSendSpeedInfoItemFromRecord(IDataRecord record)
 		{
 			SendSpeedInfoItem item = new SendSpeedInfoItem
@@ -47,9 +53,16 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 			return item;
 		}
 
+		/// <summary>
+		/// Gets a data page about bounces from the transactions table for a send.
+		/// </summary>
+		/// <param name="sendID">Send to get data for.</param>
+		/// <param name="pageNum">The page to get.</param>
+		/// <param name="pageSize">The size of the data pages.</param>
+		/// <returns>An array of BounceInfo from the data page.</returns>
 		public static BounceInfo[] GetBounceInfo(string sendID, int pageNum, int pageSize)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -75,13 +88,13 @@ WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + 
 		}
 
 		/// <summary>
-		/// 
+		/// Counts the total amount of bounces for a send.
 		/// </summary>
-		/// <param name="sendID"></param>
-		/// <returns></returns>
+		/// <param name="sendID">ID of the send to count bounces for.</param>
+		/// <returns>The amount of bounces for the send.</returns>
 		public static int GetBounceCount(string sendID)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -106,6 +119,11 @@ SELECT 1 as 'Col'
 			}
 		}
 
+		/// <summary>
+		/// Creates a BounceInfo object and fills it with data from the data record.
+		/// </summary>
+		/// <param name="record">Where to get the data from.</param>
+		/// <returns>BounceInfo filled with data from the data record.</returns>
 		private static BounceInfo CreateAndFillBounceInfo(IDataRecord record)
 		{
 			BounceInfo bounceInfo = new BounceInfo();
