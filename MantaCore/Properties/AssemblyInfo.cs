@@ -36,6 +36,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 [assembly: InternalsVisibleTo("MTALibraryTests")]
+[assembly: InternalsVisibleTo("WebInterfaceLib")]
+[assembly: InternalsVisibleTo("WebInterface")]
+
 
 // Log4net config file location
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "Log4net.config", Watch = true)]

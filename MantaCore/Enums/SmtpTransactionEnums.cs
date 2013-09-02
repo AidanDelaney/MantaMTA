@@ -23,7 +23,7 @@ namespace MantaMTA.Core.Enums
 	/// <summary>
 	/// Specifies the status of a Transaction.
 	/// </summary>
-	internal enum TransactionStatus : int
+	public enum TransactionStatus : int
 	{
 		/// <summary>
 		/// 

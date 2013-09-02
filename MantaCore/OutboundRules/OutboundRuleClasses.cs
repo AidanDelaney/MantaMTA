@@ -5,7 +5,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// <summary>
 	/// Identifies a Type of outbound rule.
 	/// </summary>
-	internal enum OutboundRuleType : int
+	public enum OutboundRuleType : int
 	{
 		/// <summary>
 		/// Rule holds the maximum simultaneous connections value.
@@ -24,7 +24,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// <summary>
 	/// Identifies the type of pattern to match with.
 	/// </summary>
-	internal enum OutboundMxPatternType : int
+	public enum OutboundMxPatternType : int
 	{
 		/// <summary>
 		/// Value is a regular expression.
@@ -40,7 +40,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// Holds an outbound MX pattern, this is used to match against
 	/// an MX servers host name in it's MX record.
 	/// </summary>
-	internal class OutboundMxPattern
+	public class OutboundMxPattern
 	{
 		/// <summary>
 		/// ID of this pattern.
@@ -77,7 +77,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// <summary>
 	/// Holds a rule for outbound clients.
 	/// </summary>
-	internal class OutboundRule
+	public class OutboundRule
 	{
 		/// <summary>
 		/// ID of the pattern that this rule should be used with.
@@ -98,7 +98,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// <summary>
 	/// Holds a collection of Outbound Rules.
 	/// </summary>
-	internal class OutboundRuleCollection : List<OutboundRule>
+	public class OutboundRuleCollection : List<OutboundRule>
 	{
 		public OutboundRuleCollection() { }
 		public OutboundRuleCollection(IEnumerable<OutboundRule> collection) : base(collection) { }
@@ -107,7 +107,7 @@ namespace MantaMTA.Core.OutboundRules
 	/// <summary>
 	/// Holds a collection of OutboundMxPatterns.
 	/// </summary>
-	internal class  OutboundMxPatternCollection : List<OutboundMxPattern>
+	public class  OutboundMxPatternCollection : List<OutboundMxPattern>
 	{
 		public OutboundMxPatternCollection() { }
 		public OutboundMxPatternCollection(IEnumerable<OutboundMxPattern> collection) : base(collection) { }

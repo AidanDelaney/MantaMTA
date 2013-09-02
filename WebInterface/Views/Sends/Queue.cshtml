@@ -1,0 +1,79 @@
+﻿@{
+    ViewBag.Title = "Queue";
+    Layout = "~/Views/_Layout.cshtml";
+}
+@if (Model.SendInfo.Count == 0)
+{
+	<h2>There are no sends in progress</h2>
+}else
+{
+	<table class="table table-striped table-hover">
+		<thead>
+			<tr>
+				<th>Send</th>
+				<th class="td-align-center">Status</th>
+				<th class="td-align-right">Started</th>
+				<th class="td-align-right">Total</th>
+				<th class="td-align-right">Accepted</th>
+				<th class="td-align-right">Rejected</th>
+				<th class="td-align-right total"> 
+					Waiting
+					<h3 class="stat-orange">@Model.SendInfo.Waiting.ToString("N0")</h3>
+				</th>
+				<th class="td-align-right total"> 
+					Throttled
+					<h3 class="stat-grey">@Model.SendInfo.ThrottledPercent.ToString("N2")%</h3>
+				</th>
+				<th class="td-align-right total"> 
+					Deferred
+					<h3 class="stat-blue">@Model.SendInfo.DeferredPercent.ToString("N2")%</h3>
+				</th>
+				<th class="td-align-right">&nbsp;</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (WebInterfaceLib.Model.SendInfo sndInfo in Model.SendInfo)
+			{
+				<tr>
+					<td>@sndInfo.ID</td>
+					<td class="td-align-center">
+						@switch (sndInfo.SendStatus)
+						 {
+							case MantaMTA.Core.Enums.SendStatus.Active:
+								<span class="label label-success">Active</span>
+								break;
+							case MantaMTA.Core.Enums.SendStatus.Discard:
+								<span class="label label-important">Discarding</span>
+								break;
+							case MantaMTA.Core.Enums.SendStatus.Paused:
+								<span class="label label-warning">Paused</span>
+								break;
+						 }
+					
+
+					</td>
+					<td class="td-align-right">@sndInfo.CreatedTimestamp</td>
+					<td class="td-align-right">@sndInfo.TotalMessages.ToString("N0")</td>
+					<td class="td-align-right stat-green">@sndInfo.Accepted.ToString("N0")</td>
+					<td class="td-align-right stat-red">@sndInfo.Rejected.ToString("N0")</td>
+					<td class="td-align-right stat-waiting stat-orange">@sndInfo.Waiting.ToString("N0")</td>
+					<td class="td-align-right stat-throttled stat-grey">@sndInfo.ThrottledPercent.ToString("N2")%</td>
+					<td class="td-align-right stat-deferred stat-blue">@sndInfo.DeferredPercent.ToString("N2")%</td>
+					<td class="td-align-right">
+						<div class="btn-group pull-right"> 
+							<a href="/sends/overview?sendid=@sndInfo.ID" class="btn btn-mini btn-primary"><i class="icon-signal icon-white"></i></a>
+							<a href="/sends/pause?sendid=@sndInfo.ID&redirectUrl=@Request.Url" class="btn btn-mini btn-primary"><i class="icon-pause icon-white"></i></a>	
+							<a href="/sends/discard?sendid=@sndInfo.ID&redirectUrl=@Request.Url" class="btn btn-mini btn-primary"><i class="icon-trash icon-white"></i></a>
+							<a href="/sends/resume?sendid=@sndInfo.ID&redirectUrl=@Request.Url" class="btn btn-mini btn-primary"><i class="icon-play icon-white"></i></a>									
+							<!--<a href="javascript:void(0);" class="btn btn-mini btn-primary dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></a>
+							<ul class="dropdown-menu pull-right">
+								<li> <a href="">Re-assign Pool</a> </li>
+								<li> <a href="">Change Priority</a> </li>
+							</ul>-->					
+						</div>									
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}

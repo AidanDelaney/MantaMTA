@@ -1,6 +1,7 @@
 ﻿@{
-	ViewBag.Title = "Discarding Send";
-	Layout = "../_Layout.cshtml";
+	Layout = null;
 }
-<h2>Discarding Send</h2>
-<p>Emails have been discarded. New messages will be rejected.</p>
+
+<script type="text/javascript">
+	window.location = "@Model.RedirectUrl";
+</script>

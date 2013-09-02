@@ -1,96 +1,87 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width" />
-    <title>@ViewBag.Title</title>
-	<link rel="stylesheet" type="text/css" href="/resources/bootstrap/css/bootstrap.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/bootstrap/css/bootstrap-responsive.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/css/flat-ui.css">
-	<link rel="stylesheet" type="text/css" href="/resources/css/app.css">
-	<script type="text/javascript" src="/resources/jquery-1.10.1.min.js"></script>
-	<script type="text/javascript" src="/resources/Chart-min.js"></script>
-	<script type="text/javascript" src="/resources/bootstrap/js/bootstrap.min.js"></script>
-	<style type="text/css">
-		.btn {
-			width: 60px;
-		}
-body {
-	padding-top: 20px;
-}
- @@media (max-width: 980px) {
-/* Enable use of floated navbar text */
-.navbar-text.pull-right {
-	float: none;
-	padding-left: 5px;
-	padding-right: 5px;
-}
-}
-html, body {
-	background-color:#539fd1 !important;
-	height: 100%;/* The html and body elements cannot have any padding or margin. */
-}
-/* Wrapper for page content to push down footer */
-#wrap {
-	min-height: 100%;
-	height: auto !important;
-	height: 100%;
-	/* Negative indent footer by it's height */
-	margin: 0 auto -60px;
-}
-/* Set the fixed height of the footer here */
-#push, #footer {
-	height: 60px;
-}
-#footer {
-	background-color: #34495e;
-}
+<meta charset="utf-8">
+<title>MantaMTA - @ViewBag.Title</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-      /* Lastly, apply responsive CSS fixes as necessary */
-      @@media (max-width: 767px) {
-#footer {
-	margin-left: -20px;
-	margin-right: -20px;
-	padding-left: 20px;
-	padding-right: 20px;
-}
-}
-</style>
+<link rel="stylesheet" type="text/css" href="/assets/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/assets/bootstrap/css/bootstrap-responsive.css">
+<link rel="stylesheet" type="text/css" href="/assets/css/app-base.css">
+<link rel="stylesheet" type="text/css" href="/assets/css/fonts.css">
+<link rel="stylesheet" type="text/css" href="/assets/css/jquery.jqplot.css">
+
+<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+<script src="/assets/js/plugins/jquery.sparkline.min.js"></script>
+<script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
+
+<!--[if lt IE 9]>
+<script src="/assets/js/html5shiv.js"></script>
+<script src="/assets/js/plugins/excanvas.min.js"></script>
+<![endif]-->
+	
+	<script type="text/javascript">
+		$(document).ready(function () {
+			$('#channel-content').css('min-height', $('#channel-menu').height());
+		});
+	</script>
 </head>
 <body>
-	<div id="wrap">
-		<div class="container-fluid">
-			<div id="masthead" class="row-fluid">
-				<div id="logo-area" class="span2"><img src="/resources/manta-logo.png" alt="MantaMTA" /></div>
+<div id="wrap">
+	<div id="system-head" class="container-fluid">
+		<div class="row-fluid">
+			<div id="system-head-left" class="span6">
+				<span id="manta-logo"></span>
 			</div>
-			<div class="navbar">
-				<div class="navbar-inner navbar-manta">
-					<div class="container">
-						<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target="#nav-collapse-01"></button>
-						<div class="nav-collapse collapse" id="nav-collapse-01">
-							<ul class="nav">
-								<li><a href="/sends/active">Queue</a></li>
-								<li><a href="/sends">Sends</a></li>
-								<li><a href="/stats">Server Stats</a></li>
-							</ul>
-						</div>
-					</div>
-				</div>
+			<div id="system-head-right" class="span6">
+				<a href="javascript:void(0);">@DateTime.UtcNow.ToString("HH:mm dd MMM yy")</a>
 			</div>
 		</div>
-		<div class="container-fluid">
-			<div id="app-canvas">
+	</div>
+	<div id="app-head" class="container-fluid">
+		<div class="row-fluid">
+			<div id="header-title" class="span2"> </div>
+			<div id="header-actions" class="span5">
+
+			</div>
+			<div id="header-controls" class="span5"> 
 				<div class="row-fluid">
 					<div class="span12">
-						@RenderBody()
+
 					</div>
 				</div>
 			</div>
 		</div>
-		<div id="push"></div>
 	</div>
-	<div id="footer">
-		<div class="container">
-			<p>Stuff.</p>
+	
+	<div id="app-body" class="container-fluid">
+		<div class="row-fluid">
+			<div id="channel-menu" class="span2">
+				<div class="sidebar-nav">
+					<ul class="nav nav-list">
+						<li><a href="/dashboard"><i class="icon-th-large icon-white"></i> Dashboard</a></li>
+						<li><a href="/sends/queue"><i class="icon-time icon-white"></i> Queue</a></li>
+						<li><a href="/sends"><i class="icon-random icon-white"></i> Sends</a></li>
+						<li><a href="/virtualmta"><i class="icon-envelope icon-white"></i> Virtual MTAs</a></li>
+						<li><a href="/serverstatus"><i class="icon-tasks icon-white"></i> Server Status</a></li>
+						<li><a href="/outboundrules"><i class="icon-cog icon-white"></i> Outbound Rules</a></li>
+					</ul>
+				</div>
+			</div>
+			
+			<div id="channel" class="span10">
+				<div id="channel-head">
+					<ul class="breadcrumb">
+						<li><a  class="active"href="#">@ViewBag.Title</a> <span class="divider">/</span></li>
+					</ul>
+				</div>
+				<div id="channel-content">					
+					<div class="row-fluid">
+						@RenderBody()								
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>

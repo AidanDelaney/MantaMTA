@@ -108,12 +108,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\DashboardController.cs" />
+    <Compile Include="Controllers\OutboundRulesController.cs" />
     <Compile Include="Controllers\SendsController.cs" />
-    <Compile Include="Controllers\StatsController.cs" />
+    <Compile Include="Controllers\ServerStatusController.cs" />
+    <Compile Include="Controllers\VirtualMtaController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\OutboundRules.cs" />
+    <Compile Include="Models\Sends.cs" />
+    <Compile Include="Models\ServerStatusModel.cs" />
+    <Compile Include="Models\VirtualMTA.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -135,43 +141,40 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Views\Sends\Index.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Views\_Layout.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Sends\Report.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Home\Index.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Sends\Active.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Stats\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MantaCore\MantaCore.csproj">
       <Project>{abf5ef93-77ad-44f4-933f-ff6cce139aaa}</Project>
       <Name>MantaCore</Name>
     </ProjectReference>
+    <ProjectReference Include="..\WebInterfaceLib\WebInterfaceLib.csproj">
+      <Project>{2c57af28-f471-4d88-83bf-89e3a8a2ad50}</Project>
+      <Name>WebInterfaceLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Properties\PublishProfiles\Default.pubxml" />
+    <Content Include="Views\Dashboard\Index.cshtml" />
+    <Content Include="Views\Sends\Index.cshtml" />
+    <Content Include="Views\Sends\Overview.cshtml" />
+    <Content Include="Views\Sends\_ReportLayout.cshtml" />
+    <Content Include="Views\Sends\VirtualMTA.cshtml" />
+    <Content Include="Views\Sends\Bounces.cshtml" />
+    <Content Include="Views\Sends\Speed.cshtml" />
     <Content Include="Views\Sends\Pause.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Sends\Discard.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Views\Sends\Resume.cshtml" />
+    <Content Include="Views\Sends\Discard.cshtml" />
+    <Content Include="Views\VirtualMta\Index.cshtml" />
+    <Content Include="Views\ServerStatus\Index.cshtml" />
+    <Content Include="Views\OutboundRules\Index.cshtml" />
+    <Content Include="Views\OutboundRules\Edit.cshtml" />
+    <Content Include="Views\Sends\Queue.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

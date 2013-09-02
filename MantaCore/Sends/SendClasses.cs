@@ -22,5 +22,9 @@ namespace MantaMTA.Core.Sends
 		/// the SendIDManager to clean up it's internal cache.
 		/// </summary>
 		public DateTime LastAccessedTimestamp { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public DateTime CreatedTimestamp { get; set; }
 	}
 }

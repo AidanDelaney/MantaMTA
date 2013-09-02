@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
 
 namespace MantaMTA.Core.DAL
@@ -11,7 +10,7 @@ namespace MantaMTA.Core.DAL
 		/// </summary>
 		/// <param name="ID"></param>
 		/// <returns></returns>
-		public static MtaIpAddress.MtaIPGroup GetMtaIpGroup(int id)
+		internal static MtaIpAddress.MtaIPGroup GetMtaIpGroup(int id)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -26,11 +25,27 @@ WHERE [grp].ip_group_id = @groupID";
 		}
 
 		/// <summary>
+		/// Gets all of the MTA IP Groups from the database; doesn't include IP Addresses.
+		/// </summary>
+		/// <returns></returns>
+		internal static MtaIpAddress.MtaIPGroupCollection GetMtaIpGroups()
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT *
+FROM man_ip_group";
+				return new MtaIpAddress.MtaIPGroupCollection(DataRetrieval.GetCollectionFromDatabase<MtaIpAddress.MtaIPGroup>(cmd, CreateAndFillMtaIpGroup));
+			}
+		}
+
+		/// <summary>
 		/// Creates a MtaIPGroup object using the Data Record.
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		internal static MtaIpAddress.MtaIPGroup CreateAndFillMtaIpGroup(IDataRecord record)
+		private static MtaIpAddress.MtaIPGroup CreateAndFillMtaIpGroup(IDataRecord record)
 		{
 			MtaIpAddress.MtaIPGroup group = new MtaIpAddress.MtaIPGroup();
 			group.ID = record.GetInt32("ip_group_id");
