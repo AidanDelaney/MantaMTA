@@ -109,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\DashboardController.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\OutboundRulesController.cs" />
     <Compile Include="Controllers\SendsController.cs" />
     <Compile Include="Controllers\ServerStatusController.cs" />
@@ -175,6 +176,7 @@
     <Content Include="Views\OutboundRules\Index.cshtml" />
     <Content Include="Views\OutboundRules\Edit.cshtml" />
     <Content Include="Views\Sends\Queue.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
