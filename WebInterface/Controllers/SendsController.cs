@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using MantaMTA.Core.ServiceContracts;
+using WebInterface.Models;
+using WebInterfaceLib.Model;
 
 namespace WebInterface.Controllers
 {
@@ -14,169 +13,80 @@ namespace WebInterface.Controllers
     {
         //
         // GET: /Sends/
-
-        public ActionResult Index()
+        public ActionResult Index(int page = 1, int pageSize = 10)
         {
-			return View(GetSendListDataSet(false));
+			SendInfoCollection sends = WebInterfaceLib.DAL.SendDB.GetSends(pageSize, page);
+			int pages = (int)Math.Ceiling(WebInterfaceLib.DAL.SendDB.GetSendsCount() / Convert.ToDouble(pageSize));
+			return View(new SendsModel(sends, page, pages));
         }
 
-		public ActionResult Active()
+		//
+		// GET: /Queue/
+		public ActionResult Queue()
 		{
-			return View(GetSendListDataSet(true));
+			SendInfoCollection sends = WebInterfaceLib.DAL.SendDB.GetSendsInProgress();
+			return View(new SendsModel(sends, 1, 1));
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="sendIID">Send Internal ID</param>
-		/// <returns></returns>
-		public ActionResult Pause(string sendIID)
+		//
+		// GET: /Sends/Overview?sendID=
+		public ActionResult Overview(string sendID)
+		{
+			SendInfo send = WebInterfaceLib.DAL.SendDB.GetSend(sendID);
+			return View(new SendReportOverview(send));
+		}
+
+		//
+		// GET: /Sends/VirtualMTA?sendID=
+		public ActionResult VirtualMTA(string sendID)
+		{
+			return View(new SendReportVirtualMta(WebInterfaceLib.DAL.VirtualMtaDB.GetSendVirtualMTAStats(sendID), sendID));
+		}
+
+		//
+		// GET: /Sends/Bounces?sendID=
+		public ActionResult Bounces(string sendID, int page = 1, int pageSize = 25)
+		{
+			int bounceCount = WebInterfaceLib.DAL.TransactionDB.GetBounceCount(sendID);
+			int pageCount = (int)Math.Ceiling(bounceCount / Convert.ToDouble(pageSize));
+			return View(new SendReportBounces(WebInterfaceLib.DAL.TransactionDB.GetBounceInfo(sendID, page, pageSize), sendID, page, pageCount));
+		}
+
+		//
+		// GET: /Sends/Speed?sendID=
+		public ActionResult Speed(string sendID)
+		{
+			return View(new SendReportSpeed(WebInterfaceLib.DAL.TransactionDB.GetSendSpeedInfo(sendID), sendID));
+		}
+
+		//
+		// GET: /Sends/Pause?sendID=
+		public ActionResult Pause(string sendID, string redirectURL)
 		{
 			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			sendManager.Pause(Int32.Parse(sendIID));
-			return View();
+			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
+			sendManager.Pause(internalID);
+			return View(new SendStatusUpdated(redirectURL));
 		}
 
-		public ActionResult Discard(string sendIID)
+		//
+		// GET: /Sends/Resume?sendID=
+		public ActionResult Resume(string sendID, string redirectURL)
 		{
 			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			sendManager.Discard(Int32.Parse(sendIID));
-			return View();
+			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
+			sendManager.Resume(internalID);
+			return View(new SendStatusUpdated(redirectURL));
 		}
 
-		public ActionResult Resume(string sendIID)
+		//
+		// GET: /Sends/Discard?sendID=
+		public ActionResult Discard(string sendID, string redirectURL)
 		{
 			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			sendManager.Resume(Int32.Parse(sendIID));
-			return View();
-		}
-		
-		public ActionResult Report(string sendID)
-		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
-			{
-				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"
-SELECT [msg].mta_msg_rcptTo,
-[tran].*,
-[ip].ip_ipAddress_ipAddress,
-[ip].ip_ipAddress_hostname
-FROM man_mta_transaction as [tran]
-JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
-JOIN man_mta_send as [snd] on [snd].mta_send_internalId = [msg].mta_send_internalId
-LEFT JOIN man_ip_ipAddress as [ip] on [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
-WHERE (mta_transactionStatus_id < 4 OR mta_transactionStatus_id = 6)
-AND [snd].mta_send_id = @sndID
-ORDER BY [tran].mta_transaction_timestamp DESC";
-				cmd.Parameters.AddWithValue("@sndID", sendID);
-				conn.Open();
-				DataSet[] results = new DataSet[] { new DataSet(), new DataSet() };
-				SqlDataAdapter da = new SqlDataAdapter(cmd);
-				da.Fill(results[0]);
-
-				cmd.CommandText = @"
-SELECT *
-FROM
-(select 
-	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date', 
-	count(*) as 'Sent',
-	4 as 'status'
-from man_mta_transaction as [tran]
-join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
-join man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-where mta_transactionStatus_id = 4
-and [snd].mta_send_id = @sndID
-GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp)) sent
-UNION
-(select 
-	CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)) + '-' +
-	CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)) + ' ' +
-	CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)) + ':' +
-	CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)) as 'Date', 
-	count(*) as 'Deferred',
-	2 as 'Status'
-from man_mta_transaction as [tran]
-join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
-join man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-where (mta_transactionStatus_id = 2 OR mta_transactionStatus_id = 6)
-and [snd].mta_send_id = @sndID
-GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp))
-UNION (select 
-	RIGHT ('0' + CONVERT(varchar, DATEPART(YEAR, [tran].mta_transaction_timestamp)), 2) + '-' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(MONTH, [tran].mta_transaction_timestamp)), 2) + '-' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(DAY, [tran].mta_transaction_timestamp)), 2) + ' ' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(HOUR, [tran].mta_transaction_timestamp)), 2) + ':' +
-	RIGHT ('0' + CONVERT(varchar, DATEPART(MINUTE, [tran].mta_transaction_timestamp)), 2) as 'Date',
-	count(*) as 'Failed',
-	1 as 'Status'
-from man_mta_transaction as [tran]
-join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
-join man_mta_send as [snd] on [msg].mta_send_internalId = [snd].mta_send_internalId
-where mta_transactionStatus_id = 1
-and [snd].mta_send_id = @sndID
-GROUP BY DATEPART(YEAR, [tran].mta_transaction_timestamp), DATEPART(MONTH, [tran].mta_transaction_timestamp), DATEPART(DAY, [tran].mta_transaction_timestamp), DATEPART(HOUR, [tran].mta_transaction_timestamp), DATEPART(MINUTE, [tran].mta_transaction_timestamp))
-ORDER BY [Date] ASC
-";
-				da.Fill(results[1]);
-
-				return View(results);
-			}
-		}
-
-		private DataSet GetSendListDataSet(bool onlyActive)
-		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
-			{
-				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"
-SELECT [snd].mta_send_id as 'SendID',
-[snd].mta_send_internalId as 'InternalSendID',
-[snd].mta_sendStatus_id as 'SendStatus',
-[snd].mta_send_createdTimestamp as 'Started',
-(SELECT COUNT(*) FROM man_mta_msg as [msg] WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Messages',
-(SELECT COUNT(*) FROM man_mta_queue as [queue] 
-	JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Waiting',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 1) as 'Deferred',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND ([tran].mta_transactionStatus_id = 2
-	OR [tran].mta_transactionStatus_id = 6)) as 'Failed',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 3) as 'Timed Out',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 5) as 'Throttled',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId
-	AND [tran].mta_transactionStatus_id = 4) as 'Delivered',
-(SELECT COUNT(*) FROM man_mta_transaction as [tran]
-	JOIN man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id 
-	WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) as 'Attempts'
-FROM man_mta_send as [snd]"
-  + (onlyActive ? " WHERE [snd].mta_send_internalId IN (SELECT man_mta_msg.mta_send_internalId FROM man_mta_queue join man_mta_msg on man_mta_queue.mta_msg_id = man_mta_msg.mta_msg_id) " : string.Empty)
-  +	" ORDER BY [snd].mta_send_createdTimestamp DESC";
-
-				conn.Open();
-				DataSet results = new DataSet();
-				SqlDataAdapter da = new SqlDataAdapter(cmd);
-				da.Fill(results);
-
-				return results;
-			}
+			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
+			sendManager.Discard(internalID);
+			return View(new SendStatusUpdated(redirectURL));
 		}
     }
 }

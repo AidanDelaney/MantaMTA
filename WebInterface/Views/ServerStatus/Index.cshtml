@@ -1,0 +1,39 @@
+﻿@{
+    ViewBag.Title = "Server Status";
+	Layout = "~/Views/_Layout.cshtml";
+}
+
+<h2>Server Status</h2>
+
+<table class="table table-striped table-hover">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Directory</th>
+			<th>Files</th>
+			<th>Used Space</th>
+			<th>Available Space</th>
+		</tr>
+		<tr>
+			<th>Drop</th>
+			<td>@Model.DropDir.Path</td>
+			<td>@Model.DropDir.FileCount</td>
+			<td>@Model.DropDir.UsedSpace</td>
+			<td>@Model.DropDir.FreeSpace</td>
+		</tr>
+		<tr>
+			<th>Logs</th>
+			<td>@Model.LogDir.Path</td>
+			<td>@Model.LogDir.FileCount</td>
+			<td>@Model.LogDir.UsedSpace</td>
+			<td>@Model.LogDir.FreeSpace</td>
+		</tr>
+		<tr>
+			<th>Queue</th>
+			<td>@Model.QueueDir.Path</td>
+			<td>@Model.QueueDir.FileCount</td>
+			<td>@Model.QueueDir.UsedSpace</td>
+			<td>@Model.QueueDir.FreeSpace</td>
+		</tr>
+	</thead>
+</table>

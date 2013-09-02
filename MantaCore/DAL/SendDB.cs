@@ -53,6 +53,7 @@ WHERE mta_send_id = @sndID";
 			sendID.InternalID = record.GetInt32("mta_send_internalId");
 			sendID.SendStatus = (SendStatus)record.GetInt32("mta_sendStatus_id");
 			sendID.LastAccessedTimestamp = DateTime.UtcNow;
+			sendID.CreatedTimestamp = record.GetDateTime("mta_send_createdTimestamp");
 
 			return sendID;
 		}

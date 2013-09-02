@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MantaMTA.Core.MtaIpAddress
@@ -75,5 +76,14 @@ namespace MantaMTA.Core.MtaIpAddress
 				return ipAddress;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Holds a collection of MtaIPGroup objects.
+	/// </summary>
+	public class MtaIPGroupCollection : List<MtaIPGroup>
+	{
+		public MtaIPGroupCollection() { }
+		public MtaIPGroupCollection(IEnumerable<MtaIPGroup> collection) : base(collection) { }
 	}
 }

@@ -37,6 +37,8 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("MTALibraryTests")]
 [assembly: InternalsVisibleTo("MantaEventsConsole")]
+[assembly: InternalsVisibleTo("WebInterfaceLib")]
+[assembly: InternalsVisibleTo("WebInterface")]
 
 // Log4net config file location
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "Log4net.config", Watch = true)]

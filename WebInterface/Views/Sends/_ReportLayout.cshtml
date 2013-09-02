@@ -1,0 +1,25 @@
+﻿@{
+    Layout = "~/Views/_Layout.cshtml";
+	PageData["OverviewUrl"] = "/sends/overview";
+	PageData["SpeedUrl"] = "/sends/speed";
+	PageData["VmtaUrl"] = "/sends/virtualmta";
+	PageData["BounceUrl"] = "/sends/bounces";
+}
+
+<div class="row-fluid">
+	<ul class="nav nav-tabs" id="myTab">
+		<li @(Request.Path.Equals(PageData["OverviewUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["OverviewUrl"]?sendID=@Model.SendID">Overview</a></li>
+		<li @(Request.Path.Equals(PageData["SpeedUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["SpeedUrl"]?sendID=@Model.SendID">Send Speed</a></li>
+		<li @(Request.Path.Equals(PageData["VmtaUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["VmtaUrl"]?sendID=@Model.SendID">Virtual MTAs</a></li>
+		<li @(Request.Path.Equals(PageData["BounceUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["BounceUrl"]?sendID=@Model.SendID">Bounces</a></li>
+	</ul>
+</div>
+
+@RenderBody()
+
+<div class="row-fluid">
+	<div id="report-footer">
+		<hr>
+		Report generated at @DateTime.UtcNow.ToString("hh:mm on dd MMMM yyyy")
+	</div>
+</div>

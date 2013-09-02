@@ -1,0 +1,98 @@
+﻿@{
+    ViewBag.Title = "Speed";
+    Layout = "~/Views/Sends/_ReportLayout.cshtml";
+}
+<script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function () {
+		var rateAccepted = [@Model.GetAcceptedSendRates()];
+		var rateRejected = [@Model.GetRejectedSendRates()];
+		var rateDeferred = [@Model.GetDeferredSendRates()];
+
+		var plot2 = $.jqplot('chart1', [rateAccepted, rateRejected, rateDeferred],
+		{
+			// An axes object holds options for all axes.
+			// Allowable axes are xaxis, x2axis, yaxis, y2axis, y3axis, ...
+			// Up to 9 y axes are supported.
+			series: [{ label: 'Accepted' }, { label: 'Rejected' }, { label: 'Deferred' }],
+			axes: {
+				// options for each axis are specified in seperate option objects.
+				xaxis: {
+					label: "Time",
+					// Turn off "padding".  This will allow data point to lie on the
+					// edges of the grid.  Default padding is 1.2 and will keep all
+					// points inside the bounds of the grid.
+					pad: 0
+				},
+				yaxis: {
+					label: "Rate",
+					min: 0
+				}
+			},
+			axesDefaults: {
+				show: false,    // wether or not to renderer the axis.  Determined automatically.
+				min: null,      // minimum numerical value of the axis.  Determined automatically.
+				max: null,      // maximum numverical value of the axis.  Determined automatically.
+				pad: 1.2,       // a factor multiplied by the data range on the axis to give the
+				// axis range so that data points don't fall on the edges of the axis.
+				ticks: [],      // a 1D [val1, val2, ...], or 2D [[val, label], [val, label], ...]
+				// array of ticks to use.  Computed automatically.
+				numberTicks: undefined,
+				renderer: $.jqplot.LinearAxisRenderer,  // renderer to use to draw the axis,
+				rendererOptions: {},    // options to pass to the renderer.  LinearAxisRenderer
+				// has no options,
+				tickOptions: {
+					mark: 'outside',    // Where to put the tick mark on the axis
+					// 'outside', 'inside' or 'cross',
+					showMark: true,
+					showGridline: true, // wether to draw a gridline (across the whole grid) at this tick,
+					markSize: 4,        // length the tick will extend beyond the grid in pixels.  For
+					// 'cross', length will be added above and below the grid boundary,
+					show: true,         // wether to show the tick (mark and label),
+					showLabel: true,    // wether to show the text label at the tick,
+					formatString: '',   // format string to use with the axis tick formatter
+				},
+				showTicks: true,        // wether or not to show the tick labels,
+				showTickMarks: true,    // wether or not to show the tick marks
+			},
+			legend: {
+				renderer: $.jqplot.EnhancedLegendRenderer,
+				show: true
+			},
+			seriesDefaults: {
+				show: true,     // wether to render the series.
+				xaxis: 'xaxis', // either 'xaxis' or 'x2axis'.
+				yaxis: 'yaxis', // either 'yaxis' or 'y2axis'.
+				label: '',      // label to use in the legend for this line.
+				color: '',      // CSS color spec to use for the line.  Determined automatically.
+				lineWidth: 3, // Width of the line in pixels.
+				shadow: false,   // show shadow or not.
+				showLine: true,     // whether to render the line segments or not.
+				showMarker: false,   // render the data point markers or not.
+				fill: false,        // fill under the line,
+				fillAndStroke: false,       // *stroke a line at top of fill area.
+				fillColor: undefined,       // *custom fill color for filled lines (default is line color).
+				fillAlpha: undefined,       // *custom alpha to apply to fillColor.
+				renderer: $.jqplot.LineRenderer,    // renderer used to draw the series.
+				rendererOptions: {}, // options passed to the renderer.  LineRenderer has no options.
+				markerRenderer: $.jqplot.MarkerRenderer    // renderer to use to draw the data
+			},
+			seriesColors: ['green','red','blue'],
+			grid: {
+				drawGridLines: true,        // wether to draw lines across the grid or not.
+				gridLineColor: '#e3e3e3',    // *Color of the grid lines.
+				background: '#ffffff',      // CSS color spec for background color of grid.
+				borderColor: '#cccccc',     // CSS color spec for border around grid.
+				borderWidth: 0,           // pixel width of border around grid.
+				shadow: false,               // draw a shadow for grid.
+				renderer: $.jqplot.CanvasGridRenderer,  // renderer to use to draw the grid.
+				rendererOptions: {}         // options to pass to the renderer.  Note, the default
+			},
+		});
+	});
+</script>
+
+<div class="row-fluid">
+	<h3>Delivery Rate Timeline</h3>
+	<div id="chart1" style="height: 300px; width: 100%; position: relative;" class="jqplot-target"></div>
+</div>

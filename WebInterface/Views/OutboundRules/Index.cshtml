@@ -1,0 +1,44 @@
+﻿@{
+    ViewBag.Title = "Outbound Rules";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<h2>Outbound Rules&nbsp;<a href="javascript:void(0);" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a></h2>
+
+<table class="table table-striped table-hover">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Description</th>
+			<th>Pattern</th>
+			<th>All Virtual MTAs</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (MantaMTA.Core.OutboundRules.OutboundMxPattern outboundRule in Model)
+		{
+			<tr>
+				<td>@outboundRule.Name</td>
+				<td>@outboundRule.Description</td>
+				<td><span class="label">@switch (outboundRule.Type)
+										{
+											case MantaMTA.Core.OutboundRules.OutboundMxPatternType.CommaDelimited:
+												@:List
+												break;
+											case MantaMTA.Core.OutboundRules.OutboundMxPatternType.Regex:
+												@:Regex
+												break;
+										}
+				    </span>&nbsp;@outboundRule.Value</td>
+				<td>@(!outboundRule.LimitedToOutboundIpAddressID.HasValue)</td>
+				<td>
+					<div class="btn-group pull-right">
+						<a href="/OutboundRules/Edit?id=@outboundRule.ID" class="btn btn-mini btn-primary">View</a>
+						<a href="javascript:void(0);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
+					</div>
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>

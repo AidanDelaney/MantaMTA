@@ -1,0 +1,46 @@
+﻿@{
+    ViewBag.Title = "Overview";
+	Layout = "~/Views/Sends/_ReportLayout.cshtml";
+}
+
+<div class="row-fluid">
+	<div class="span4">
+		<div class="tile tile-midgrey">
+			<h6>Total Emails</h6>
+			<h3>@Model.SendInfo.TotalMessages.ToString("N0")</h3>
+		</div>
+	</div>
+	<div class="span4">
+		<div class="tile tile-green">
+			<h6>Accepted</h6>
+			<h3>@Model.SendInfo.Accepted.ToString("N0")</h3>
+		</div>
+	</div>
+	<div class="span4">
+		<div class="tile tile-red">
+			<h6>Rejected</h6>
+			<h3>@Model.SendInfo.Rejected.ToString("N0")</h3>
+		</div>
+	</div>
+</div>
+
+<div class="row-fluid">
+	<div class="span4">
+		<div class="tile tile-turquoise">
+			<h6>Send Time</h6>
+			<h3>@Model.SendInfo.SendTimeString</h3>
+		</div>
+	</div>
+	<div class="span4">
+		<div class="tile tile-grey">
+			<h6>Throttled</h6>
+			<h3><span class="stat">@Model.SendInfo.ThrottledPercent.ToString("N2")%</span></h3>
+		</div>
+	</div>
+	<div class="span4">
+		<div class="tile tile-blue">
+			<h6>Deferred</h6>
+			<h3><span class="stat">@Model.SendInfo.DeferredPercent.ToString("N2")%</span></h3>
+		</div>
+	</div>
+</div>
