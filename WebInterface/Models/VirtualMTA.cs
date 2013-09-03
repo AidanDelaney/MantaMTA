@@ -23,7 +23,7 @@ namespace WebInterface.Models
 		/// <summary>
 		/// The ammount of messages sent from this vMTA that were accepted by the remote MX.
 		/// </summary>
-		public int Accepted
+		public long Accepted
 		{
 			get
 			{
@@ -37,7 +37,7 @@ namespace WebInterface.Models
 		/// <summary>
 		/// The ammount of messages sent from this vMTA that were not accepted by the remote MX.
 		/// </summary>
-		public int Failed
+		public long Failed
 		{
 			get
 			{
@@ -58,7 +58,7 @@ namespace WebInterface.Models
 		{
 			get
 			{
-				int attempts = SendTransactionSummaryCollection.Sum(i => i.Count);
+				long attempts = SendTransactionSummaryCollection.Sum(i => i.Count);
 				if (attempts == 0)
 					return 0;
 
@@ -76,7 +76,7 @@ namespace WebInterface.Models
 		{
 			get
 			{
-				int attempts = SendTransactionSummaryCollection.Sum(i => i.Count);
+				long attempts = SendTransactionSummaryCollection.Sum(i => i.Count);
 				if (attempts == 0)
 					return 0;
 

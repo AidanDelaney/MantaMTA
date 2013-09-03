@@ -35,6 +35,6 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of times that this bounce has happened.
 		/// </summary>
-		public int Count { get; set; }
+		public long Count { get; set; }
 	}
 }

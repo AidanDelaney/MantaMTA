@@ -9,27 +9,27 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of messages accepted by a remote MX.
 		/// </summary>
-		public int Accepted { get; set; }
+		public long Accepted { get; set; }
 
 		/// <summary>
 		/// The amount of messages rejected by a remote MX.
 		/// </summary>
-		public int Rejected { get; set; }
+		public long Rejected { get; set; }
 
 		/// <summary>
 		/// The amount of attempts to send a message that where throttled by MantaMTA.
 		/// </summary>
-		public int Throttled { get; set; }
+		public long Throttled { get; set; }
 
 		/// <summary>
 		/// The amount of attempts to send a message that where deferred by the remote MX.
 		/// </summary>
-		public int Deferred { get; set; }
+		public long Deferred { get; set; }
 
 		/// <summary>
 		/// The amount of attempts to send messages that where made.
 		/// </summary>
-		private int Attempts
+		private long Attempts
 		{
 			get
 			{

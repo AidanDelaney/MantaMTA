@@ -14,7 +14,7 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// 
 		/// </summary>
-		public int Waiting
+		public long Waiting
 		{
 			get
 			{
@@ -29,10 +29,10 @@ namespace WebInterfaceLib.BO
 		{
 			get
 			{
-				int attempts = this.Sum(snd => snd.Attempts);
+				long attempts = this.Sum(snd => snd.Attempts);
 				if (attempts == 0)
 					return 0;
-				int throttled = this.Sum(snd => snd.Throttled);
+				long throttled = this.Sum(snd => snd.Throttled);
 				return (100d / attempts) * throttled;
 			}
 		}
@@ -44,10 +44,10 @@ namespace WebInterfaceLib.BO
 		{
 			get
 			{
-				int attempts = this.Sum(snd => snd.Attempts);
+				long attempts = this.Sum(snd => snd.Attempts);
 				if (attempts == 0)
 					return 0;
-				int deferred = this.Sum(snd => snd.Deferred);
+				long deferred = this.Sum(snd => snd.Deferred);
 				return (100d / attempts) * deferred;
 			}
 		}
@@ -61,32 +61,32 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The total messages that this send has.
 		/// </summary>
-		public int TotalMessages { get; set; }
+		public long TotalMessages { get; set; }
 
 		/// <summary>
 		/// The amount of messages that have been accepted by remote MXs.
 		/// </summary>
-		public int Accepted { get; set; }
+		public long Accepted { get; set; }
 
 		/// <summary>
 		/// Amount of messages that have been rejected by remote MXs.
 		/// </summary>
-		public int Rejected { get; set; }
+		public long Rejected { get; set; }
 
 		/// <summary>
 		/// Amount of messages waiting to be sent.
 		/// </summary>
-		public int Waiting { get; set; }
+		public long Waiting { get; set; }
 
 		/// <summary>
 		/// Amount of times that an attempt to send has been throttled.
 		/// </summary>
-		public int Throttled { get; set; }
+		public long Throttled { get; set; }
 
 		/// <summary>
 		/// Amount of times that attempts to send messages have been deferred by remote MXs.
 		/// </summary>
-		public int Deferred { get; set; }
+		public long Deferred { get; set; }
 
 		/// <summary>
 		/// Timestamp of the last transaction. NULL if no transactions.
@@ -96,7 +96,7 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of attempts to send messages that have been made.
 		/// </summary>
-		public int Attempts
+		public long Attempts
 		{
 			get
 			{

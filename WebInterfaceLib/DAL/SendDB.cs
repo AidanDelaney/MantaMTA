@@ -14,7 +14,7 @@ namespace WebInterfaceLib.DAL
 		/// Gets the amount of messages currently waiting in the queue for sending.
 		/// </summary>
 		/// <returns>Count of the messages waiting in the queue.</returns>
-		public static int GetWaitingCount()
+		public static long GetWaitingCount()
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -22,7 +22,7 @@ namespace WebInterfaceLib.DAL
 				cmd.CommandText = @"SELECT COUNT(*)
 FROM man_mta_queue";
 				conn.Open();
-				return Convert.ToInt32(cmd.ExecuteScalar());
+				return Convert.ToInt64(cmd.ExecuteScalar());
 			}
 		}
 
@@ -30,14 +30,14 @@ FROM man_mta_queue";
 		/// Get a count of all the sends in the MantaMTA database.
 		/// </summary>
 		/// <returns>Count of all Sends.</returns>
-		public static int GetSendsCount()
+		public static long GetSendsCount()
 		{
 			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT COUNT(*) FROM man_mta_send";
 				conn.Open();
-				return Convert.ToInt32(cmd.ExecuteScalar());
+				return Convert.ToInt64(cmd.ExecuteScalar());
 			}
 		}
 
@@ -129,15 +129,15 @@ WHERE [snd].mta_send_id = @sndID";
 			{
 				ID = record.GetString("mta_send_id"),
 				InternalID = record.GetInt32("mta_send_internalId"),
-				SendStatus = (SendStatus)record.GetInt32("mta_sendStatus_id"),
+				SendStatus = (SendStatus)record.GetInt64("mta_sendStatus_id"),
 				LastAccessedTimestamp = DateTime.UtcNow,
 				CreatedTimestamp = record.GetDateTime("mta_send_createdTimestamp"),
-				Accepted = record.GetInt32("Accepted"),
-				Deferred = record.GetInt32("Deferred"),
-				Rejected = record.GetInt32("Rejected"),
-				Throttled = record.GetInt32("Throttled"),
-				TotalMessages = record.GetInt32("Messages"),
-				Waiting = record.GetInt32("Waiting")
+				Accepted = record.GetInt64("Accepted"),
+				Deferred = record.GetInt64("Deferred"),
+				Rejected = record.GetInt64("Rejected"),
+				Throttled = record.GetInt64("Throttled"),
+				TotalMessages = record.GetInt64("Messages"),
+				Waiting = record.GetInt64("Waiting")
 			};
 
 			if (!record.IsDBNull("LastTransactionTimestamp"))

@@ -304,7 +304,10 @@ namespace MantaMTA.Core.DAL
 		/// <returns>The value of the specified column.</returns>
 		public static long GetInt64(this IDataRecord myIDataRecord, string name)
 		{
-			return myIDataRecord.GetInt64(myIDataRecord.GetOrdinal(name));
+			int ordinal = myIDataRecord.GetOrdinal(name);
+			if (myIDataRecord.GetFieldType(ordinal) == typeof(int))
+				return Convert.ToInt64(myIDataRecord.GetInt32(ordinal));
+			return myIDataRecord.GetInt64(ordinal);
 		}
 
 		/// <summary>

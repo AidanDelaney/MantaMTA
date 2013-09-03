@@ -17,7 +17,7 @@ namespace WebInterface.Models
 		/// <summary>
 		/// Holds the current amount of messages waiting in the queue.
 		/// </summary>
-		public int Waiting { get; set; }
+		public long Waiting { get; set; }
 
 		/// <summary>
 		/// Information about bounces in the last hour.
@@ -46,7 +46,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");
@@ -68,7 +68,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");
@@ -90,7 +90,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");

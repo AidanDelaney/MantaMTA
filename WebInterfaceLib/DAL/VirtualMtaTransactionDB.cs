@@ -32,7 +32,7 @@ GROUP BY mta_transactionStatus_id";
 		/// <returns>A filled SendTransactionSummary object.</returns>
 		private static SendTransactionSummary CreateAndFillSendTransactionSummaryFromRecord(System.Data.IDataRecord record)
 		{
-			return new SendTransactionSummary((MantaMTA.Core.Enums.TransactionStatus)record.GetInt32("mta_transactionStatus_id"), record.GetInt32("count"));
+			return new SendTransactionSummary((MantaMTA.Core.Enums.TransactionStatus)record.GetInt64("mta_transactionStatus_id"), record.GetInt64("count"));
 		}
 	}
 }

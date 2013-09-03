@@ -44,7 +44,7 @@ namespace WebInterfaceLib.BO
 		/// <param name="accepted">returns the accepted rate.</param>
 		/// <param name="failed">returns the failed rate.</param>
 		/// <param name="deferred">returns the deferred rate.</param>
-		public void GetDataPoints(DateTime timestamp, out int accepted, out int failed, out int deferred)
+		public void GetDataPoints(DateTime timestamp, out long accepted, out long failed, out long deferred)
 		{
 			SendSpeedInfo subItems = new SendSpeedInfo(from i in this where i.Timestamp == timestamp select i);
 			SendSpeedInfoItem item = subItems.SingleOrDefault(i => i.Status == TransactionStatus.Success);
@@ -84,6 +84,6 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The ammount of times this status happened in the timestamp for a send.
 		/// </summary>
-		public int Count { get; set; }
+		public long Count { get; set; }
 	}
 }

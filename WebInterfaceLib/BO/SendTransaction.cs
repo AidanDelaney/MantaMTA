@@ -17,10 +17,10 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of time it has happened.
 		/// </summary>
-		public int Count { get; set; }
+		public long Count { get; set; }
 
 		public SendTransactionSummary() { }
-		public SendTransactionSummary(TransactionStatus status, int count)
+		public SendTransactionSummary(TransactionStatus status, long count)
 		{
 			Status = status;
 			Count = count;
@@ -38,7 +38,7 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of attempts to send that have been made.
 		/// </summary>
-		private int Attempts
+		private long Attempts
 		{
 			get
 			{
@@ -49,7 +49,7 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of send attempts that have resulted in the remote MX accepting the message.
 		/// </summary>
-		public int Accepted
+		public long Accepted
 		{
 			get
 			{
@@ -60,7 +60,7 @@ namespace WebInterfaceLib.BO
 		/// <summary>
 		/// The amount of send attempts that resulted in the remote MX rejecting the message.
 		/// </summary>
-		public int Rejected
+		public long Rejected
 		{
 			get
 			{
@@ -79,7 +79,7 @@ namespace WebInterfaceLib.BO
 			{
 				if (this.Attempts < 1)
 					return 0;
-				int throttled = this.Where(ts => ts.Status == TransactionStatus.Throttled).Sum(ts => ts.Count);
+				long throttled = this.Where(ts => ts.Status == TransactionStatus.Throttled).Sum(ts => ts.Count);
 				return (100d / Attempts) * throttled;
 			}
 		}
@@ -93,7 +93,7 @@ namespace WebInterfaceLib.BO
 			{
 				if (this.Attempts < 1)
 					return 0;
-				int deferred = this.Where(ts => ts.Status == TransactionStatus.Deferred).Sum(ts => ts.Count);
+				long deferred = this.Where(ts => ts.Status == TransactionStatus.Deferred).Sum(ts => ts.Count);
 				return (100d / Attempts) * deferred;
 			}
 		}

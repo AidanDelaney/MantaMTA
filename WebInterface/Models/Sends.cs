@@ -132,7 +132,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");
@@ -154,7 +154,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");
@@ -176,7 +176,7 @@ namespace WebInterface.Models
 			bool first = true;
 			foreach (DateTime timestamp in SendSpeedInfo.Dates)
 			{
-				int accepted, rejected, deferred = 0;
+				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
 				if (!first)
 					sb.Append(",");

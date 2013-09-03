@@ -60,10 +60,10 @@ WHERE [ip].ip_ipAddress_id IN (SELECT * FROM @usedIpAddressIds)";
 			vinfo.IPAddress = System.Net.IPAddress.Parse(record.GetString("ip_ipAddress_ipAddress"));
 			vinfo.IsSmtpInbound = record.GetBoolean("ip_ipAddress_isInbound");
 			vinfo.IsSmtpOutbound = record.GetBoolean("ip_ipAddress_isOutbound");
-			vinfo.Accepted = record.GetInt32("Accepted");
-			vinfo.Deferred = record.GetInt32("Deferred");
-			vinfo.Rejected = record.GetInt32("Rejected");
-			vinfo.Throttled = record.GetInt32("Throttled");
+			vinfo.Accepted = record.GetInt64("Accepted");
+			vinfo.Deferred = record.GetInt64("Deferred");
+			vinfo.Rejected = record.GetInt64("Rejected");
+			vinfo.Throttled = record.GetInt64("Throttled");
 
 			return vinfo;
 		}
