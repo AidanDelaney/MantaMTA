@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
+using WebInterface.Models;
 
 namespace WebInterface.Controllers
 {
@@ -12,7 +9,13 @@ namespace WebInterface.Controllers
         // GET: /Dashboard/
         public ActionResult Index()
         {
-            return View();
+			return View(new DashboardModel
+				{
+					SendTransactionSummaryCollection = WebInterfaceLib.DAL.TransactionDB.GetLastHourTransactionSummary(),
+					Waiting = WebInterfaceLib.DAL.SendDB.GetWaitingCount(),
+					BounceInfo = WebInterfaceLib.DAL.TransactionDB.GetLastHourBounceInfo(3),
+					SendSpeedInfo = WebInterfaceLib.DAL.TransactionDB.GetLastHourSendSpeedInfo()
+				});
         }
 
     }

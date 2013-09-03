@@ -117,6 +117,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\DashboardModel.cs" />
     <Compile Include="Models\OutboundRules.cs" />
     <Compile Include="Models\Sends.cs" />
     <Compile Include="Models\ServerStatusModel.cs" />
@@ -128,9 +129,6 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
-    <Content Include="Resources\Chart-min.js" />
-    <Content Include="Resources\jquery-1.10.1.min.js" />
-    <Content Include="Resources\manta-logo.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>

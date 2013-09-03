@@ -108,6 +108,7 @@ table.send-header { margin-bottom: 10px; font-size: 12px; }
 .tile { padding: 10px; text-align: right; color: #fff; margin-bottom: 20px; }
 .tile h3 { font-size: 34px; }
 .tile h6 { text-transform: uppercase; }
+.tile-lightgrey { background-color: #eee; color: #555; }
 .tile-midgrey { background-color: #ccc; }
 .tile-green { background-color: #2ecc71; }
 .tile-grey { background-color: #34495E; }

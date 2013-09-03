@@ -61,7 +61,7 @@ namespace WebInterfaceLib.BO
 
 
 			failed = 0;
-			foreach(SendSpeedInfoItem failedItem in subItems.Where(i=>i.Status == TransactionStatus.Discarded || i.Status == TransactionStatus.Failed || i.Status == TransactionStatus.TimedOut))
+			foreach (SendSpeedInfoItem failedItem in subItems.Where(i => i.Status == TransactionStatus.Discarded || i.Status == TransactionStatus.Failed || i.Status == TransactionStatus.TimedOut))
 				failed += failedItem.Count;
 		}
 	}
@@ -69,17 +69,17 @@ namespace WebInterfaceLib.BO
 	/// <summary>
 	/// Information about a sends speed.
 	/// </summary>
-	public class SendSpeedInfoItem
+	public class SendSpeedInfoItem 
 	{
-		/// <summary>
-		/// The status this item relates to.
-		/// </summary>
-		public TransactionStatus Status { get; set; }
-
 		/// <summary>
 		/// The timestamp this item represents.
 		/// </summary>
 		public DateTime Timestamp { get; set; }
+
+		/// <summary>
+		/// The status this item relates to.
+		/// </summary>
+		public TransactionStatus Status { get; set; }
 
 		/// <summary>
 		/// The ammount of times this status happened in the timestamp for a send.

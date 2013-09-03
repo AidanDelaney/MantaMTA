@@ -38,6 +38,25 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 		}
 
 		/// <summary>
+		/// Gets information about the speed of sending over the last one hour.
+		/// </summary>
+		/// <returns>SendSpeedInfo</returns>
+		public static SendSpeedInfo GetLastHourSendSpeedInfo()
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT COUNT(*) AS 'Count', [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp) as 'mta_transaction_timestamp'
+FROM man_mta_transaction as [tran]
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
+GROUP BY [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp)
+ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
+				return new SendSpeedInfo(DataRetrieval.GetCollectionFromDatabase<SendSpeedInfoItem>(cmd, CreateAndFillSendSpeedInfoItemFromRecord));
+			}
+		}
+
+		/// <summary>
 		/// Creates a SendSpeedInfoItem object and fills it with data from the data record.
 		/// </summary>
 		/// <param name="record">Contains the data to use for filling.</param>
@@ -83,6 +102,29 @@ FROM (
 	 ) as [sorted]
 WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + (pageNum * pageSize);
 				cmd.Parameters.AddWithValue("@sndID", sendID);
+				return DataRetrieval.GetCollectionFromDatabase<BounceInfo>(cmd, CreateAndFillBounceInfo).ToArray();
+			}
+		}
+
+		/// <summary>
+		/// Gets the most common bounces from the last hour.
+		/// </summary>
+		/// <param name="count">Amount of bounces to get.</param>
+		/// <returns>Information about the bounces</returns>
+		public static BounceInfo[] GetLastHourBounceInfo(int count)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT TOP " + count + @" mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+FROM man_mta_transaction as [tran]
+JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE()) 
+AND mta_transactionStatus_id IN (1, 2, 3, 6)
+GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
+ORDER BY COUNT(*) DESC";
 				return DataRetrieval.GetCollectionFromDatabase<BounceInfo>(cmd, CreateAndFillBounceInfo).ToArray();
 			}
 		}
@@ -134,6 +176,31 @@ SELECT 1 as 'Col'
 			bounceInfo.RemoteHostname = record.GetStringOrEmpty("mta_transaction_serverHostname");
 			bounceInfo.TransactionStatus = (TransactionStatus)record.GetInt32("mta_transactionStatus_id");
 			return bounceInfo;
+		}
+
+		/// <summary>
+		/// Gets a summary of the transactions made in the last one hour.
+		/// </summary>
+		/// <returns>Transaction Summary</returns>
+		public static SendTransactionSummaryCollection GetLastHourTransactionSummary()
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"SELECT [tran].mta_transactionStatus_id, COUNT(*) AS 'Count'
+FROM man_mta_transaction as [tran]
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
+GROUP BY [tran].mta_transactionStatus_id";
+				return new SendTransactionSummaryCollection(DataRetrieval.GetCollectionFromDatabase<SendTransactionSummary>(cmd, CreateAndFillTransactionSummary));
+			}
+		}
+
+		private static SendTransactionSummary CreateAndFillTransactionSummary(IDataRecord record)
+		{
+			return new SendTransactionSummary { 
+				Count = record.GetInt32("Count"),
+				Status = (TransactionStatus)record.GetInt32("mta_transactionStatus_id")
+			};
 		}
 	}
 }
