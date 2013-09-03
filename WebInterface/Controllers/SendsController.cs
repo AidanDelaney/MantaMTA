@@ -5,7 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using MantaMTA.Core.ServiceContracts;
 using WebInterface.Models;
-using WebInterfaceLib.Model;
+using WebInterfaceLib.BO;
 
 namespace WebInterface.Controllers
 {

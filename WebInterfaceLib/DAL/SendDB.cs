@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
-using WebInterfaceLib.Model;
+using WebInterfaceLib.BO;
 
 namespace WebInterfaceLib.DAL
 {
@@ -36,7 +36,7 @@ namespace WebInterfaceLib.DAL
 			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"SELECT TOP 10 [sorted].*,
+				cmd.CommandText = @"SELECT [sorted].*,
 	(SELECT COUNT(*) FROM man_mta_msg WHERE man_mta_msg.mta_send_internalId = [sorted].mta_send_internalId) AS 'Messages',
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [sorted].mta_send_internalId AND [tran].mta_transactionStatus_id = 4) AS 'Accepted',
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [sorted].mta_send_internalId AND ([tran].mta_transactionStatus_id = 2 OR [tran].mta_transactionStatus_id = 3 OR [tran].mta_transactionStatus_id = 6)) AS 'Rejected',

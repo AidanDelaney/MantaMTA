@@ -2,7 +2,7 @@
 using MantaMTA.Core.Enums;
 using MantaMTA.Core.MtaIpAddress;
 
-namespace WebInterfaceLib.Model
+namespace WebInterfaceLib.BO
 {
 	/// <summary>
 	/// Holds a Send Status transaction, this may be for a send or a vMTA.

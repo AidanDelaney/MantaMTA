@@ -1,5 +1,5 @@
 ﻿
-namespace WebInterfaceLib.Model
+namespace WebInterfaceLib.BO
 {
 	/// <summary>
 	/// Holds information abount a Virtual MTA and what it has done in a send.

@@ -40,15 +40,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BO\BounceInfo.cs" />
+    <Compile Include="BO\SendInfo.cs" />
+    <Compile Include="BO\SendSpeedInfo.cs" />
+    <Compile Include="BO\SendTransaction.cs" />
+    <Compile Include="BO\VirtualMtaSendInfo.cs" />
     <Compile Include="DAL\SendDB.cs" />
     <Compile Include="DAL\TransactionDB.cs" />
     <Compile Include="DAL\VirtualMtaDB.cs" />
-    <Compile Include="Model\BounceInfo.cs" />
     <Compile Include="DAL\VirtualMtaTransactionDB.cs" />
-    <Compile Include="Model\SendInfo.cs" />
-    <Compile Include="Model\SendSpeedInfo.cs" />
-    <Compile Include="Model\SendTransaction.cs" />
-    <Compile Include="Model\VirtualMtaSendInfo.cs" />
     <Compile Include="MtaIpManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

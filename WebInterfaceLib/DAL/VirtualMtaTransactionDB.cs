@@ -1,6 +1,6 @@
 ﻿using System.Data.SqlClient;
 using MantaMTA.Core.DAL;
-using WebInterfaceLib.Model;
+using WebInterfaceLib.BO;
 
 namespace WebInterfaceLib.DAL
 {

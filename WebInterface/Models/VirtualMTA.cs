@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using MantaMTA.Core.Enums;
 using MantaMTA.Core.MtaIpAddress;
-using WebInterfaceLib.Model;
+using WebInterfaceLib.BO;
 
 namespace WebInterface.Models
 {

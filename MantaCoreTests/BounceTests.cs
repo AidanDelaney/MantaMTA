@@ -20,6 +20,7 @@ namespace MantaMTA.Core.Tests
 		/// </summary>
 		Func<BouncePair, BouncePair, bool> AreBouncePairsTheSame = new Func<BouncePair, BouncePair, bool>(delegate(BouncePair expected, BouncePair actual) { return (actual.BounceType == expected.BounceType && actual.BounceCode == expected.BounceCode); });
 
+		
 
 		/// <summary>
 		/// Checks that the SmtpResponse Regex pattern is working as intended.
@@ -36,7 +37,7 @@ namespace MantaMTA.Core.Tests
 		public void SmtpCodesToMantaBouncePairs()
 		{
 			// Check some common values.
-
+			
 			Assert.IsTrue(
 				AreBouncePairsTheSame(
 					new BouncePair { BounceType = MantaBounceType.Soft, BounceCode = MantaBounceCode.BadEmailAddress },

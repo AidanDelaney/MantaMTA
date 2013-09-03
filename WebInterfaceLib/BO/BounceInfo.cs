@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MantaMTA.Core.Enums;
 
-namespace WebInterfaceLib.Model
+namespace WebInterfaceLib.BO
 {
 	/// <summary>
 	/// Holds information about a bounce.

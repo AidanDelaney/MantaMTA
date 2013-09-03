@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MantaMTA.Core.Enums;
 using System.Linq;
 
-namespace WebInterfaceLib.Model
+namespace WebInterfaceLib.BO
 {
 	/// <summary>
 	/// Holds speed information about a send.

@@ -4,7 +4,7 @@ using System.Linq;
 using System;
 using System.Text;
 
-namespace WebInterfaceLib.Model
+namespace WebInterfaceLib.BO
 {
 	public class SendInfoCollection : List<SendInfo>
 	{

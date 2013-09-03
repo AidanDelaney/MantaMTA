@@ -23,7 +23,7 @@ namespace MantaMTA.Core.Sends
 		/// </summary>
 		public DateTime LastAccessedTimestamp { get; set; }
 		/// <summary>
-		/// 
+		/// Timestamp Send was created.
 		/// </summary>
 		public DateTime CreatedTimestamp { get; set; }
 	}

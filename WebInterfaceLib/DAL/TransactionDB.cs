@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
-using WebInterfaceLib.Model;
+using WebInterfaceLib.BO;
 
 namespace WebInterfaceLib.DAL
 {
@@ -78,7 +78,7 @@ FROM (
 		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE [msg].mta_send_internalId = @internalSendID 
-		AND mta_transactionStatus_id IN (1, 2, 3, 6)
+		AND mta_transactionStatus_id IN (1, 2, 3, 6) --// Todo: Make this enum!
 		GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
 	 ) as [sorted]
 WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + (pageNum * pageSize);
@@ -110,7 +110,7 @@ SELECT 1 as 'Col'
 		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE [msg].mta_send_internalId = @internalSendID 
-		AND mta_transactionStatus_id IN (1, 2, 3, 6)
+		AND mta_transactionStatus_id IN (1, 2, 3, 6) --// Todo: Make this enum!
 	GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
 	) as [sorted]";
 				cmd.Parameters.AddWithValue("@sndID", sendID);

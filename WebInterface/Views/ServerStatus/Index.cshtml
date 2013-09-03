@@ -17,21 +17,21 @@
 		<tr>
 			<th>Drop</th>
 			<td>@Model.DropDir.Path</td>
-			<td>@Model.DropDir.FileCount</td>
+			<td>@Model.DropDir.FileCount.ToString("N0")</td>
 			<td>@Model.DropDir.UsedSpace</td>
 			<td>@Model.DropDir.FreeSpace</td>
 		</tr>
 		<tr>
 			<th>Logs</th>
 			<td>@Model.LogDir.Path</td>
-			<td>@Model.LogDir.FileCount</td>
+			<td>@Model.LogDir.FileCount.ToString("N0")</td>
 			<td>@Model.LogDir.UsedSpace</td>
 			<td>@Model.LogDir.FreeSpace</td>
 		</tr>
 		<tr>
 			<th>Queue</th>
 			<td>@Model.QueueDir.Path</td>
-			<td>@Model.QueueDir.FileCount</td>
+			<td>@Model.QueueDir.FileCount.ToString("N0")</td>
 			<td>@Model.QueueDir.UsedSpace</td>
 			<td>@Model.QueueDir.FreeSpace</td>
 		</tr>
