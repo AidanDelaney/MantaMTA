@@ -3,21 +3,71 @@
     Layout = "~/Views/_Layout.cshtml";
 }
 
-<h2>@Model.Pattern.Name <small>@Model.Pattern.Description</small></h2>
-<p><span class="label">@Model.Pattern.Type</span> <strong>@Model.Pattern.Value</strong></p>
+<script type="text/javascript">
+	function Update() {
+		$.ajax({
+			type: "POST",
+			data: "{ 'patternID':'@Model.Pattern.ID',\
+					 'name':'" + $('#txtName').val() + "',\
+					 'description':'" + $('#txtDescription').val() + "',\
+					 'virtualMTA':'" + $('#ddlVMTA').val() + "',\
+					 'type':'" + $('#ddlType').val() + "',\
+					 'patternValue':'" + $('#txtPattern').val().replace(/\\/g, '\\\\') + "',\
+					 'maxConnections':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxConnections)"]').val().replace(/,/g, '') + "',\
+					 'maxMessagesConn':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxMessagesConnection)"]').val().replace(/,/g, '') + "',\
+					 'maxMessagesHour':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxMessagesPerHour)"]').val().replace(/,/g, '') + "'}",
+			dataType: "json",
+			url: "/services/outboundrulesservice.asmx/Update",
+			contentType: "application/json; charset=utf-8",
+			success: function (data) {
+				window.location = '/OutboundRules';
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert(JSON.parse(jqXHR.responseText).Message);
+			}
+		});
+	}
+</script>
 
-<table class="table table-striped table-hover">
-	<thead>
-		<tr>
-			<th>Rule</th>
-			<th>Value</th>
-		</tr>
-	</thead>
+<table class="table table-striped">
 	<tbody>
+		<tr>
+			<th>Name</th>
+			<td><input id="txtName" type="text" value="@Model.Pattern.Name" /></td>
+		</tr>
+		<tr>
+			<th>Description</th>
+			<td><textarea id="txtDescription">@Model.Pattern.Description</textarea></td>
+		</tr>
+		<tr>
+			<th>Virtual MTA</th>
+			<td>
+				<select id="ddlVMTA">
+					<option value="-1">All</option>
+					@foreach (MantaMTA.Core.MtaIpAddress.MtaIpAddress vMta in Model.VirtualMtaCollection)
+					 {
+						<option value="@vMta.ID" @(Model.Pattern.LimitedToOutboundIpAddressID == vMta.ID ? "selected=selected" : string.Empty)>@vMta.Hostname</option>
+					 }
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Type</th>
+			<td>
+				<select id="ddlType">
+					<option value="@((int)MantaMTA.Core.OutboundRules.OutboundMxPatternType.Regex)" @(Model.Pattern.Type == MantaMTA.Core.OutboundRules.OutboundMxPatternType.Regex ? "selected=selected" : string.Empty)>Regex</option>
+					<option value="@((int)MantaMTA.Core.OutboundRules.OutboundMxPatternType.CommaDelimited)" @(Model.Pattern.Type == MantaMTA.Core.OutboundRules.OutboundMxPatternType.CommaDelimited ? "selected=selected" : string.Empty)>List</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Pattern</th>
+			<td><textarea id="txtPattern">@Model.Pattern.Value</textarea></td>
+		</tr>
 		@foreach (MantaMTA.Core.OutboundRules.OutboundRule rule in Model.OutboundRules)
 		{
 			<tr>
-				<td>@switch (rule.Type)
+				<th>@switch (rule.Type)
 					{
 						case MantaMTA.Core.OutboundRules.OutboundRuleType.MaxConnections:
 							@:Maximum Connections
@@ -29,9 +79,19 @@
 							@:Maximum Messages / Hour
 							break;
 					}
-				</td>
-				<td>@Convert.ToInt32(rule.Value).ToString("N0")</td>
+				</th>
+				<td><input type="text" data-rule-type="@((int)rule.Type)" value="@Convert.ToInt32(rule.Value).ToString("N0")" /></td>
 			</tr>
 		} 
 	</tbody>
+	<tfoot>
+		<tr>
+			<td></td>
+			<td>
+				<a href="javascript:Update();" class="btn btn-success">Update</a>
+				<a href="/OutboundRules" class="btn">Cancel</a>
+			</td>
+		</tr>
+	</tfoot>
 </table>
+

@@ -1,4 +1,5 @@
-﻿using MantaMTA.Core.OutboundRules;
+﻿using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.OutboundRules;
 
 namespace WebInterface.Models
 {
@@ -17,10 +18,16 @@ namespace WebInterface.Models
 		/// </summary>
 		public OutboundMxPattern Pattern { get; set; }
 
-		public OutboundRuleModel(OutboundRuleCollection outboundRuleCollection, OutboundMxPattern pattern)
+		/// <summary>
+		/// Holds a list of all the outbound Virtual MTAs.
+		/// </summary>
+		public MtaIpAddressCollection VirtualMtaCollection { get; set; }
+
+		public OutboundRuleModel(OutboundRuleCollection outboundRuleCollection, OutboundMxPattern pattern, MtaIpAddressCollection virtualMtaCollection)
 		{
 			OutboundRules = outboundRuleCollection;
 			Pattern = pattern;
+			VirtualMtaCollection = virtualMtaCollection;
 		}
 	}
 }

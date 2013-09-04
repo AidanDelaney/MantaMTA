@@ -5,6 +5,11 @@
 
 <script type="text/javascript">
 	function ConfirmDelete(patternID) {
+		if (patternID == @MantaMTA.Core.MtaParameters.OUTBOUND_RULES_DEFAULT_PATTERN_ID) {
+			alert("Cannot delete DEFAULT");
+			return;
+		}
+
 		if (confirm("Are you sure you want to delete this Outound Rule?"))
 			window.location = "/outboundrules/delete?patternID=" + patternID;
 	}
@@ -18,7 +23,7 @@
 			<th>Name</th>
 			<th>Description</th>
 			<th>Pattern</th>
-			<th>All Virtual MTAs</th>
+			<th>Virtual MTA</th>
 			<th></th>
 		</tr>
 	</thead>
@@ -38,11 +43,19 @@
 												break;
 										}
 				    </span>&nbsp;@outboundRule.Value</td>
-				<td>@(!outboundRule.LimitedToOutboundIpAddressID.HasValue)</td>
+				<td>@if (!outboundRule.LimitedToOutboundIpAddressID.HasValue)
+					{
+						@:All
+					}
+					else
+					{
+						@:Need to show vMTA here!
+					}
+				</td>
 				<td>
 					<div class="btn-group pull-right">
-						<a href="/OutboundRules/Edit?id=@outboundRule.ID" class="btn btn-mini btn-primary">View</a>
-						<a href="javascript:ConfirmDelete(@outboundRule.ID);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
+						<a href="/OutboundRules/Edit?id=@outboundRule.ID" class="btn btn-mini btn-primary">Edit</a>
+						<a href="javascript:ConfirmDelete(@outboundRule.ID);" class="btn btn-danger btn-mini @(outboundRule.ID == MantaMTA.Core.MtaParameters.OUTBOUND_RULES_DEFAULT_PATTERN_ID ? "disabled" : string.Empty)"><i class="icon-trash icon-white"></i></a>
 					</div>
 				</td>
 			</tr>

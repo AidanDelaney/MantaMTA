@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using MantaMTA.Core;
 using MantaMTA.Core.DAL;
 
 namespace WebInterfaceLib.DAL
@@ -16,8 +17,11 @@ namespace WebInterfaceLib.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-DELETE FROM man_rle_mxPattern WHERE rle_mxPattern_id = @mxPatternID
-DELETE FROM man_rle_rule WHERE rle_mxPattern_id = @mxPatternID
+IF(@mxPatternID <> " + MtaParameters.OUTBOUND_RULES_DEFAULT_PATTERN_ID + @")
+	BEGIN
+		DELETE FROM man_rle_mxPattern WHERE rle_mxPattern_id = @mxPatternID
+		DELETE FROM man_rle_rule WHERE rle_mxPattern_id = @mxPatternID
+	END
 ";
 				cmd.Parameters.AddWithValue("@mxPatternID", mxPatternID);
 				conn.Open();
@@ -39,6 +43,7 @@ IF EXISTS (SELECT 1 FROM man_rle_rule WHERE rle_mxPattern_id = @mxPatternID AND 
 	BEGIN
 		UPDATE man_rle_rule
 		SET rle_rule_value = @value
+		WHERE rle_mxPattern_id = @mxPatternID AND rle_ruleType_id = @type
 	END
 ELSE
 	BEGIN

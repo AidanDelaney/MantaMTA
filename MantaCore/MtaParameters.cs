@@ -366,6 +366,11 @@ namespace MantaMTA.Core
 			}
 		}
 		private static string _EventForwardingHttpPostUrl = string.Empty;
+
+		/// <summary>
+		/// This is the ID of the outbound rule mx pattern that should be used as the default.
+		/// </summary>
+		public const int OUTBOUND_RULES_DEFAULT_PATTERN_ID = -1;
 	}
 
 	/// <summary>

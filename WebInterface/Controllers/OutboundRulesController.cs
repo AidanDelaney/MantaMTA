@@ -7,6 +7,7 @@ using WebInterface.Models;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.OutboundRules;
 using WebInterfaceLib;
+using MantaMTA.Core.MtaIpAddress;
 
 namespace WebInterface.Controllers
 {
@@ -25,7 +26,8 @@ namespace WebInterface.Controllers
 		{
 			OutboundMxPattern pattern = OutboundRuleDB.GetOutboundRulePatterns().Single(p=>p.ID == id);
 			OutboundRuleCollection rules = new MantaMTA.Core.OutboundRules.OutboundRuleCollection(OutboundRuleDB.GetOutboundRules().Where(r => r.OutboundMxPatternID == id).ToArray());
-			return View(new OutboundRuleModel(rules,pattern));
+			MtaIpAddressCollection vMtas = MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddresses();
+			return View(new OutboundRuleModel(rules, pattern, vMtas));
 		}
 
 		//
