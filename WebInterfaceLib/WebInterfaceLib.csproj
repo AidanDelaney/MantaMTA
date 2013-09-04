@@ -45,11 +45,13 @@
     <Compile Include="BO\SendSpeedInfo.cs" />
     <Compile Include="BO\SendTransaction.cs" />
     <Compile Include="BO\VirtualMtaSendInfo.cs" />
+    <Compile Include="DAL\OutboundRulesDB.cs" />
     <Compile Include="DAL\SendDB.cs" />
     <Compile Include="DAL\TransactionDB.cs" />
     <Compile Include="DAL\VirtualMtaDB.cs" />
     <Compile Include="DAL\VirtualMtaTransactionDB.cs" />
     <Compile Include="MtaIpManager.cs" />
+    <Compile Include="OutboundRuleWebManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

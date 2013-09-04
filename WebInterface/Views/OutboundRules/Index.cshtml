@@ -3,6 +3,13 @@
     Layout = "~/Views/_Layout.cshtml";
 }
 
+<script type="text/javascript">
+	function ConfirmDelete(patternID) {
+		if (confirm("Are you sure you want to delete this Outound Rule?"))
+			window.location = "/outboundrules/delete?patternID=" + patternID;
+	}
+</script>
+
 <h2>Outbound Rules&nbsp;<a href="javascript:void(0);" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a></h2>
 
 <table class="table table-striped table-hover">
@@ -35,7 +42,7 @@
 				<td>
 					<div class="btn-group pull-right">
 						<a href="/OutboundRules/Edit?id=@outboundRule.ID" class="btn btn-mini btn-primary">View</a>
-						<a href="javascript:void(0);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
+						<a href="javascript:ConfirmDelete(@outboundRule.ID);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
 					</div>
 				</td>
 			</tr>

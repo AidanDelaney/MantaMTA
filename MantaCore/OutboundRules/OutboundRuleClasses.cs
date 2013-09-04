@@ -72,6 +72,18 @@ namespace MantaMTA.Core.OutboundRules
 		/// specified IP address.
 		/// </summary>
 		public int? LimitedToOutboundIpAddressID { get; set; }
+
+		public OutboundMxPattern()
+		{
+			this.ID = -1;
+			this.Name = string.Empty;
+			this.Description = string.Empty;
+
+			// Default to Regex match all.
+			this.Type = OutboundMxPatternType.Regex;
+			this.Value = ".";
+			this.LimitedToOutboundIpAddressID = null;
+		}
 	}
 
 	/// <summary>
@@ -93,6 +105,13 @@ namespace MantaMTA.Core.OutboundRules
 		/// The value of this rule.
 		/// </summary>
 		public string Value { get; set; }
+
+		public OutboundRule(int outbounbMxPatternID, OutboundRuleType type, string value)
+		{
+			this.OutboundMxPatternID = outbounbMxPatternID;
+			this.Type = type;
+			this.Value = value;
+		}
 	}
 
 	/// <summary>

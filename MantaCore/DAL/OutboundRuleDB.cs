@@ -68,11 +68,7 @@ FROM man_rle_rule";
 		/// <returns>OutboundRule object.</returns>
 		private static OutboundRule CreateAndFillOutboundRule(IDataRecord record)
 		{
-			OutboundRule rule = new OutboundRule();
-
-			rule.OutboundMxPatternID = record.GetInt32("rle_mxPattern_id");
-			rule.Type = (OutboundRuleType)record.GetInt32("rle_ruleType_id");
-			rule.Value = record.GetString("rle_rule_value");
+			OutboundRule rule = new OutboundRule(record.GetInt32("rle_mxPattern_id"), (OutboundRuleType)record.GetInt32("rle_ruleType_id"), record.GetString("rle_rule_value"));
 			
 			return rule;
 		}
