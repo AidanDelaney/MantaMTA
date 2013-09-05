@@ -1,0 +1,59 @@
+﻿@{
+    ViewBag.Title = "Settings";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<table class="table table-striped table-hover">
+	<thead>
+		<tr>
+			<th>Parameter</th>
+			<th>Value</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<th>Connection Idle Timeout</th>
+			<td>@Html.Raw(Model.ClientIdleTimeout) Seconds</td>
+		</tr>
+		<tr>
+			<th>Connection Receive Timeout</th>
+			<td>@Html.Raw(Model.ReceiveTimeout) Seconds</td>
+		</tr>
+		<tr>
+			<th>Connection Send Timeout</th>
+			<td>@Html.Raw(Model.SendTimeout) Seconds</td>
+		</tr>
+		<tr>
+			<th>Default ReturnPath Domain</th>
+			<td>@Html.Raw(Model.ReturnPathDomain)</td>
+		</tr>
+		<tr>
+			<th>Default Virtual MTA Group</th>
+			<td>@Html.Raw(Model.DefaultVirtualMtaGroup.Name)</td>
+		</tr>
+		<tr>
+			<th>Event Forwarding URL</th>
+			<td>@Html.Raw(Model.EventForwardingUrl)</td>
+		</tr>
+		<tr>
+			<th>Keep SMTP Logs For</th>
+			<td>@Html.Raw(Model.DaysToKeepSmtpLogsFor) Days</td>
+		</tr>
+		<tr>
+			<th>Local Domains</th>
+			<td>@Html.Raw(string.Join("<br/>", Model.LocalDomains))</td>
+		</tr>
+		<tr>
+			<th>Message Max Time in Queue</th>
+			<td>@Html.Raw(Model.MaxTimeInQueue / 60) Hours</td>
+		</tr>
+		<tr>
+			<th>Message Retry Interval Base</th>
+			<td>@Html.Raw(Model.RetryInterval) Minutes</td>
+		</tr>
+		<tr>
+			<th>Relaying Permitted From</th>
+			<td>@Html.Raw(string.Join("<br/>", Model.RelayingPermittedIPs))</td>
+		</tr>
+	</tbody>
+</table>

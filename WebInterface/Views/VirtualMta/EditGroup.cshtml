@@ -49,7 +49,7 @@
 				@foreach(MantaMTA.Core.VirtualMta.VirtualMTA vmta in Model.VirtualMTACollection)
 				{
 					<label class="checkbox" style="display: inline-block;">
-						<input data-mta-id="@vmta.ID" type="checkbox" @(((MantaMTA.Core.VirtualMta.VirtualMTACollection)Model.VirtualMtaGroup.VirtualMtaCollection).Count(i=>i.ID == vmta.ID) == 1 ? "checked=\"checked\"" : string.Empty) > @vmta.Hostname
+						<input data-mta-id="@vmta.ID" type="checkbox" checked="@(((MantaMTA.Core.VirtualMta.VirtualMTACollection)Model.VirtualMtaGroup.VirtualMtaCollection).Count(i=>i.ID == vmta.ID) == 1)" > @vmta.Hostname
 					</label>
 				}
 			</td>

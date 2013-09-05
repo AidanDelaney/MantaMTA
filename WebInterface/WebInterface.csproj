@@ -114,6 +114,7 @@
     <Compile Include="Controllers\OutboundRulesController.cs" />
     <Compile Include="Controllers\SendsController.cs" />
     <Compile Include="Controllers\ServerStatusController.cs" />
+    <Compile Include="Controllers\SettingsController.cs" />
     <Compile Include="Controllers\VirtualMtaController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -123,6 +124,7 @@
     <Compile Include="Models\OutboundRules.cs" />
     <Compile Include="Models\Sends.cs" />
     <Compile Include="Models\ServerStatusModel.cs" />
+    <Compile Include="Models\SettingsModel.cs" />
     <Compile Include="Models\VirtualMTA.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\OutboundRulesService.asmx.cs">
@@ -191,6 +193,7 @@
     <Content Include="Views\OutboundRules\Delete.cshtml" />
     <Content Include="Views\VirtualMta\Edit.cshtml" />
     <Content Include="Views\VirtualMta\EditGroup.cshtml" />
+    <Content Include="Views\Settings\Index.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

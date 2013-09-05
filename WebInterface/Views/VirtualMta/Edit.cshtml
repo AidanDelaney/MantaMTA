@@ -34,11 +34,11 @@
 		</tr>
 		<tr>
 			<th>Accept Inbound Email</th>
-			<td><input id="ckbInbound" type="checkbox" @(Model.IsSmtpInbound ? "checked=\"checked\"" : string.Empty) /></td>
+			<td><input id="ckbInbound" type="checkbox" checked="@Model.IsSmtpInbound" /></td>
 		</tr>
 		<tr>
 			<th>Send Outbound Email</th>
-			<td><input id="ckbOutbound" type="checkbox" @(Model.IsSmtpOutbound ? "checked=\"checked\"" : string.Empty) /></td>
+			<td><input id="ckbOutbound" type="checkbox" checked="@Model.IsSmtpOutbound" /></td>
 		</tr>
 		<tr>
 			<td></td>
