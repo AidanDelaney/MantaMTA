@@ -51,7 +51,7 @@
 					}
 					else
 					{
-						@MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddress(outboundRule.LimitedToOutboundIpAddressID.Value).Hostname
+						@MantaMTA.Core.DAL.VirtualMtaDB.GetVirtualMta(outboundRule.LimitedToOutboundIpAddressID.Value).Hostname
 					}
 				</td>
 				<td>
