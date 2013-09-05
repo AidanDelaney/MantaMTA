@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MantaMTA.Core.MtaIpAddress
+namespace MantaMTA.Core.VirtualMta
 {
 	/// <summary>
 	/// Represents a grouping of IP Address that can be used by the MTA for 
 	/// sending of messages.
 	/// </summary>
-	public class MtaIPGroup
+	public class VirtualMtaGroup
 	{
 		/// <summary>
 		/// The groups unique identifier.
@@ -23,9 +23,9 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// </summary>
 		public string Description { get; set; }
 		/// <summary>
-		/// Collection of the IP Addresses that make up this group.
+		/// Collection of the Virtual MTAs that make up this group.
 		/// </summary>
-		public MtaIpAddressCollection IpAddresses { get; set; }
+		public VirtualMTACollection VirtualMtaCollection { get; set; }
 		/// <summary>
 		/// Timestamp of when this MtaIPGroup instance was created; used for caching.
 		/// </summary>
@@ -36,13 +36,13 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// This should be improved to take into account messages sent in last ?.
 		/// </summary>
 		/// <returns></returns>
-		public MtaIpAddress GetRandomIP()
+		public VirtualMTA GetRandomIP()
 		{
 			// There are no IP addresses in the group so return null.
-			if (IpAddresses == null)
+			if (VirtualMtaCollection == null)
 				return null;
 
-			return IpAddresses.OrderBy(x => new Random().Next()).FirstOrDefault();
+			return VirtualMtaCollection.OrderBy(x => new Random().Next()).FirstOrDefault();
 		}
 
 		/// <summary>
@@ -55,25 +55,25 @@ namespace MantaMTA.Core.MtaIpAddress
 		/// </summary>
 		/// <param name="mxRecord">MXRecord of the host wanting to send to.</param>
 		/// <returns>MtaIpAddress or NULL if none in group.</returns>
-		internal MtaIpAddress GetIpAddressForSending(DNS.MXRecord mxRecord)
+		internal VirtualMTA GetVirtualMtasForSending(DNS.MXRecord mxRecord)
 		{
 			lock (_SyncLock)
 			{
 				string key = mxRecord.Host.ToLowerInvariant();
 
 				// Get the IP address that has sent the least to the mx host.
-				MtaIpAddress ipAddress = IpAddresses.OrderBy(ipAddr => ipAddr.SendsCounter.GetOrAdd(key, 0)).FirstOrDefault();
+				VirtualMTA vMTA = VirtualMtaCollection.OrderBy(ipAddr => ipAddr.SendsCounter.GetOrAdd(key, 0)).FirstOrDefault();
 				
 				// Get the current sends count.
 				int currentSends = 0;
-				if (!ipAddress.SendsCounter.TryGetValue(key, out currentSends))
+				if (!vMTA.SendsCounter.TryGetValue(key, out currentSends))
 					return null;
 
 				// Increment the sends count to include this one.
-				ipAddress.SendsCounter.AddOrUpdate(key, currentSends + 1, new Func<string, int, int>(delegate(string k, int value) { return value + 1; }));
+				vMTA.SendsCounter.AddOrUpdate(key, currentSends + 1, new Func<string, int, int>(delegate(string k, int value) { return value + 1; }));
 
 				// Return the IP Address.
-				return ipAddress;
+				return vMTA;
 			}
 		}
 	}
@@ -81,9 +81,9 @@ namespace MantaMTA.Core.MtaIpAddress
 	/// <summary>
 	/// Holds a collection of MtaIPGroup objects.
 	/// </summary>
-	public class MtaIPGroupCollection : List<MtaIPGroup>
+	public class VirtualMtaGroupCollection : List<VirtualMtaGroup>
 	{
-		public MtaIPGroupCollection() { }
-		public MtaIPGroupCollection(IEnumerable<MtaIPGroup> collection) : base(collection) { }
+		public VirtualMtaGroupCollection() { }
+		public VirtualMtaGroupCollection(IEnumerable<VirtualMtaGroup> collection) : base(collection) { }
 	}
 }

@@ -88,9 +88,9 @@
     <Compile Include="MantaCoreEvents.cs" />
     <Compile Include="Message\MimeMessage.cs" />
     <Compile Include="Message\ReturnPathManager.cs" />
-    <Compile Include="MtaIpAddress\IPAddressClasses.cs" />
-    <Compile Include="MtaIpAddress\IpAddressManager.cs" />
-    <Compile Include="MtaIpAddress\IPGroupClasses.cs" />
+    <Compile Include="VirtualMTA\VirtualMtaClasses.cs" />
+    <Compile Include="VirtualMTA\VirtualMtaManager.cs" />
+    <Compile Include="VirtualMTA\VirtualMtaGroupClasses.cs" />
     <Compile Include="MtaParameters.cs" />
     <Compile Include="OutboundRules\OutboundRuleClasses.cs" />
     <Compile Include="OutboundRules\OutboundRuleManager.cs" />

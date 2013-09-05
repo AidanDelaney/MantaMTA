@@ -5,7 +5,7 @@ using System.ServiceProcess;
 using MantaMTA.Core;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.Events;
-using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.VirtualMta;
 using MantaMTA.Core.Sends;
 using MantaMTA.Core.Server;
 
@@ -39,12 +39,12 @@ namespace MantaService
 			// Start the send manager service.
 			SendManager.Instance.StartService();
 
-			MtaIpAddressCollection ipAddresses = IpAddressManager.GetIPsForListeningOn();
+			VirtualMTACollection ipAddresses = VirtualMtaManager.GetVirtualMtasForListeningOn();
 			
 			// Create the SmtpServers
 			for (int c = 0; c < ipAddresses.Count; c++)
 			{
-				MtaIpAddress ipAddress = ipAddresses[c];
+				VirtualMTA ipAddress = ipAddresses[c];
 				for (int i = 0; i < MtaParameters.ServerListeningPorts.Length; i++)
 					_SmtpServers.Add(new SmtpServer(ipAddress.IPAddress, MtaParameters.ServerListeningPorts[i]));
 			}

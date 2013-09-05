@@ -3,13 +3,29 @@
     Layout = "~/Views/_Layout.cshtml";
 }
 
-<h2>Virtual MTAs&nbsp;<a href="javascript:void(0);" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a></h2>
+<script type="text/javascript">
+	function Delete(id) {
+		if (confirm("Delete the Virtual MTA?")) {
+			PostToWebService("/services/VirtualMtaService.asmx/Delete", "{ 'id':'" + id + "'}",
+				function (data) {
+					window.location = '/VirtualMTA';
+				},
+				function (jqXHR, textStatus, errorThrown) {
+					alert(JSON.parse(jqXHR.responseText).Message);
+				}
+			);
+		}
+	}
+</script>
+
+<h2>Virtual MTAs&nbsp;<a href="/VirtualMTA/Edit" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a></h2>
 
 <table class="table table-striped">
 	<thead>
 		<tr>
 			<th>Hostname</th>
 			<th>IP Address</th>
+			<th>rDNS Match</th>
 			<th>Accepts Inbound</th>
 			<th>Send Outbound</th>
 			<th class="text-success">Accepted</th>
@@ -25,6 +41,7 @@
 			<tr>
 				<td>@vmta.IpAddress.Hostname</td>
 				<td>@vmta.IpAddress.IPAddress</td>
+				<td>@vmta.IsReverseDnsMatch</td>
 				<td>@vmta.IpAddress.IsSmtpInbound</td>
 				<td>@vmta.IpAddress.IsSmtpOutbound</td>
 				<td class="text-success">@vmta.Accepted.ToString("N0")</td>
@@ -33,8 +50,8 @@
 				<td class="text-info">@vmta.DeferredPercent.ToString("N2")%</td>
 				<td>
 					<div class="btn-group pull-right">
-						<a href="javascript:alert('Not implemented');" class="btn btn-primary btn-mini">Edit</a>
-						<a href="javascript:void(0);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
+						<a href="/VirtualMTA/Edit?ID=@vmta.IpAddress.ID" class="btn btn-primary btn-mini">Edit</a>
+						<a href="javascript:Delete(@vmta.IpAddress.ID);" class="btn btn-danger btn-mini"><i class="icon-trash icon-white"></i></a>
 					</div>
 				</td>
 			</tr>
@@ -54,12 +71,12 @@
 		</tr>
 	</thead>
 	<tbody>
-		@foreach (MantaMTA.Core.MtaIpAddress.MtaIPGroup ipGroup in Model.IpGroups)
+		@foreach (MantaMTA.Core.VirtualMta.VirtualMtaGroup ipGroup in Model.IpGroups)
 		{
 			<tr>
 				<td>@ipGroup.Name</td>
 				<td>@ipGroup.Description</td>
-				<td>@string.Join("<br/>", (from ip in ipGroup.IpAddresses select ip.Hostname).ToArray())</td>
+				<td>@string.Join("<br/>", (from vmta in ipGroup.VirtualMtaCollection select vmta.Hostname).ToArray())</td>
 				<td>
 					<div class="btn-group pull-right">
 						<a href="javascript:alert('Not implemented');" class="btn btn-primary btn-mini">Edit</a>

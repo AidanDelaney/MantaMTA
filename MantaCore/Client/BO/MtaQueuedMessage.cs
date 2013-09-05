@@ -113,7 +113,7 @@ namespace MantaMTA.Core.Client.BO
 		/// Deletes queued data
 		/// </summary>
 		/// <param name="failMsg"></param>
-		public void HandleDeliveryFail(string failMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public void HandleDeliveryFail(string failMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
 			// Send fails to Manta.Core.Events
@@ -151,7 +151,7 @@ namespace MantaMTA.Core.Client.BO
 		/// Logs success
 		/// Deletes queued data
 		/// </summary>
-		public void HandleDeliverySuccess(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public void HandleDeliverySuccess(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
 			MtaMessageDB.Delete(this);
@@ -166,7 +166,7 @@ namespace MantaMTA.Core.Client.BO
 		/// Sets the next rety date time
 		/// </summary>
 		/// <param name="defMsg"></param>
-		public void HandleDeliveryDeferral(string defMsg, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public void HandleDeliveryDeferral(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log the deferral.
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
@@ -198,7 +198,7 @@ namespace MantaMTA.Core.Client.BO
 		///	Logs throttle
 		/// Sets the next rety date time 
 		/// </summary>
-		internal void HandleDeliveryThrottle(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		internal void HandleDeliveryThrottle(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log deferral
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
@@ -224,7 +224,7 @@ namespace MantaMTA.Core.Client.BO
 		/// Handles a service unavailable event, should be same as defer but only wait 1 minute before next retry.
 		/// </summary>
 		/// <param name="sndIpAddress"></param>
-		internal void HandleServiceUnavailable(MtaIpAddress.MtaIpAddress ipAddress)
+		internal void HandleServiceUnavailable(VirtualMta.VirtualMTA ipAddress)
 		{
 			// Log deferral
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);

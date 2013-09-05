@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
-namespace MantaMTA.Core.MtaIpAddress
+namespace MantaMTA.Core.VirtualMta
 {
 	/// <summary>
 	/// Extends the .Net IPAddress class with extra Colony101 MTA bits.
 	/// </summary>
-	public class MtaIpAddress
+	public class VirtualMTA
 	{
 		/// <summary>
-		/// 
+		/// ID of the Virtual MTA.
 		/// </summary>
 		public int ID { get; set; }
 
@@ -21,7 +21,7 @@ namespace MantaMTA.Core.MtaIpAddress
 		public string Hostname { get; set; }
 
 		/// <summary>
-		/// 
+		/// The .Net IP Address object for this Virtual MTA.
 		/// </summary>
 		public IPAddress IPAddress {get;set;} 
 
@@ -44,7 +44,7 @@ namespace MantaMTA.Core.MtaIpAddress
 		internal ConcurrentDictionary<string, int> SendsCounter = new ConcurrentDictionary<string, int>();
 
 		/// <summary>
-		/// 
+		/// Creates a new TcpClient for this Virtual MTA.
 		/// </summary>
 		/// <param name="port"></param>
 		/// <returns></returns>
@@ -52,14 +52,26 @@ namespace MantaMTA.Core.MtaIpAddress
 		{
 			return new TcpClient(new IPEndPoint(this.IPAddress, port));
 		}
+
+		/// <summary>
+		/// Constructor sets defaults.
+		/// </summary>
+		public VirtualMTA()
+		{
+			this.Hostname = string.Empty;
+			this.ID = 0;
+			this.IPAddress = null;
+			this.IsSmtpInbound = true;
+			this.IsSmtpOutbound = true;
+		}
 	}
 
 	/// <summary>
-	/// 
+	/// A Collection a Virtual MTA's.
 	/// </summary>
-	public class MtaIpAddressCollection : List<MtaIpAddress>
+	public class VirtualMTACollection : List<VirtualMTA>
 	{
-		public MtaIpAddressCollection() { }
-		public MtaIpAddressCollection(IEnumerable<MtaIpAddress> collection) : base(collection) { }
+		public VirtualMTACollection() { }
+		public VirtualMTACollection(IEnumerable<VirtualMTA> collection) : base(collection) { }
 	}
 }

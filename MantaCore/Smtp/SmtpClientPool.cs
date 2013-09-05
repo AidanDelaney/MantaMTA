@@ -86,7 +86,7 @@ namespace MantaMTA.Core.Smtp
 		/// Attempt to create a new connection using the specified ip address and mx record.
 		/// </summary>
 		/// <returns>A connected outbound client or NULL</returns>
-		public SmtpOutboundClient CreateNewConnection(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public SmtpOutboundClient CreateNewConnection(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			SmtpOutboundClient smtpClient = null;
 
@@ -176,7 +176,7 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="deferalAction">The action to be called if service is unavalible or we are unable to 
 		/// connect to any of the MX's in the MX records.</param>
 		/// <returns>SmtpOutboundClient or Null.</returns>
-		public static SmtpOutboundClient Dequeue(MtaIpAddress.MtaIpAddress ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction)
+		public static SmtpOutboundClient Dequeue(VirtualMta.VirtualMTA ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction)
 		{
 			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(ipAddress.IPAddress.ToString(), new SmtpClientMxRecords());
 			SmtpOutboundClient smtpClient = null;

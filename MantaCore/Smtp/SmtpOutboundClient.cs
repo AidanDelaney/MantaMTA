@@ -60,13 +60,13 @@ namespace MantaMTA.Core.Smtp
 		/// <summary>
 		/// Holds the MTA IP Address this client is using.
 		/// </summary>
-		private MtaIpAddress.MtaIpAddress MtaIpAddress { get; set; }
+		private VirtualMta.VirtualMTA MtaIpAddress { get; set; }
 
 		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
 		/// </summary>
 		/// <param name="ipAddress">The local IP address to bind to.</param>
-		public SmtpOutboundClient(MtaIpAddress.MtaIpAddress ipAddress) : base(new IPEndPoint(ipAddress.IPAddress, 0)) 
+		public SmtpOutboundClient(VirtualMta.VirtualMTA ipAddress) : base(new IPEndPoint(ipAddress.IPAddress, 0)) 
 		{
 			this.MtaIpAddress = ipAddress;
 			base.ReceiveTimeout = MtaParameters.Client.ConnectionReceiveTimeoutInterval * 1000;

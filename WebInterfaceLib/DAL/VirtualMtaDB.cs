@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using MantaMTA.Core.DAL;
+using MantaMTA.Core.VirtualMta;
 using WebInterfaceLib.BO;
 
 namespace WebInterfaceLib.DAL
@@ -15,7 +16,7 @@ namespace WebInterfaceLib.DAL
 		/// <returns>Information about the usage of each VirtualMTA in the send.</returns>
 		public static VirtualMtaSendInfo[] GetSendVirtualMTAStats(string sendID)
 		{
-			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
@@ -66,6 +67,59 @@ WHERE [ip].ip_ipAddress_id IN (SELECT * FROM @usedIpAddressIds)";
 			vinfo.Throttled = record.GetInt64("Throttled");
 
 			return vinfo;
+		}
+
+		/// <summary>
+		/// Save the specified Virtual MTA to the Database.
+		/// </summary>
+		/// <param name="vmta"></param>
+		public static void Save(VirtualMTA vmta)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+IF EXISTS(SELECT 1 FROM man_ip_ipAddress WHERE ip_ipAddress_id = @id)
+	BEGIN
+		UPDATE man_ip_ipAddress
+		SET ip_ipAddress_ipAddress = @ipAddress,
+			ip_ipAddress_hostname = @hostname,
+			ip_ipAddress_isInbound = @isInbound,
+			ip_ipAddress_isOutbound = @isOutbound
+		WHERE ip_ipAddress_id = @id
+	END
+ELSE
+	BEGIN
+		INSERT INTO man_ip_ipAddress(ip_ipAddress_ipAddress, ip_ipAddress_hostname, ip_ipAddress_isInbound, ip_ipAddress_isOutbound)
+		VALUES(@ipAddress, @hostname, @isInbound, @isOutbound)
+	END
+";
+				cmd.Parameters.AddWithValue("@id", vmta.ID);
+				cmd.Parameters.AddWithValue("@ipAddress", vmta.IPAddress.ToString());
+				cmd.Parameters.AddWithValue("@hostname", vmta.Hostname);
+				cmd.Parameters.AddWithValue("@isInbound", vmta.IsSmtpInbound);
+				cmd.Parameters.AddWithValue("@isOutbound", vmta.IsSmtpOutbound);
+				conn.Open();
+				cmd.ExecuteNonQuery();
+			}
+		}
+
+		/// <summary>
+		/// Deletes the specified Virtual MTA from the Database.
+		/// </summary>
+		/// <param name="id">ID of Virtual MTA to Delete.</param>
+		public static void Delete(int id)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+DELETE FROM man_ip_ipAddress WHERE ip_ipAddress_id = @id
+DELETE FROM man_ip_groupMembership WHERE ip_ipAddress_id = @id";
+				cmd.Parameters.AddWithValue("@id", id);
+				conn.Open();
+				cmd.ExecuteNonQuery();
+			}
 		}
 	}
 }

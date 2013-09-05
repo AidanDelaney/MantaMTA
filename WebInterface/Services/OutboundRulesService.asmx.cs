@@ -20,9 +20,14 @@ namespace WebInterface.Services
 		[WebMethod]
 		public bool Update(int patternID, string name, string description, int? virtualMTA, OutboundMxPatternType type, string patternValue, int maxConnections, int maxMessagesConn, int maxMessagesHour)
 		{
-			if (virtualMTA.Value == -1)
+			if (virtualMTA == -1)
 				virtualMTA = null;
-			OutboundMxPattern pattern = MantaMTA.Core.DAL.OutboundRuleDB.GetOutboundRulePatterns().SingleOrDefault(p => p.ID == patternID);
+
+			OutboundMxPattern pattern = null;
+			if (patternID == WebInterfaceLib.WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID)
+				pattern = new OutboundMxPattern();
+			else
+				pattern = MantaMTA.Core.DAL.OutboundRuleDB.GetOutboundRulePatterns().SingleOrDefault(p => p.ID == patternID);
 			if (pattern == null)
 				return false;
 
@@ -31,11 +36,11 @@ namespace WebInterface.Services
 			pattern.Name = name.Trim();
 			pattern.Type = type;
 			pattern.Value = patternValue;
-			OutboundRuleWebManager.Save(pattern);
+			pattern.ID = OutboundRuleWebManager.Save(pattern);
 
-			OutboundRuleWebManager.Save(new OutboundRule(patternID, OutboundRuleType.MaxConnections, maxConnections.ToString()));
-			OutboundRuleWebManager.Save(new OutboundRule(patternID, OutboundRuleType.MaxMessagesConnection, maxMessagesConn.ToString()));
-			OutboundRuleWebManager.Save(new OutboundRule(patternID, OutboundRuleType.MaxMessagesPerHour, maxMessagesHour.ToString()));
+			OutboundRuleWebManager.Save(new OutboundRule(pattern.ID, OutboundRuleType.MaxConnections, maxConnections.ToString()));
+			OutboundRuleWebManager.Save(new OutboundRule(pattern.ID, OutboundRuleType.MaxMessagesConnection, maxMessagesConn.ToString()));
+			OutboundRuleWebManager.Save(new OutboundRule(pattern.ID, OutboundRuleType.MaxMessagesPerHour, maxMessagesHour.ToString()));
 
 			return true;
 		}

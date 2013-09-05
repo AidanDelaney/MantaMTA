@@ -1,13 +1,11 @@
 ﻿@{
-    ViewBag.Title = "Edit";
+    ViewBag.Title = (Model.Pattern.ID == WebInterfaceLib.WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID ? "Create New" : "Edit") + " Outbound Rule";
     Layout = "~/Views/_Layout.cshtml";
 }
 
 <script type="text/javascript">
 	function Update() {
-		$.ajax({
-			type: "POST",
-			data: "{ 'patternID':'@Model.Pattern.ID',\
+		PostToWebService("/services/outboundrulesservice.asmx/Update", "{ 'patternID':'@Model.Pattern.ID',\
 					 'name':'" + $('#txtName').val() + "',\
 					 'description':'" + $('#txtDescription').val() + "',\
 					 'virtualMTA':'" + $('#ddlVMTA').val() + "',\
@@ -16,16 +14,12 @@
 					 'maxConnections':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxConnections)"]').val().replace(/,/g, '') + "',\
 					 'maxMessagesConn':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxMessagesConnection)"]').val().replace(/,/g, '') + "',\
 					 'maxMessagesHour':'" + $('input[data-rule-type="@((int)MantaMTA.Core.OutboundRules.OutboundRuleType.MaxMessagesPerHour)"]').val().replace(/,/g, '') + "'}",
-			dataType: "json",
-			url: "/services/outboundrulesservice.asmx/Update",
-			contentType: "application/json; charset=utf-8",
-			success: function (data) {
+			function (data) {
 				window.location = '/OutboundRules';
 			},
-			error: function (jqXHR, textStatus, errorThrown) {
+			function (jqXHR, textStatus, errorThrown) {
 				alert(JSON.parse(jqXHR.responseText).Message);
-			}
-		});
+			});
 	}
 </script>
 
@@ -44,7 +38,7 @@
 			<td>
 				<select id="ddlVMTA">
 					<option value="-1">All</option>
-					@foreach (MantaMTA.Core.MtaIpAddress.MtaIpAddress vMta in Model.VirtualMtaCollection)
+					@foreach (MantaMTA.Core.VirtualMta.VirtualMTA vMta in Model.VirtualMtaCollection)
 					 {
 						<option value="@vMta.ID" @(Model.Pattern.LimitedToOutboundIpAddressID == vMta.ID ? "selected=selected" : string.Empty)>@vMta.Hostname</option>
 					 }
@@ -88,7 +82,7 @@
 		<tr>
 			<td></td>
 			<td>
-				<a href="javascript:Update();" class="btn btn-success">Update</a>
+				<a href="javascript:Update();" class="btn btn-success">@(Model.Pattern.ID == WebInterfaceLib.WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID ? "Create" : "Update")</a>
 				<a href="/OutboundRules" class="btn">Cancel</a>
 			</td>
 		</tr>

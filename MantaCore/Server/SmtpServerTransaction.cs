@@ -160,12 +160,12 @@ namespace MantaMTA.Core.Server
 			MessageHeader ipGroupHeader = headers.SingleOrDefault(m => m.Name.Equals(MessageHeaderNames.SendGroupID, StringComparison.OrdinalIgnoreCase));
 
 			// Parameter will hold the MtaIPGroup that will be used to relay this message.
-			MtaIpAddress.MtaIPGroup mtaGroup = null;
+			VirtualMta.VirtualMtaGroup mtaGroup = null;
 			int ipGroupID = 0;
 			if (ipGroupHeader != null)
 			{
 				if (int.TryParse(ipGroupHeader.Value, out ipGroupID))
-					mtaGroup = MtaIpAddress.IpAddressManager.GetMtaIPGroup(ipGroupID);
+					mtaGroup = VirtualMta.VirtualMtaManager.GetVirtualMtaGroup(ipGroupID);
 			}
 
 			#region Look for a send id, if one doesn't exist create it.
@@ -233,8 +233,8 @@ namespace MantaMTA.Core.Server
 
 			// If the MTA group doesn't exist or it's not got any IPs, use the default.
 			if (mtaGroup == null ||
-				mtaGroup.IpAddresses.Count == 0)
-				ipGroupID = MtaIpAddress.IpAddressManager.GetDefaultMtaIPGroup().ID;
+				mtaGroup.VirtualMtaCollection.Count == 0)
+				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
 			// Need to put this message in the database for relaying to pickup
 			MessageSender.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);

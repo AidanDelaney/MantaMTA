@@ -25,6 +25,23 @@
 		$(document).ready(function () {
 			$('#channel-content').css('min-height', $('#channel-menu').height());
 		});
+
+		/*	Function to make calling web services cleaner.
+		 	url: URL of the webservice [/services/webservice.asmx/Method]
+		 	data: data to post [{"id":"1"}]
+		 	success(data): Callback for success
+		 	error(jqXHR, textStatus, errorThrown): Callback for error	*/
+		function PostToWebService(url, data, success, error) {
+			$.ajax({
+				type: "POST",
+				data: data,
+				dataType: "json",
+				url: url,
+				contentType: "application/json; charset=utf-8",
+				success: success,
+				error: error
+			});
+		}
 	</script>
 </head>
 <body>

@@ -129,6 +129,10 @@
       <DependentUpon>OutboundRulesService.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Services\VirtualMtaService.asmx.cs">
+      <DependentUpon>VirtualMtaService.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\FilterConfig.cs" />
@@ -136,6 +140,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
     <Content Include="Services\OutboundRulesService.asmx" />
+    <Content Include="Services\VirtualMtaService.asmx" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -184,6 +189,8 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Bounces\Index.cshtml" />
     <Content Include="Views\OutboundRules\Delete.cshtml" />
+    <Content Include="Views\VirtualMta\Edit.cshtml" />
+    <Content Include="Views\VirtualMta\EditGroup.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

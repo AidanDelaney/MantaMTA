@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Net;
 using MantaMTA.Core.Enums;
-using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.VirtualMta;
 using WebInterfaceLib.BO;
 
 namespace WebInterface.Models
@@ -14,11 +16,29 @@ namespace WebInterface.Models
 		/// <summary>
 		/// The IP Address that this virtual MTA represents.
 		/// </summary>
-		public MtaIpAddress IpAddress { get; set; }
+		public VirtualMTA IpAddress { get; set; }
 		/// <summary>
 		/// Iformation about sends from this virtual MTA.
 		/// </summary>
 		public SendTransactionSummaryCollection SendTransactionSummaryCollection { get; set; }
+
+		/// <summary>
+		/// Returns TRUE if the Virtual MTA Hostname matches a rDNS lookup.
+		/// </summary>
+		public bool IsReverseDnsMatch
+		{
+			get
+			{
+				try
+				{
+					return Dns.GetHostEntry(IpAddress.IPAddress).HostName.Equals(IpAddress.Hostname, StringComparison.OrdinalIgnoreCase);
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+		}
 
 		/// <summary>
 		/// The ammount of messages sent from this vMTA that were accepted by the remote MX.
@@ -100,6 +120,6 @@ namespace WebInterface.Models
 		/// <summary>
 		/// Collection of the vMTA Groups
 		/// </summary>
-		public MtaIPGroupCollection IpGroups { get; set; }
+		public VirtualMtaGroupCollection IpGroups { get; set; }
 	}
 }

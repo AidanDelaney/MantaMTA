@@ -1,7 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.VirtualMta;
 
 namespace MantaMTA.Core.DAL
 {
@@ -11,7 +11,7 @@ namespace MantaMTA.Core.DAL
 		/// Gets all of the MTA IP Addresses from the Database.
 		/// </summary>
 		/// <returns></returns>
-		public static MtaIpAddressCollection GetMtaIpAddresses()
+		public static VirtualMTACollection GetMtaIpAddresses()
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -19,7 +19,25 @@ namespace MantaMTA.Core.DAL
 				cmd.CommandText = @"
 SELECT *
 FROM man_ip_ipAddress";
-				return new MtaIpAddressCollection(DataRetrieval.GetCollectionFromDatabase<MtaIpAddress.MtaIpAddress>(cmd, CreateAndFillMtaIpAddressFromRecord));
+				return new VirtualMTACollection(DataRetrieval.GetCollectionFromDatabase<VirtualMta.VirtualMTA>(cmd, CreateAndFillMtaIpAddressFromRecord));
+			}
+		}
+
+		/// <summary>
+		/// Gets a single MTA IP Addresses from the Database.
+		/// </summary>
+		/// <returns></returns>
+		public static VirtualMta.VirtualMTA GetMtaIpAddress(int id)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT *
+FROM man_ip_ipAddress
+WHERE ip_ipAddress_id = @id";
+				cmd.Parameters.AddWithValue("@id", id);
+				return DataRetrieval.GetSingleObjectFromDatabase<VirtualMta.VirtualMTA>(cmd, CreateAndFillMtaIpAddressFromRecord);
 			}
 		}
 
@@ -28,7 +46,7 @@ FROM man_ip_ipAddress";
 		/// </summary>
 		/// <param name="id"></param>
 		/// <returns></returns>
-		internal static MtaIpAddress.MtaIpAddressCollection GetMtaIpGroupIps(int id)
+		internal static VirtualMta.VirtualMTACollection GetMtaIpGroupIps(int id)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -37,7 +55,7 @@ FROM man_ip_ipAddress";
 FROM man_ip_ipAddress as [ip]
 WHERE [ip].ip_ipAddress_id IN (SELECT [grp].ip_ipAddress_id FROM man_ip_groupMembership as [grp] WHERE [grp].ip_group_id = @groupID) ";
 				cmd.Parameters.AddWithValue("@groupID", id);
-				return new MtaIpAddressCollection(DataRetrieval.GetCollectionFromDatabase<MtaIpAddress.MtaIpAddress>(cmd, CreateAndFillMtaIpAddressFromRecord));
+				return new VirtualMTACollection(DataRetrieval.GetCollectionFromDatabase<VirtualMta.VirtualMTA>(cmd, CreateAndFillMtaIpAddressFromRecord));
 			}
 		}
 
@@ -46,9 +64,9 @@ WHERE [ip].ip_ipAddress_id IN (SELECT [grp].ip_ipAddress_id FROM man_ip_groupMem
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		private static MtaIpAddress.MtaIpAddress CreateAndFillMtaIpAddressFromRecord(IDataRecord record)
+		private static VirtualMta.VirtualMTA CreateAndFillMtaIpAddressFromRecord(IDataRecord record)
 		{
-			MtaIpAddress.MtaIpAddress ipAddress = new MtaIpAddress.MtaIpAddress();
+			VirtualMta.VirtualMTA ipAddress = new VirtualMta.VirtualMTA();
 			ipAddress.ID = record.GetInt32("ip_ipAddress_id");
 			ipAddress.Hostname = record.GetString("ip_ipAddress_hostname");
 			ipAddress.IPAddress = System.Net.IPAddress.Parse(record.GetString("ip_ipAddress_ipAddress"));

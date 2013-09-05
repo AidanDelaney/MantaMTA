@@ -50,9 +50,10 @@
     <Compile Include="DAL\TransactionDB.cs" />
     <Compile Include="DAL\VirtualMtaDB.cs" />
     <Compile Include="DAL\VirtualMtaTransactionDB.cs" />
-    <Compile Include="MtaIpManager.cs" />
+    <Compile Include="VirtualMtaWebManager.cs" />
     <Compile Include="OutboundRuleWebManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebInterfaceParameters.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

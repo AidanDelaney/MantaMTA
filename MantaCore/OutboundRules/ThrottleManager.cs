@@ -130,7 +130,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="ipAddress">The IP Address we wan't to send from.</param>
 		/// <param name="mxRecord">The MX Record of the destination.</param>
 		/// <returns>TRUE if we can send FALSE if we should throttle.</returns>
-		public bool TryGetSendAuth(MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public bool TryGetSendAuth(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Ensure send history cleaner is running
 			EnsureSendHistoryCleanerIsRunning();

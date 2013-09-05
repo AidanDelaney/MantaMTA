@@ -4,7 +4,7 @@ namespace WebInterfaceLib.BO
 	/// <summary>
 	/// Holds information abount a Virtual MTA and what it has done in a send.
 	/// </summary>
-	public class VirtualMtaSendInfo : MantaMTA.Core.MtaIpAddress.MtaIpAddress
+	public class VirtualMtaSendInfo : MantaMTA.Core.VirtualMta.VirtualMTA
 	{
 		/// <summary>
 		/// The amount of messages accepted by a remote MX.

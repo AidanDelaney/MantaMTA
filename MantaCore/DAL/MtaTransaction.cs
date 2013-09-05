@@ -10,7 +10,7 @@ namespace MantaMTA.Core.DAL
 		/// <summary>
 		/// Logs an MTA Transaction to the database.
 		/// </summary>
-		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse, MtaIpAddress.MtaIpAddress ipAddress, DNS.MXRecord mxRecord)
+		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{

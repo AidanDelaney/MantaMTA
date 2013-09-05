@@ -59,7 +59,7 @@ namespace MantaMTA.Core.OutboundRules
 			/// </summary>
 			/// <param name="mxPatternID">The matching pattern ID</param>
 			/// <param name="ipAddress">IP Address if specific or NULL</param>
-			public void Add(int mxPatternID, MtaIpAddress.MtaIpAddress ipAddress)
+			public void Add(int mxPatternID, VirtualMta.VirtualMTA ipAddress)
 			{
 				MatchedMxPattern newMxPattern = new MatchedMxPattern();
 				newMxPattern.MatchedUtc = DateTime.UtcNow;
@@ -96,7 +96,7 @@ namespace MantaMTA.Core.OutboundRules
 			/// </summary>
 			/// <param name="ipAddress"></param>
 			/// <returns></returns>
-			public MatchedMxPattern GetMatchedMxPattern(MtaIpAddress.MtaIpAddress ipAddress)
+			public MatchedMxPattern GetMatchedMxPattern(VirtualMta.VirtualMTA ipAddress)
 			{
 				MatchedMxPattern tmp;
 				if (this.TryGetValue(ipAddress.IPAddress.ToString(), out tmp))
@@ -124,7 +124,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="mtaIpAddress">Outbound IP Address</param>
 		/// <param name="mxPatternID">OUT: the ID of MxPattern that caused match.</param>
 		/// <returns></returns>
-		public static OutboundRuleCollection GetRules(MXRecord mxRecord, MtaIpAddress.MtaIpAddress mtaIpAddress, out int mxPatternID)
+		public static OutboundRuleCollection GetRules(MXRecord mxRecord, VirtualMta.VirtualMTA mtaIpAddress, out int mxPatternID)
 		{
 			// Get the data from the database. This needs to be cleverer and reload every x minutes.
 			if (_MXPatterns == null)
@@ -147,7 +147,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="record"></param>
 		/// <param name="ipAddress"></param>
 		/// <returns></returns>
-		private static int GetMxPatternID(MXRecord record, MtaIpAddress.MtaIpAddress ipAddress)
+		private static int GetMxPatternID(MXRecord record, VirtualMta.VirtualMTA ipAddress)
 		{
 			if (_matchedPatterns == null)
 				_matchedPatterns = new ConcurrentDictionary<string,MatchedMxPatternCollection>();
@@ -233,7 +233,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="record">MX Record for the destination.</param>
 		/// <param name="ipAddress">IPAddress that we are sending from.</param>
 		/// <returns>Max number of messages per connection.</returns>
-		public static int GetMaxMessagesPerConnection(MXRecord record, MtaIpAddress.MtaIpAddress ipAddress)
+		public static int GetMaxMessagesPerConnection(MXRecord record, VirtualMta.VirtualMTA ipAddress)
 		{
 			int mxPatternID = 0;
 			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);
@@ -263,7 +263,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="record">MX Record of destination server.</param>
 		/// <param name="mxPatternID">ID of the pattern used to identify the rule.</param>
 		/// <returns>Maximum number of messages per hour or -1 for unlimited.</returns>
-		public static int GetMaxMessagesDestinationHour(MtaIpAddress.MtaIpAddress ipAddress, MXRecord record, out int mxPatternID)
+		public static int GetMaxMessagesDestinationHour(VirtualMta.VirtualMTA ipAddress, MXRecord record, out int mxPatternID)
 		{
 			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);
 			for (int i = 0; i < rules.Count; i++)
@@ -291,7 +291,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="ipAddress">IP Address connecting from.</param>
 		/// <param name="record">MXRecord of the destination.</param>
 		/// <returns>Max number of connections.</returns>
-		internal static int GetMaxConnectionsToDestination(MtaIpAddress.MtaIpAddress ipAddress, MXRecord record)
+		internal static int GetMaxConnectionsToDestination(VirtualMta.VirtualMTA ipAddress, MXRecord record)
 		{
 			int mxPatternID = -1;
 			OutboundRuleCollection rules = GetRules(record, ipAddress, out mxPatternID);

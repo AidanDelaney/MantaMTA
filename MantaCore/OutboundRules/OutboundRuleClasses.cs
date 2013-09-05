@@ -75,7 +75,7 @@ namespace MantaMTA.Core.OutboundRules
 
 		public OutboundMxPattern()
 		{
-			this.ID = -1;
+			this.ID = 0;
 			this.Name = string.Empty;
 			this.Description = string.Empty;
 

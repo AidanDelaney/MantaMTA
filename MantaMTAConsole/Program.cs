@@ -4,7 +4,7 @@ using System.Runtime.ExceptionServices;
 using MantaMTA.Core;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.Events;
-using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.VirtualMta;
 using MantaMTA.Core.Server;
 
 namespace MantaMTA.Console
@@ -23,7 +23,7 @@ namespace MantaMTA.Console
 			// Start the send manager service.
 			MantaMTA.Core.Sends.SendManager.Instance.StartService();
 
-			MtaIpAddressCollection ipAddresses = IpAddressManager.GetIPsForListeningOn();
+			VirtualMTACollection ipAddresses = VirtualMtaManager.GetVirtualMtasForListeningOn();
 
 			// Array will hold all instances of SmtpServer, one for each port we will be listening on.
 			ArrayList smtpServers = new ArrayList();
@@ -31,7 +31,7 @@ namespace MantaMTA.Console
 			// Create the SmtpServers
 			for (int c = 0; c < ipAddresses.Count; c++)
 			{
-				MtaIpAddress ipAddress = ipAddresses[c];
+				VirtualMTA ipAddress = ipAddresses[c];
 				for (int i = 0; i < MtaParameters.ServerListeningPorts.Length; i++)
 					smtpServers.Add(new SmtpServer(ipAddress.IPAddress, MtaParameters.ServerListeningPorts[i]));
 			}

@@ -1,0 +1,51 @@
+﻿@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<script type="text/javascript">
+	function Save() {
+		PostToWebService("/services/VirtualMtaService.asmx/Save", "{ 'id':'@Model.ID',\
+					 'hostname':'" + $('#txtHostname').val() + "',\
+					 'ipAddress':'" + $('#txtIpAddress').val() + "',\
+					 'inbound':'" + $('#ckbInbound').is(':checked') + "',\
+					 'outbound':'" + $('#ckbOutbound').is(':checked') + "'}",
+			function (data) {
+				if (data.d)
+					window.location = '/VirtualMTA';
+				else
+					alert("Save failed!");
+			},
+			function (jqXHR, textStatus, errorThrown) {
+				alert(JSON.parse(jqXHR.responseText).Message);
+			});
+	}
+</script>
+
+<table class="table table-striped">
+	<tbody>
+		<tr>
+			<th>IP Address</th>
+			<td><input id="txtIpAddress" type="text" value="@Model.IPAddress" /></td>
+		</tr>
+		<tr>
+			<th>Hostname</th>
+			<td><input id="txtHostname" type="text" value="@Model.Hostname" /></td>
+		</tr>
+		<tr>
+			<th>Accept Inbound Email</th>
+			<td><input id="ckbInbound" type="checkbox" @(Model.IsSmtpInbound ? "checked=\"checked\"" : string.Empty) /></td>
+		</tr>
+		<tr>
+			<th>Send Outbound Email</th>
+			<td><input id="ckbOutbound" type="checkbox" @(Model.IsSmtpOutbound ? "checked=\"checked\"" : string.Empty) /></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+				<a href="javascript:Save(0);" class="btn btn-success">Update</a>
+				<a href="/VirtualMTA" class="btn btn-warning">Cancel</a>
+			</td>
+		</tr>
+	</tbody>
+</table>

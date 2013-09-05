@@ -7,7 +7,7 @@ using WebInterface.Models;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.OutboundRules;
 using WebInterfaceLib;
-using MantaMTA.Core.MtaIpAddress;
+using MantaMTA.Core.VirtualMta;
 
 namespace WebInterface.Controllers
 {
@@ -22,11 +22,24 @@ namespace WebInterface.Controllers
 
 		//
 		// GET: /OutboundRules/Edit?id=
-		public ActionResult Edit(int id)
+		public ActionResult Edit(int id = 0)
 		{
-			OutboundMxPattern pattern = OutboundRuleDB.GetOutboundRulePatterns().Single(p=>p.ID == id);
-			OutboundRuleCollection rules = new MantaMTA.Core.OutboundRules.OutboundRuleCollection(OutboundRuleDB.GetOutboundRules().Where(r => r.OutboundMxPatternID == id).ToArray());
-			MtaIpAddressCollection vMtas = MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddresses();
+			OutboundMxPattern pattern = null;
+			OutboundRuleCollection rules = null;
+
+			if(id != 0)
+			{
+				pattern = OutboundRuleDB.GetOutboundRulePatterns().Single(p => p.ID == id);
+				rules = new OutboundRuleCollection(OutboundRuleDB.GetOutboundRules().Where(r => r.OutboundMxPatternID == id).ToArray());
+			}
+			else
+			{
+				pattern = new OutboundMxPattern();
+				rules = new OutboundRuleCollection(OutboundRuleDB.GetOutboundRules().Where(r => r.OutboundMxPatternID == MantaMTA.Core.MtaParameters.OUTBOUND_RULES_DEFAULT_PATTERN_ID));
+			}
+
+			
+			VirtualMTACollection vMtas = MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddresses();
 			return View(new OutboundRuleModel(rules, pattern, vMtas));
 		}
 

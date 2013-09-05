@@ -15,7 +15,9 @@
 	}
 </script>
 
-<h2>Outbound Rules&nbsp;<a href="javascript:void(0);" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a></h2>
+<h2>Outbound Rules
+	<a href="/OutboundRules/Edit?patternID=@WebInterfaceLib.WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID" class="btn btn-primary btn-mini"><i class="icon-plus icon-white"></i></a>
+</h2>
 
 <table class="table table-striped table-hover">
 	<thead>
@@ -49,7 +51,7 @@
 					}
 					else
 					{
-						@:Need to show vMTA here!
+						@MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddress(outboundRule.LimitedToOutboundIpAddressID.Value).Hostname
 					}
 				</td>
 				<td>
