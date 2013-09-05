@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.Script.Services;
 using System.Web.Services;
 using MantaMTA.Core.VirtualMta;
+using WebInterfaceLib;
 using WebInterfaceLib.DAL;
 
 namespace WebInterface.Services
@@ -70,6 +71,52 @@ namespace WebInterface.Services
 		public void Delete(int id)
 		{
 			VirtualMtaDB.Delete(id);
+		}
+
+		/// <summary>
+		/// Saves the Virtual MTA Group.
+		/// </summary>
+		/// <param name="id">ID of the Virtual MTA Group to save.</param>
+		/// <param name="name">Name of the Virtual MTA Group.</param>
+		/// <param name="description">Description of the Virtual MTA Group.</param>
+		/// <param name="mtaIDs">ID's of the VirtualMTAs that the Group should contain.</param>
+		/// <returns>TRUE if saved or FALSE if not saved.</returns>
+		[WebMethod]
+		public bool SaveGroup(int id, string name, string description, int[] mtaIDs)
+		{
+			VirtualMtaGroup grp = null;
+			if (id == 0)
+				grp = new VirtualMtaGroup();
+			else
+				grp = MantaMTA.Core.DAL.VirtualMtaGroupDB.GetVirtualMtaGroup(id);
+
+			if (grp == null)
+				return false;
+
+			grp.Name = name;
+			grp.Description = description;
+
+			VirtualMTACollection vMtas = MantaMTA.Core.DAL.VirtualMtaDB.GetVirtualMtas();
+			for (int i = 0; i < mtaIDs.Length; i++)
+			{
+				VirtualMTA mta = vMtas.SingleOrDefault(m => m.ID == mtaIDs[i]);
+				if (mta == null)
+					return false;
+				grp.VirtualMtaCollection.Add(mta);
+			}
+
+			VirtualMtaWebManager.Save(grp);
+			return true;
+		}
+
+		/// <summary>
+		/// Deletes a Virtual MTA Group.
+		/// </summary>
+		/// <param name="id">ID of the Virtual MTA Group to delete.</param>
+		[WebMethod]
+		public void DeleteGroup(int id)
+		{
+			VirtualMtaWebManager.DeleteGroup(id);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "Edit";
+	ViewBag.Title = (Model.ID == WebInterfaceLib.WebInterfaceParameters.VIRTUALMTA_NEW_ID ? "Create" : "Edit") + " Virtual MTA";
     Layout = "~/Views/_Layout.cshtml";
 }
 
@@ -43,7 +43,7 @@
 		<tr>
 			<td></td>
 			<td>
-				<a href="javascript:Save(0);" class="btn btn-success">Update</a>
+				<a href="javascript:Save(0);" class="btn btn-success">@(Model.ID == WebInterfaceLib.WebInterfaceParameters.VIRTUALMTA_NEW_ID ? "Create" : "Update")</a>
 				<a href="/VirtualMTA" class="btn btn-warning">Cancel</a>
 			</td>
 		</tr>

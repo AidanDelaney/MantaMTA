@@ -76,6 +76,17 @@ namespace MantaMTA.Core.VirtualMta
 				return vMTA;
 			}
 		}
+
+		/// <summary>
+		/// Constuctor sets defaults.
+		/// </summary>
+		public VirtualMtaGroup()
+		{
+			this.Description = string.Empty;
+			this.ID = 0;
+			this.Name = string.Empty;
+			this.VirtualMtaCollection = new VirtualMTACollection();
+		}
 	}
 
 	/// <summary>

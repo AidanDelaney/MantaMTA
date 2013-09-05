@@ -122,4 +122,19 @@ namespace WebInterface.Models
 		/// </summary>
 		public VirtualMtaGroupCollection IpGroups { get; set; }
 	}
+
+	/// <summary>
+	/// Model for the Create & Edit Virtual MTA Group Page.
+	/// </summary>
+	public class VirtualMtaGroupCreateEditModel
+	{
+		/// <summary>
+		/// The Virtual MTA Group.
+		/// </summary>
+		public VirtualMtaGroup VirtualMtaGroup { get; set; }
+		/// <summary>
+		/// All Virtual MTAs.
+		/// </summary>
+		public VirtualMTACollection VirtualMTACollection { get; set; }
+	}
 }

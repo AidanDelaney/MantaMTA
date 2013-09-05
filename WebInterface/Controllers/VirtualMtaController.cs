@@ -3,6 +3,7 @@ using System.Web.Mvc;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.VirtualMta;
 using WebInterface.Models;
+using WebInterfaceLib;
 
 namespace WebInterface.Controllers
 {
@@ -39,7 +40,17 @@ namespace WebInterface.Controllers
 		// GET: /VirtualMta/EditGroup
 		public ActionResult EditGroup(int id = 0)
 		{
-			return View(WebInterfaceLib.VirtualMtaWebManager.GetAllVirtualMtaGroups());
+			VirtualMtaGroup grp = null;
+			if (id == 0)
+				grp = new VirtualMtaGroup();
+			else
+				grp = WebInterfaceLib.VirtualMtaWebManager.GetVirtualMtaGroup(id);
+
+			return View(new VirtualMtaGroupCreateEditModel
+			{
+				VirtualMtaGroup = grp,
+				VirtualMTACollection = VirtualMtaDB.GetVirtualMtas()
+			});
 		}
     }
 }

@@ -1,6 +1,67 @@
 ﻿@{
-    ViewBag.Title = "EditGroup";
+    ViewBag.Title = (Model.VirtualMtaGroup.ID == WebInterfaceLib.WebInterfaceParameters.VIRTUALMTAGROUP_NEW_ID ? "Create" : "Edit") + " Virtual MTA Group";
     Layout = "~/Views/_Layout.cshtml";
 }
 
-<h2>EditGroup</h2>
+<script type="text/javascript">
+	function Save() {
+		var mtas = new Array();
+		$('input[data-mta-id]:checked').each(function (i, e) {
+			mtas.push($(e).data('mta-id'));
+		});
+
+		if (mtas.length < 1) {
+			alert('Group must contain at least one MTA');
+			return;
+		}
+
+		PostToWebService("/services/VirtualMtaService.asmx/SaveGroup", 
+			"{ 'id':'" + @Model.VirtualMtaGroup.ID + "',\
+'name':'" + $('#txtName').val() + "',\
+'description':'" + $('#txtDescription').val() + "',\
+'mtaIDs':" + JSON.stringify(mtas) + "}",
+			function (data) {
+				if (data.d)
+					window.location = '/VirtualMTA';
+				else
+					alert('Save failed');
+			},
+			function (jqXHR, textStatus, errorThrown) {
+				alert(JSON.parse(jqXHR.responseText).Message);
+			}
+		);
+	}
+</script>
+
+<table class="table table-striped">
+	<tbody>
+		<tr>
+			<th>Name</th>
+			<td><input id="txtName" type="text" value="@Model.VirtualMtaGroup.Name" /></td>
+		</tr>
+		<tr>
+			<th>Description</th>
+			<td><textarea id="txtDescription">@Model.VirtualMtaGroup.Description</textarea></td>
+		</tr>
+		<tr>
+			<th>Virtual MTAs</th>
+			<td>
+				@foreach(MantaMTA.Core.VirtualMta.VirtualMTA vmta in Model.VirtualMTACollection)
+				{
+					<label class="checkbox" style="display: inline-block;">
+						<input data-mta-id="@vmta.ID" type="checkbox" @(((MantaMTA.Core.VirtualMta.VirtualMTACollection)Model.VirtualMtaGroup.VirtualMtaCollection).Count(i=>i.ID == vmta.ID) == 1 ? "checked=\"checked\"" : string.Empty) > @vmta.Hostname
+					</label>
+				}
+			</td>
+		</tr>
+	</tbody>
+	<tfoot>
+		<tr>
+			<td></td>
+			<td>
+				<a href="javascript:Save();" class="btn btn-success">@(Model.VirtualMtaGroup.ID == WebInterfaceLib.WebInterfaceParameters.VIRTUALMTAGROUP_NEW_ID ? "Create" : "Update")</a>
+				<a href="/VirtualMTA" class="btn btn-warning">Cancel</a>
+			</td>
+		</tr>
+	</tfoot>
+</table>
