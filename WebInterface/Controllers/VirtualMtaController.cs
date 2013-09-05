@@ -12,7 +12,7 @@ namespace WebInterface.Controllers
         // GET: /VirtualMta/
         public ActionResult Index()
         {
-			VirtualMTACollection ips = MtaIpAddressDB.GetMtaIpAddresses();
+			VirtualMTACollection ips = VirtualMtaDB.GetVirtualMtas();
 			List<VirtualMTASummary> summary = new List<VirtualMTASummary>();
 			VirtualMtaGroupCollection ipGroups = WebInterfaceLib.VirtualMtaWebManager.GetAllVirtualMtaGroups();
 			foreach (VirtualMTA address in ips)
@@ -32,7 +32,7 @@ namespace WebInterface.Controllers
 		{
 			if (id == 0)
 				return View(new VirtualMTA());
-			return View(MtaIpAddressDB.GetMtaIpAddress(id));
+			return View(VirtualMtaDB.GetVirtualMta(id));
 		}
 
 		//

@@ -34,7 +34,7 @@ namespace WebInterface.Services
 			VirtualMTA vMTA = null;
 			
 			if (id != 0)
-				vMTA = MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddress(id);
+				vMTA = MantaMTA.Core.DAL.VirtualMtaDB.GetVirtualMta(id);
 			else
 				vMTA = new VirtualMTA();
 

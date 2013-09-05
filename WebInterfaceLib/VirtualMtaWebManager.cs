@@ -11,12 +11,12 @@ namespace WebInterfaceLib
 		/// <returns></returns>
 		public static VirtualMtaGroupCollection GetAllVirtualMtaGroups()
 		{
-			VirtualMtaGroupCollection ipGroups = MtaIpGroupDB.GetMtaIpGroups();
+			VirtualMtaGroupCollection ipGroups = VirtualMtaGroupDB.GetVirtualMtaGroups();
 			
 			// Get all the groups Virtual MTAs.
 			foreach (VirtualMtaGroup grp in ipGroups)
 			{
-				grp.VirtualMtaCollection = MtaIpAddressDB.GetMtaIpGroupIps(grp.ID);
+				grp.VirtualMtaCollection = VirtualMtaDB.GetVirtualMtasInVirtualMtaGroup(grp.ID);
 			}
 
 			return ipGroups;

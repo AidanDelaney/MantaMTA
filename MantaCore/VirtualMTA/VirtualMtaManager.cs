@@ -48,7 +48,7 @@ namespace MantaMTA.Core.VirtualMta
 
 			_outboundMtas = null;
 			_inboundMtas = null;
-			_vmtaCollection = DAL.MtaIpAddressDB.GetMtaIpAddresses();
+			_vmtaCollection = DAL.VirtualMtaDB.GetVirtualMtas();
 		}
 
 		/// <summary>
@@ -129,14 +129,14 @@ namespace MantaMTA.Core.VirtualMta
 					return group;
 
 				// Get group from the database.
-				group = DAL.MtaIpGroupDB.GetMtaIpGroup(id);
+				group = DAL.VirtualMtaGroupDB.GetVirtualMtaGroup(id);
 
 				// Group doesn't exist, so don't try and get it's IPs
 				if (group == null)
 					return null;
 
 				// Got the group, go get it's IPs.
-				group.VirtualMtaCollection = DAL.MtaIpAddressDB.GetMtaIpGroupIps(id);
+				group.VirtualMtaCollection = DAL.VirtualMtaDB.GetVirtualMtasInVirtualMtaGroup(id);
 
 				// Add the group to collection, so others can use it.
 				_vmtaGroups.TryAdd(id, group);

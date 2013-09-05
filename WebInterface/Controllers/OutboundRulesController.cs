@@ -39,7 +39,7 @@ namespace WebInterface.Controllers
 			}
 
 			
-			VirtualMTACollection vMtas = MantaMTA.Core.DAL.MtaIpAddressDB.GetMtaIpAddresses();
+			VirtualMTACollection vMtas = MantaMTA.Core.DAL.VirtualMtaDB.GetVirtualMtas();
 			return View(new OutboundRuleModel(rules, pattern, vMtas));
 		}
 
