@@ -22,12 +22,12 @@ namespace WebInterface.Controllers
 
 		//
 		// GET: /OutboundRules/Edit?id=
-		public ActionResult Edit(int id = 0)
+		public ActionResult Edit(int id = WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID)
 		{
 			OutboundMxPattern pattern = null;
 			OutboundRuleCollection rules = null;
 
-			if(id != 0)
+			if (id != WebInterfaceParameters.OUTBOUND_RULES_NEW_PATTERN_ID)
 			{
 				pattern = OutboundRuleDB.GetOutboundRulePatterns().Single(p => p.ID == id);
 				rules = new OutboundRuleCollection(OutboundRuleDB.GetOutboundRules().Where(r => r.OutboundMxPatternID == id).ToArray());

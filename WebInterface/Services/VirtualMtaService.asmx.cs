@@ -34,7 +34,7 @@ namespace WebInterface.Services
 		{
 			VirtualMTA vMTA = null;
 			
-			if (id != 0)
+			if (id != WebInterfaceParameters.VIRTUALMTA_NEW_ID)
 				vMTA = MantaMTA.Core.DAL.VirtualMtaDB.GetVirtualMta(id);
 			else
 				vMTA = new VirtualMTA();
@@ -85,7 +85,7 @@ namespace WebInterface.Services
 		public bool SaveGroup(int id, string name, string description, int[] mtaIDs)
 		{
 			VirtualMtaGroup grp = null;
-			if (id == 0)
+			if (id == WebInterfaceParameters.VIRTUALMTAGROUP_NEW_ID)
 				grp = new VirtualMtaGroup();
 			else
 				grp = MantaMTA.Core.DAL.VirtualMtaGroupDB.GetVirtualMtaGroup(id);

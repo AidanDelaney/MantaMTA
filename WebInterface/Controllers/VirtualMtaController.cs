@@ -29,19 +29,19 @@ namespace WebInterface.Controllers
 
 		//
 		// GET: /VirtualMta/Edit
-		public ActionResult Edit(int id = 0)
+		public ActionResult Edit(int id = WebInterfaceParameters.VIRTUALMTA_NEW_ID)
 		{
-			if (id == 0)
+			if (id == WebInterfaceParameters.VIRTUALMTA_NEW_ID)
 				return View(new VirtualMTA());
 			return View(VirtualMtaDB.GetVirtualMta(id));
 		}
 
 		//
 		// GET: /VirtualMta/EditGroup
-		public ActionResult EditGroup(int id = 0)
+		public ActionResult EditGroup(int id = WebInterfaceParameters.VIRTUALMTAGROUP_NEW_ID)
 		{
 			VirtualMtaGroup grp = null;
-			if (id == 0)
+			if (id == WebInterfaceParameters.VIRTUALMTAGROUP_NEW_ID)
 				grp = new VirtualMtaGroup();
 			else
 				grp = WebInterfaceLib.VirtualMtaWebManager.GetVirtualMtaGroup(id);
