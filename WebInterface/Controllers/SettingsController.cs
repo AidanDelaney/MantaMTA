@@ -18,13 +18,14 @@ namespace WebInterface.Controllers
 			{
 				ClientIdleTimeout = CfgPara.GetClientIdleTimeout(),
 				DaysToKeepSmtpLogsFor = CfgPara.GetDaysToKeepSmtpLogsFor(),
-				DefaultVirtualMtaGroup = VirtualMtaGroupDB.GetVirtualMtaGroup(CfgPara.GetDefaultIPGroupID()),			
+				DefaultVirtualMtaGroupID = CfgPara.GetDefaultVirtualMtaGroupID(),
+				VirtualMtaGroupCollection = VirtualMtaGroupDB.GetVirtualMtaGroups(),			
 				EventForwardingUrl = CfgPara.GetEventForwardingHttpPostUrl(),
 				LocalDomains = CfgLocalDomains.GetLocalDomainsArray(),
 				MaxTimeInQueue = CfgPara.GetMaxTimeInQueueMinutes(),
 				ReceiveTimeout = CfgPara.GetReceiveTimeout(),
 				RelayingPermittedIPs = CfgRelayingPermittedIP.GetRelayingPermittedIPAddresses(),
-				RetryInterval = CfgPara.GetRetryIntervalMinutes(),
+				RetryInterval = CfgPara.GetRetryIntervalBaseMinutes(),
 				ReturnPathDomain = CfgPara.GetReturnPathDomain(),
 				SendTimeout = CfgPara.GetSendTimeout()
 			});

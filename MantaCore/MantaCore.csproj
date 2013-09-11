@@ -83,6 +83,7 @@
     <Compile Include="Events\SmtpStatusCodes.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="IStopRequired.cs" />
+    <Compile Include="LocalDomainClasses.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Message\BodyPart.cs" />
     <Compile Include="MantaCoreEvents.cs" />

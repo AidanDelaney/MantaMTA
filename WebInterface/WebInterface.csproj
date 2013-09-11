@@ -131,6 +131,10 @@
       <DependentUpon>OutboundRulesService.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Services\SettingsService.asmx.cs">
+      <DependentUpon>SettingsService.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Services\VirtualMtaService.asmx.cs">
       <DependentUpon>VirtualMtaService.asmx</DependentUpon>
       <SubType>Component</SubType>
@@ -142,6 +146,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
     <Content Include="Services\OutboundRulesService.asmx" />
+    <Content Include="Services\SettingsService.asmx" />
     <Content Include="Services\VirtualMtaService.asmx" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">

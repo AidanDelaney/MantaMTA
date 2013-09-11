@@ -145,7 +145,7 @@ namespace MantaMTA.Core
 		/// List of domains to accept messages for drop folder.
 		/// All domains are toLowered!
 		/// </summary>
-		internal static string[] LocalDomains
+		internal static LocalDomainCollection LocalDomains
 		{
 			get
 			{
@@ -157,7 +157,7 @@ namespace MantaMTA.Core
 				return _LocalDomains;
 			}
 		}
-		private static string[] _LocalDomains { get; set; }
+		private static LocalDomainCollection _LocalDomains { get; set; }
 		private static DateTime _LocalDomainsLoadTime = DateTime.MinValue;
 
 		/// <summary>
@@ -205,7 +205,7 @@ namespace MantaMTA.Core
 			{
 				if (_MtaRetryIntervalLoadTime < DateTime.UtcNow)
 				{
-					_MtaRetryInterval = DAL.CfgPara.GetRetryIntervalMinutes();
+					_MtaRetryInterval = DAL.CfgPara.GetRetryIntervalBaseMinutes();
 					_MtaRetryIntervalLoadTime = DateTime.UtcNow.AddMinutes(5);
 				}
 

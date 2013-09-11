@@ -97,6 +97,8 @@ th.total h3 { margin: 0; }
 
 table.send-header { margin-bottom: 10px; font-size: 12px; }
 
+td input, td select, td textarea { margin-bottom: 0px !important; }
+
 /* Stats */
 .stat-green { color: #2ecc71; }
 .stat-grey { color: #34495E; }

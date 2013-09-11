@@ -294,7 +294,7 @@ namespace MantaMTA.Core.Server
 
 
 						// Check to see if mail is to be delivered locally or relayed for delivery somewhere else.
-						if (!MtaParameters.LocalDomains.Contains(rcptTo.Host.ToLower()))
+						if (MtaParameters.LocalDomains.Count(ld=> ld.Hostname.Equals(rcptTo.Host, StringComparison.OrdinalIgnoreCase)) < 1)
 						{
 							// Messages isn't for delivery on this server.
 							// Check if we are allowed to relay for the client IP

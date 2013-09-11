@@ -3,6 +3,31 @@
     Layout = "~/Views/_Layout.cshtml";
 }
 
+<script type="text/javascript">
+	function Save() {
+		PostToWebService("/services/settingsservice.asmx/Update", "{ 'clientIdleTimeout':'" + $('#txtClientIdleTimeout').val() + "',\
+																	 'receiveTimeout':'" + $('#txtReveiveTimeout').val() + "',\
+																	 'sendTimeout':'" + $('#txtSendTimeout').val() + "',\
+																	 'defaultVirtualMtaGroupID':'" + $('#ddlDefaultVirtualMtaGroup').val() + "',\
+																	 'eventUrl':'" + $('#txtEventUrl').val() + "',\
+																	 'daysToKeepSmtpLogsFor':'" + $('#txtDaysToKeepSmtpLogsFor').val() + "',\
+																	 'maxTimeInQueueHours':'" + $('#txtMaxTimeInQueueHours').val() + "',\
+																	 'retryIntervalBase':'" + $('#txtRetryIntervalBase').val() + "',\
+																	 'ipAddressesForRelaying':" + JSON.stringify($('#txtRelayingIpAddresses').val().split('\n')).replace(/"/gi, "'") + ",\
+																	 'returnPathLocalDomainID':'" + $('#ddlDefaultReturnPathLocalDomain').val() + "',\
+																	 'localDomains':" + JSON.stringify($('#txtLocalDomains').val().split('\n')).replace(/"/gi, "'") + "}",
+			function (data) {
+				if (data.d)
+					window.location = window.location;
+				else
+					alert('Failed to save');
+			},
+			function (jqXHR, textStatus, errorThrown) {
+				alert(JSON.parse(jqXHR.responseText).Message);
+			});
+	}
+</script>
+
 <table class="table table-striped table-hover">
 	<thead>
 		<tr>
@@ -13,47 +38,68 @@
 	<tbody>
 		<tr>
 			<th>Connection Idle Timeout</th>
-			<td>@Html.Raw(Model.ClientIdleTimeout) Seconds</td>
+			<td><input id="txtClientIdleTimeout" type="text" value="@Model.ClientIdleTimeout" /> Seconds</td>
 		</tr>
 		<tr>
 			<th>Connection Receive Timeout</th>
-			<td>@Html.Raw(Model.ReceiveTimeout) Seconds</td>
+			<td><input id="txtReveiveTimeout" type="text" value="@Model.ReceiveTimeout" /> Seconds</td>
 		</tr>
 		<tr>
 			<th>Connection Send Timeout</th>
-			<td>@Html.Raw(Model.SendTimeout) Seconds</td>
+			<td><input id="txtSendTimeout" type="text" value="@Model.SendTimeout" /> Seconds</td>
 		</tr>
 		<tr>
 			<th>Default ReturnPath Domain</th>
-			<td>@Html.Raw(Model.ReturnPathDomain)</td>
+			<td>
+				<select id="ddlDefaultReturnPathLocalDomain">
+					@foreach (MantaMTA.Core.LocalDomain localDomain in Model.LocalDomains)
+					 {
+						<option value="@localDomain.ID" selected="@localDomain.Hostname.Equals(Model.ReturnPathDomain, StringComparison.OrdinalIgnoreCase)">@localDomain.Hostname</option>
+					 }
+				</select>
+			</td>
 		</tr>
 		<tr>
 			<th>Default Virtual MTA Group</th>
-			<td>@Html.Raw(Model.DefaultVirtualMtaGroup.Name)</td>
+			<td>
+				<select id="ddlDefaultVirtualMtaGroup">
+					@foreach (MantaMTA.Core.VirtualMta.VirtualMtaGroup grp in Model.VirtualMtaGroupCollection)
+					 {
+						<option value="@grp.ID" selected="@(grp.ID == Model.DefaultVirtualMtaGroupID)">@grp.Name</option>
+					 }
+				</select>
 		</tr>
 		<tr>
 			<th>Event Forwarding URL</th>
-			<td>@Html.Raw(Model.EventForwardingUrl)</td>
+			<td><input id="txtEventUrl" type="text" value="@Model.EventForwardingUrl" /></td>
 		</tr>
 		<tr>
 			<th>Keep SMTP Logs For</th>
-			<td>@Html.Raw(Model.DaysToKeepSmtpLogsFor) Days</td>
+			<td><input id="txtDaysToKeepSmtpLogsFor" type="text" value="@Model.DaysToKeepSmtpLogsFor" /> Days</td>
 		</tr>
 		<tr>
 			<th>Local Domains</th>
-			<td>@Html.Raw(string.Join("<br/>", Model.LocalDomains))</td>
+			<td><textarea id="txtLocalDomains">@string.Join(Environment.NewLine, ((MantaMTA.Core.LocalDomainCollection)Model.LocalDomains).Select(ld=>ld.Hostname))</textarea></td>
 		</tr>
 		<tr>
 			<th>Message Max Time in Queue</th>
-			<td>@Html.Raw(Model.MaxTimeInQueue / 60) Hours</td>
+			<td><input id="txtMaxTimeInQueueHours" type="text" value="@(Model.MaxTimeInQueue / 60)" /> Hours</td>
 		</tr>
 		<tr>
 			<th>Message Retry Interval Base</th>
-			<td>@Html.Raw(Model.RetryInterval) Minutes</td>
+			<td><input id="txtRetryIntervalBase" type="text" value="@Model.RetryInterval" /> Minutes</td>
 		</tr>
 		<tr>
 			<th>Relaying Permitted From</th>
-			<td>@Html.Raw(string.Join("<br/>", Model.RelayingPermittedIPs))</td>
+			<td><textarea id="txtRelayingIpAddresses">@string.Join(Environment.NewLine, Model.RelayingPermittedIPs)</textarea></td>
 		</tr>
 	</tbody>
+	<tfoot>
+		<tr>
+			<td></td>
+			<td>
+				<a href="javascript:Save()" class="btn btn-success">Save</a>
+			</td>
+		</tr>
+	</tfoot>
 </table>

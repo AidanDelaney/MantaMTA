@@ -93,7 +93,7 @@ namespace MantaMTA.Core.VirtualMta
 		/// <returns></returns>
 		public static VirtualMtaGroup GetDefaultVirtualMtaGroup()
 		{
-			int defaultGroupID = DAL.CfgPara.GetDefaultIPGroupID();
+			int defaultGroupID = DAL.CfgPara.GetDefaultVirtualMtaGroupID();
 			return GetVirtualMtaGroup(defaultGroupID);
 		}
 

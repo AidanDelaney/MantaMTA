@@ -1,6 +1,6 @@
 ﻿using System.Collections;
-using System.Configuration;
 using System.Data.SqlClient;
+using System.Net;
 
 namespace MantaMTA.Core.DAL
 {
@@ -25,6 +25,26 @@ FROM man_cfg_relayingPermittedIp";
 					results.Add(reader.GetString("cfg_relayingPermittedIp_ip"));
 
 				return (string[])results.ToArray(typeof(string));
+			}
+		}
+
+		/// <summary>
+		/// Saves the array of IP Address that are allowed to relay messages through MantaMTA.
+		/// Overwrites the existing addresses.
+		/// </summary>
+		/// <param name="addresses">IP Addresses to allow relaying for.</param>
+		public static void SetRelayingPermittedIPAddresses(IPAddress[] addresses)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"DELETE FROM man_cfg_relayingPermittedIp";
+				foreach (IPAddress addr in addresses)
+				{
+					cmd.CommandText += System.Environment.NewLine + "INSERT INTO man_cfg_relayingPermittedIp(cfg_relayingPermittedIp_ip) VALUES ( '" + addr.ToString() + "' )";
+				}
+				conn.Open();
+				cmd.ExecuteNonQuery();
 			}
 		}
 	}

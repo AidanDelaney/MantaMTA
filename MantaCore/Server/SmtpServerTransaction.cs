@@ -197,7 +197,7 @@ namespace MantaMTA.Core.Server
 				MessageHeader returnPathDomainOverrideHeader = headers.SingleOrDefault(h => h.Name.Equals(MessageHeaderNames.ReturnPathDomain, StringComparison.OrdinalIgnoreCase));
 
 				if (returnPathDomainOverrideHeader != null &&
-					MtaParameters.LocalDomains.Count(d => d.Equals(returnPathDomainOverrideHeader.Value, StringComparison.OrdinalIgnoreCase)) > 0)
+					MtaParameters.LocalDomains.Count(d => d.Hostname.Equals(returnPathDomainOverrideHeader.Value, StringComparison.OrdinalIgnoreCase)) > 0)
 					// The message contained a local domain in the returnpathdomain 
 					// header so use it instead of the default.
 					returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId, returnPathDomainOverrideHeader.Value);
