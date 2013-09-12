@@ -9,7 +9,7 @@ GO
 
 ALTER TABLE [dbo].[man_cfg_localDomain] ADD  CONSTRAINT [PK_man_cfg_localDomain] PRIMARY KEY CLUSTERED 
 (
-	[cfg_localDomain_domain] ASC
+	[cfg_localDomain_id] ASC
 )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
 GO
 

@@ -1,5 +1,5 @@
 CREATE TABLE [dbo].[man_rle_mxPattern](
-	[rle_mxPattern_id] [int] NOT NULL,
+	[rle_mxPattern_id] [int] IDENTITY(1,1) NOT NULL,
 	[rle_mxPattern_name] [nvarchar](50) COLLATE Latin1_General_CI_AS NOT NULL,
 	[rle_mxPattern_description] [nvarchar](250) COLLATE Latin1_General_CI_AS NULL,
 	[rle_patternType_id] [int] NOT NULL,

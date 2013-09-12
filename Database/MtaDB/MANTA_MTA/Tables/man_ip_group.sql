@@ -1,5 +1,5 @@
 CREATE TABLE [dbo].[man_ip_group](
-	[ip_group_id] [int] NOT NULL,
+	[ip_group_id] [int] IDENTITY(1,1) NOT NULL,
 	[ip_group_name] [nvarchar](50) COLLATE Latin1_General_CI_AS NOT NULL,
 	[ip_group_description] [nvarchar](250) COLLATE Latin1_General_CI_AS NULL
 ) ON [PRIMARY]

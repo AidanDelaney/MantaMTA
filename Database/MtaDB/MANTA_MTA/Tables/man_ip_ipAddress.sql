@@ -1,5 +1,5 @@
 CREATE TABLE [dbo].[man_ip_ipAddress](
-	[ip_ipAddress_id] [int] NOT NULL,
+	[ip_ipAddress_id] [int] IDENTITY(1,1) NOT NULL,
 	[ip_ipAddress_ipAddress] [varchar](45) COLLATE Latin1_General_CI_AS NOT NULL,
 	[ip_ipAddress_hostname] [varchar](255) COLLATE Latin1_General_CI_AS NULL,
 	[ip_ipAddress_isInbound] [bit] NULL,
