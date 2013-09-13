@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using MantaMTA.Core.Server;
 using MantaMTA.Core.Smtp;
 using NUnit.Framework;
@@ -82,17 +83,20 @@ namespace MantaMTA.Core.Tests
 		[Test]
 		public void SmtpClientIdleTimeout()
 		{
-			using (SmtpServer s = new SmtpServer(25))
+			if(MessageBox.Show("Do you want to run the idle timeout test?", "Idle timeout test", MessageBoxButtons.YesNo) == DialogResult.Yes)
 			{
-				VirtualMta.VirtualMTA outboundEndpoint = new VirtualMta.VirtualMTA() { IPAddress = IPAddress.Parse("127.0.0.1") };
-				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
+				using (SmtpServer s = new SmtpServer(25))
+				{
+					VirtualMta.VirtualMTA outboundEndpoint = new VirtualMta.VirtualMTA() { IPAddress = IPAddress.Parse("127.0.0.1") };
+					MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
-				SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
-				smtpClient.Connect(mxRecord);
+					SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
+					smtpClient.Connect(mxRecord);
 
-				Assert.IsTrue(smtpClient.Connected);
-				System.Threading.Thread.Sleep((MantaMTA.Core.MtaParameters.Client.ConnectionIdleTimeoutInterval + 5) * 1000);
-				Assert.IsFalse(smtpClient.Connected);
+					Assert.IsTrue(smtpClient.Connected);
+					System.Threading.Thread.Sleep((MantaMTA.Core.MtaParameters.Client.ConnectionIdleTimeoutInterval + 5) * 1000);
+					Assert.IsFalse(smtpClient.Connected);
+				}
 			}
 		}
 	}

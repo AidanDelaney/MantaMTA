@@ -76,9 +76,7 @@ namespace MantaMTA.Core.Server
 		/// <param name="value">Value for the header.</param>
 		public void AddHeader(string name, string value)
 		{
-			MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
-			headers.Insert(0, new MessageHeader(name, value));
-			Data = MessageManager.ReplaceHeaders(Data, headers);
+			Data = MessageManager.AddHeader(Data, new MessageHeader(name, value));
 		}
 
 		/// <summary>
@@ -103,13 +101,11 @@ namespace MantaMTA.Core.Server
 		private void SaveToLocalMailbox()
 		{
 			// Add the MAIL FROM & RCPT TO headers.
-			MessageHeaderCollection headers = MessageManager.GetMessageHeaders(Data);
-			headers.Insert(0, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
+			Data = MessageManager.AddHeader(Data, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
 			if (HasMailFrom && string.IsNullOrWhiteSpace(MailFrom))
-				headers.Insert(0, new MessageHeader("X-Sender", "<>"));
+				Data = MessageManager.AddHeader(Data, new MessageHeader("X-Sender", "<>"));
 			else
-				headers.Insert(0, new MessageHeader("X-Sender", MailFrom));
-			Data = MessageManager.ReplaceHeaders(Data, headers);
+				Data = MessageManager.AddHeader(Data, new MessageHeader("X-Sender", MailFrom));			
 
 			// Need to drop a copy of the message for each recipient.
 			for (int i = 0; i < RcptTo.Count; i++)
@@ -228,8 +224,9 @@ namespace MantaMTA.Core.Server
 			#endregion
 
 			// Remove any control headers.
-			headers = new MessageHeaderCollection(headers.Where(h => !h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
-			Data = MessageManager.ReplaceHeaders(Data, headers);
+			headers = new MessageHeaderCollection(headers.Where(h => h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
+			foreach(MessageHeader header in headers)
+				Data = MessageManager.RemoveHeader(Data, header.Name);
 
 			// If the MTA group doesn't exist or it's not got any IPs, use the default.
 			if (mtaGroup == null ||

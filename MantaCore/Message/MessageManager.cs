@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Linq;
+using System.Text;
 
 namespace MantaMTA.Core.Message
 {
@@ -12,25 +12,88 @@ namespace MantaMTA.Core.Message
 	public static class MessageManager
 	{
 		/// <summary>
-		/// Replaces the headers in the messageData with the new ones.
+		/// The default message line length for email messages.
 		/// </summary>
-		/// <param name="newHeaders">The new headers to be used to replace the current headers.</param>
-		/// <returns>Message string containing the new headers</returns>
-		public static string ReplaceHeaders(string messageData, MessageHeaderCollection newHeaders)
+		private const int DEFAULT_MESSAGE_LINE_LENGTH = 78;
+
+		/// <summary>
+		/// Add the header to the Email.
+		/// </summary>
+		/// <param name="message">The original email message.</param>
+		/// <param name="header">The header to add to the email message.</param>
+		/// <returns>The original message with the new header.</returns>
+		public static string AddHeader(string message, MessageHeader header)
 		{
-			StringBuilder sb = new StringBuilder(string.Empty);
-			for (int i = 0; i < newHeaders.Count; i++)
+			string headingPart = GetHeaderSection(message, false);
+			string bodyPart = GetMessageBodySection(message);
+
+			return string.Format("{0}{1}{2}{2}{3}", FoldHeader(header, DEFAULT_MESSAGE_LINE_LENGTH), headingPart, MtaParameters.NewLine, bodyPart);
+		}
+
+		/// <summary>
+		/// Removes the specified header from the email message.
+		/// </summary>
+		/// <param name="message">Original email message.</param>
+		/// <param name="headerName">Name of the header to remove from the message.</param>
+		/// <returns>The original message with the header removed.</returns>
+		public static string RemoveHeader(string message, string headerName)
+		{
+			// Grab the header section of the message. Don't unfold as we don't want
+			// to change any headers other than the one we are removing.
+			string headerSection = GetHeaderSection(message, false);
+
+			// String build will be used to build a new header section.
+			StringBuilder sbNewHeaderSection = new StringBuilder(string.Empty);
+
+			using (StringReader reader = new StringReader(headerSection))
 			{
-				MessageHeader cHeader = newHeaders[i];
+				// Will hold a single line from the header section. (Unfolded).
+				string line = string.Empty;
 
-				sb.Append(FoldHeader(cHeader, 78));
+
+				// Keep looping until we have gone through all of the lines in the header section.
+				do
+				{
+					// Get the first line.
+					line = reader.ReadLine();
+
+					// If the line is null we can't do anything.
+					if (string.IsNullOrEmpty(line))
+						continue;
+
+					// If the first line is whitespace or there is no : char then there is no header name
+					// to check so keep this line.
+					if (char.IsWhiteSpace(line[0]) || line.IndexOf(":") < 0)
+					{
+						sbNewHeaderSection.Append(line + MtaParameters.NewLine);
+						continue;
+					}
+
+					// We have found a header name in the line, get it so we can check it.
+					string chname = line.Substring(0, line.IndexOf(":")).TrimEnd();
+
+					// If the found header name doesn't match the name of the header that we are removing
+					// from the email message then keep the line.
+					if (!chname.Equals(headerName, StringComparison.OrdinalIgnoreCase))
+					{
+						sbNewHeaderSection.Append(line + MtaParameters.NewLine);
+						continue;
+					}
+
+					//
+					// FOUND THE HEADER TO REMOVE!!!
+					//
+ 					// We remove the header by simply not adding it to the new header section.
+					// We need to peek at the next line and move through the header section
+					// until we find the next header.
+					while (char.IsWhiteSpace((char)reader.Peek()))
+						reader.ReadLine();
+
+				} while (!string.IsNullOrWhiteSpace(line));
 			}
-
-			sb.Append(MtaParameters.NewLine);
-
-			sb.Append(GetMessageBodySection(messageData));
-
-			return sb.ToString();
+			
+			// Return the new header section with the original body.
+			return sbNewHeaderSection.ToString() + MtaParameters.NewLine + GetMessageBodySection(message);
 		}
 
 		/// <summary>
@@ -39,32 +102,62 @@ namespace MantaMTA.Core.Message
 		/// <param name="header">Header to fold.</param>
 		/// <param name="maxLength">The maximum length of the line.</param>
 		/// <returns>The folded header.</returns>
-		private static string FoldHeader(MessageHeader header, int maxLength)
+		internal static string FoldHeader(MessageHeader header, int maxLength)
 		{
 			// Calculate the maximum line length without CLRF
 			int maxLengthBeforeCLRF = maxLength - MtaParameters.NewLine.Length;
+			
+			// Build the header string from the message header object.
 			string str = (header.Name + ": " + header.Value.TrimStart()).Replace(MtaParameters.NewLine, string.Empty);
 
+			// If the header lenght is less that the max line lenght no folding 
+			// is required and it can just be returned.
 			if (str.Length < maxLengthBeforeCLRF)
 				return str + MtaParameters.NewLine;
 
-			StringBuilder allLines = new StringBuilder();
+			// StringBuild will be used to build the folder header.
+			StringBuilder foldedHeader = new StringBuilder();
 
 			while (str.Length > 0)
 			{
 				if (str.Length < maxLengthBeforeCLRF)
 				{
-					allLines.Append(str + MtaParameters.NewLine);
+					// String is already under the max line length.
+					foldedHeader.Append(str + MtaParameters.NewLine);
 					str = string.Empty;
 				}
 				else
 				{
+					// String is too long for the line.
+
+					// Get the max line length substring so we can work back and find some whitespace to split on.
 					string subStr = str.Substring(0, maxLengthBeforeCLRF);
+					
+					// Set to true if a whitespace char is found.
 					bool foundWhitespace = false;
+					
+					// Set to true if a split char is found.
 					bool foundSplitChar = false;
 
+					// We need to treat any whitespace at the start of the string as if they weren't whitespace.
+					// Do this by only stepping back to the first non-whitespace char in the string.
+					int firstNonWhitespace = 0;
+
+					// Find the first non-whitespace char.
+					for (int i = 0; i < subStr.Length; i++)
+					{
+						if (!char.IsWhiteSpace(subStr[i]))
+						{
+							firstNonWhitespace = i;
+							break;
+						}
+					}
+
+					// This will be set to the index of a foldable position in the string, if one is found.
 					int foldPos = -1;
-					for (int i = subStr.Length - 1; i > 0; i--)
+
+					// Starting from the end of the string loopback
+					for (int i = subStr.Length - 1; i > firstNonWhitespace; i--)
 					{
 						char c = subStr[i];
 
@@ -82,16 +175,19 @@ namespace MantaMTA.Core.Message
 						}
 						else if (foundWhitespace || foundSplitChar)
 						{
-							allLines.Append(subStr.Substring(0, foldPos) + MtaParameters.NewLine);
+							foldedHeader.Append(subStr.Substring(0, foldPos) + MtaParameters.NewLine);
 
 							if (foundWhitespace)
 								str = str.Remove(0, foldPos);
 							else
 								str = " " + str.Remove(0, foldPos);
-							
+
+							// Reset the max line length as it may have been increased for a single line.
+							maxLengthBeforeCLRF = maxLength - MtaParameters.NewLine.Length;
+
 							break;
 						}
-						else if (i == 1)
+						else if (i == firstNonWhitespace + 1)
 						{
 							// Found a line too big for size, likly DKIM unfoldable at current size incress current line to 1,000
 							if (maxLengthBeforeCLRF == 1000 - MtaParameters.NewLine.Length)
@@ -104,7 +200,7 @@ namespace MantaMTA.Core.Message
 			}
 
 
-			return allLines.ToString();
+			return foldedHeader.ToString();
 		}
 
 		/// <summary>
