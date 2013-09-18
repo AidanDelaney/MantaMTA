@@ -49,7 +49,7 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				cmd.CommandText = @"
 SELECT COUNT(*) AS 'Count', [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp) as 'mta_transaction_timestamp'
 FROM man_mta_transaction as [tran]
-WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
+WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp)
 ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				return new SendSpeedInfo(DataRetrieval.GetCollectionFromDatabase<SendSpeedInfoItem>(cmd, CreateAndFillSendSpeedInfoItemFromRecord));
@@ -109,6 +109,78 @@ WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + 
 		}
 
 		/// <summary>
+		/// Gets a data page about bounces from the transactions table for a send.
+		/// </summary>
+		/// <param name="sendID">Send to get data for.</param>
+		/// <param name="pageNum">The page to get.</param>
+		/// <param name="pageSize">The size of the data pages.</param>
+		/// <returns>An array of BounceInfo from the data page.</returns>
+		public static BounceInfo[] GetFailedInfo(string sendID, int pageNum, int pageSize)
+		{
+			bool hasSendID = !string.IsNullOrWhiteSpace(sendID);
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = (hasSendID ? @"
+declare @internalSendID int
+SELECT @internalSendID = mta_send_internalId
+FROM man_mta_send
+WHERE mta_send_id = @sndID
+" : string.Empty) + @"
+SELECT [sorted].*
+FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row', mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+		FROM man_mta_transaction as [tran]
+		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
+		WHERE mta_transactionStatus_id IN (2, 3, 6) --// Todo: Make this enum!
+		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID " : string.Empty) + @"
+		GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
+	 ) as [sorted]
+WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + (pageNum * pageSize);
+				if (hasSendID)
+					cmd.Parameters.AddWithValue("@sndID", sendID);
+				return DataRetrieval.GetCollectionFromDatabase<BounceInfo>(cmd, CreateAndFillBounceInfo).ToArray();
+			}
+		}
+
+		/// <summary>
+		/// Gets a data page about bounces from the transactions table for a send.
+		/// </summary>
+		/// <param name="sendID">Send to get data for.</param>
+		/// <param name="pageNum">The page to get.</param>
+		/// <param name="pageSize">The size of the data pages.</param>
+		/// <returns>An array of BounceInfo from the data page.</returns>
+		public static BounceInfo[] GetDeferralInfo(string sendID, int pageNum, int pageSize)
+		{
+			bool hasSendID = !string.IsNullOrWhiteSpace(sendID);
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = (hasSendID ? @"
+declare @internalSendID int
+SELECT @internalSendID = mta_send_internalId
+FROM man_mta_send
+WHERE mta_send_id = @sndID
+" : string.Empty) + @"
+SELECT [sorted].*
+FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row', mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+		FROM man_mta_transaction as [tran]
+		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
+		WHERE mta_transactionStatus_id IN (1) --// Todo: Make this enum!
+		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID " : string.Empty) + @"
+		GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
+	 ) as [sorted]
+WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + (pageNum * pageSize);
+				if (hasSendID)
+					cmd.Parameters.AddWithValue("@sndID", sendID);
+				return DataRetrieval.GetCollectionFromDatabase<BounceInfo>(cmd, CreateAndFillBounceInfo).ToArray();
+			}
+		}
+
+		/// <summary>
 		/// Gets the most common bounces from the last hour.
 		/// </summary>
 		/// <param name="count">Amount of bounces to get.</param>
@@ -123,8 +195,9 @@ SELECT TOP " + count + @" mta_transactionStatus_id, mta_transaction_serverRespon
 FROM man_mta_transaction as [tran]
 JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
-WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE()) 
+WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE()) 
 AND mta_transactionStatus_id IN (1, 2, 3, 6)
+AND mta_transaction_serverHostname NOT LIKE ''
 GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
 ORDER BY COUNT(*) DESC";
 				return DataRetrieval.GetCollectionFromDatabase<BounceInfo>(cmd, CreateAndFillBounceInfo).ToArray();
@@ -159,6 +232,74 @@ SELECT 1 as 'Col'
 	GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
 	) as [sorted]";
 				if(hasSendID)
+					cmd.Parameters.AddWithValue("@sndID", sendID);
+				conn.Open();
+				return Convert.ToInt32(cmd.ExecuteScalar());
+			}
+		}
+
+		/// <summary>
+		/// Counts the total amount of deferrals for a send.
+		/// </summary>
+		/// <param name="sendID">ID of the send to count bounces for.</param>
+		/// <returns>The amount of deferrals for the send.</returns>
+		public static int GetDeferredCount(string sendID)
+		{
+			bool hasSendID = !string.IsNullOrWhiteSpace(sendID);
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = (hasSendID ? @"
+declare @internalSendID int
+SELECT @internalSendID = mta_send_internalId
+FROM man_mta_send
+WHERE mta_send_id = @sndID
+" : string.Empty) + @"
+SELECT COUNT(*)
+FROM(
+SELECT 1 as 'Col'
+		FROM man_mta_transaction as [tran]
+		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
+		WHERE mta_transactionStatus_id IN (1) --// Todo: Make this enum! 
+		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID" : string.Empty) + @"
+	GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
+	) as [sorted]";
+				if (hasSendID)
+					cmd.Parameters.AddWithValue("@sndID", sendID);
+				conn.Open();
+				return Convert.ToInt32(cmd.ExecuteScalar());
+			}
+		}
+
+		/// <summary>
+		/// Counts the total amount of deferrals for a send.
+		/// </summary>
+		/// <param name="sendID">ID of the send to count bounces for.</param>
+		/// <returns>The amount of deferrals for the send.</returns>
+		public static int GetFailedCount(string sendID)
+		{
+			bool hasSendID = !string.IsNullOrWhiteSpace(sendID);
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = (hasSendID ? @"
+declare @internalSendID int
+SELECT @internalSendID = mta_send_internalId
+FROM man_mta_send
+WHERE mta_send_id = @sndID
+" : string.Empty) + @"
+SELECT COUNT(*)
+FROM(
+SELECT 1 as 'Col'
+		FROM man_mta_transaction as [tran]
+		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
+		WHERE mta_transactionStatus_id IN (2, 3, 6) --// Todo: Make this enum! 
+		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID" : string.Empty) + @"
+	GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
+	) as [sorted]";
+				if (hasSendID)
 					cmd.Parameters.AddWithValue("@sndID", sendID);
 				conn.Open();
 				return Convert.ToInt32(cmd.ExecuteScalar());
@@ -225,7 +366,7 @@ SELECT @deferred as 'Deferred', @rejected as 'Rejected'";
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT [tran].mta_transactionStatus_id, COUNT(*) AS 'Count'
 FROM man_mta_transaction as [tran]
-WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
+WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id";
 				return new SendTransactionSummaryCollection(DataRetrieval.GetCollectionFromDatabase<SendTransactionSummary>(cmd, CreateAndFillTransactionSummary));
 			}

@@ -1,13 +1,13 @@
 ﻿@{
-	ViewBag.Title = Model.SendID + " > Bounces";
+	ViewBag.Title = Model.SendID + " > Deferrals";
     Layout = "~/Views/Sends/_ReportLayout.cshtml";
 }
+
 
 <table class="table table-striped table-hover">
 	<thead>
 		<tr>
 			<th>VirtualMTA</th>
-			<th>Status</th>
 			<th>Remote</th>
 			<th>Response</th>
 			<th>Count</th>
@@ -18,21 +18,6 @@
 		{
 			<tr>
 				<td>@bounce.LocalHostname<br /><small>@bounce.LocalIpAddress</small></td>
-				@switch (bounce.TransactionStatus)
-				{
-					case MantaMTA.Core.Enums.TransactionStatus.Deferred:
-						<td class="stat-blue">Deferred</td>
-						break;
-					case MantaMTA.Core.Enums.TransactionStatus.Discarded:
-						<td class="stat-red">Discarded</td>
-						break;
-					case MantaMTA.Core.Enums.TransactionStatus.Failed:
-						<td class="stat-red">Rejected</td>
-						break;
-					case MantaMTA.Core.Enums.TransactionStatus.TimedOut:
-						<td class="stat-red">Timed Out In Queue</td>
-						break;
-				}
 				<td>@bounce.RemoteHostname</td>
 				<td>@bounce.Message</td>
 				<td>@bounce.Count.ToString("N0")</td>
@@ -45,7 +30,7 @@
 	<script type="text/javascript">
 		$(document).ready(function () {
 			$('#ddlPages').change(function () {
-				window.location = '/sends/bounces?sendID=@Model.SendID&page=' + $(this).val();
+				window.location = '/sends/deferred?sendID=@Model.SendID&page=' + $(this).val();
 			});
 		});
 	</script>

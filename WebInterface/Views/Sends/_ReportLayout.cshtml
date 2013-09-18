@@ -4,6 +4,8 @@
 	PageData["SpeedUrl"] = "/sends/speed";
 	PageData["VmtaUrl"] = "/sends/virtualmta";
 	PageData["BounceUrl"] = "/sends/bounces";
+	PageData["DeferredUrl"] = "/sends/deferred";
+	PageData["FailedUrl"] = "/sends/failed";
 }
 
 <div class="row-fluid">
@@ -11,7 +13,8 @@
 		<li @(Request.Path.Equals(PageData["OverviewUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["OverviewUrl"]?sendID=@Model.SendID">Overview</a></li>
 		<li @(Request.Path.Equals(PageData["SpeedUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["SpeedUrl"]?sendID=@Model.SendID">Send Speed</a></li>
 		<li @(Request.Path.Equals(PageData["VmtaUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["VmtaUrl"]?sendID=@Model.SendID">Virtual MTAs</a></li>
-		<li @(Request.Path.Equals(PageData["BounceUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["BounceUrl"]?sendID=@Model.SendID">Bounces</a></li>
+		<li @(Request.Path.Equals(PageData["DeferredUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["DeferredUrl"]?sendID=@Model.SendID">Deferred</a></li>
+		<li @(Request.Path.Equals(PageData["FailedUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["FailedUrl"]?sendID=@Model.SendID">Failed</a></li>
 	</ul>
 </div>
 

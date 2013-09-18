@@ -46,7 +46,7 @@ namespace WebInterfaceLib.BO
 			{
 				if (Attempts < 1)
 					return 0;
-				return (100d / Attempts) * Accepted;
+				return (100d / (Attempts - Throttled - Deferred)) * Accepted;
 			}
 		}
 
@@ -85,7 +85,7 @@ namespace WebInterfaceLib.BO
 			{
 				if (Attempts < 1)
 					return 0;
-				return (100d / Attempts) * Rejected;
+				return (100d / (Attempts - Throttled - Deferred)) * Rejected;
 			}
 		}
 

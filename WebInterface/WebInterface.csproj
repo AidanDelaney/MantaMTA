@@ -199,6 +199,8 @@
     <Content Include="Views\VirtualMta\Edit.cshtml" />
     <Content Include="Views\VirtualMta\EditGroup.cshtml" />
     <Content Include="Views\Settings\Index.cshtml" />
+    <Content Include="Views\Sends\Deferred.cshtml" />
+    <Content Include="Views\Sends\Failed.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -17,7 +17,7 @@ a
 }
 
 /* Typography */
-h1 { margin: 0; font-size: 28px; line-height: 28px; }
+h1 { margin: 0; }
 h1 span { color: #ccc; }
 
 #system-head { height: 42px; line-height: 38px; background: #2a88c6; color: #999; font-size: 11px; }
@@ -57,7 +57,10 @@ h1 span { color: #ccc; }
 #channel-menu ul.nav.nav-list { }
 #channel-menu ul.nav.nav-list li { margin-bottom: 1px; }
 #channel-menu ul.nav.nav-list li a { color: #fff; background: #2a88c6; text-shadow: none; text-transform: uppercase; }
-#channel-menu ul.nav.nav-list li a:hover { background: #54a0d2; }
+
+#channel-menu ul.nav.nav-list li.active a:hover,
+#channel-menu ul.nav.nav-list li.active a {color: #000;	background: #fff; }
+#channel-menu ul.nav.nav-list li a:hover { background: #54a0d2; color: #fff; }
 #channel-menu ul.nav.nav-list li.sidenav-active a { color: #666; background: #fff; }
 #channel-menu .nav-list > li >a { padding: 9px 15px; }
 
@@ -577,3 +580,12 @@ ul.nav-tabs li a { color: #555; }
   -moz-box-shadow: none;
   box-shadow: none;
 }
+
+#channel-menu .nav-list > .active > a > [class^="icon-"] {
+background-image: url("/assets/bootstrap/img/glyphicons-halflings.png") !important;
+}
+
+#channel-menu .nav-list  > li > a > [class^="icon-"] {
+background-image: url("/assets/bootstrap/img/glyphicons-halflings-white.png") !important;
+}
+

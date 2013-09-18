@@ -1,5 +1,5 @@
 ﻿@{
-	ViewBag.Title = Model.SendID + " Speed";
+	ViewBag.Title = Model.SendID + " > Speed";
     Layout = "~/Views/Sends/_ReportLayout.cshtml";
 }
 <script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
@@ -77,7 +77,7 @@
 				rendererOptions: {}, // options passed to the renderer.  LineRenderer has no options.
 				markerRenderer: $.jqplot.MarkerRenderer    // renderer to use to draw the data
 			},
-			seriesColors: ['green','red','blue'],
+			seriesColors: ['#2ecc71','#e74c3c','#3498db'],
 			grid: {
 				drawGridLines: true,        // wether to draw lines across the grid or not.
 				gridLineColor: '#e3e3e3',    // *Color of the grid lines.

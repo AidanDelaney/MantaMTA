@@ -53,6 +53,24 @@ namespace WebInterface.Controllers
 		}
 
 		//
+		// GET: /Sends/Deferred?sendID=
+		public ActionResult Deferred(string sendID, int page = 1, int pageSize = 25)
+		{
+			int bounceCount = WebInterfaceLib.DAL.TransactionDB.GetDeferredCount(sendID);
+			int pageCount = (int)Math.Ceiling(bounceCount / Convert.ToDouble(pageSize));
+			return View(new SendReportBounces(WebInterfaceLib.DAL.TransactionDB.GetDeferralInfo(sendID, page, pageSize), sendID, page, pageCount));
+		}
+
+		//
+		// GET: /Sends/Failed?sendID=
+		public ActionResult Failed(string sendID, int page = 1, int pageSize = 25)
+		{
+			int bounceCount = WebInterfaceLib.DAL.TransactionDB.GetFailedCount(sendID);
+			int pageCount = (int)Math.Ceiling(bounceCount / Convert.ToDouble(pageSize));
+			return View(new SendReportBounces(WebInterfaceLib.DAL.TransactionDB.GetFailedInfo(sendID, page, pageSize), sendID, page, pageCount));
+		}
+
+		//
 		// GET: /Sends/Speed?sendID=
 		public ActionResult Speed(string sendID)
 		{

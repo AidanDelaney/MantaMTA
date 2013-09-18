@@ -115,7 +115,7 @@ else
 					rendererOptions: {}, // options passed to the renderer.  LineRenderer has no options.
 					markerRenderer: $.jqplot.MarkerRenderer    // renderer to use to draw the data
 				},
-				seriesColors: ['green','red','blue'],
+				seriesColors: ['#2ecc71','#e74c3c','#3498db'],
 				grid: {
 					drawGridLines: true,        // wether to draw lines across the grid or not.
 					gridLineColor: '#e3e3e3',    // *Color of the grid lines.
@@ -140,7 +140,7 @@ else
 <div class="row-fluid">
 	@if (Model.BounceInfo.Length > 0)
  {
-		<h4>Top Bounces Last Hour</h4>
+		<h4>Highest Bounces Last Hour</h4>
 		<table class="table table-striped table-hover">
 			<tr>
 				<th>VirtualMTA</th>

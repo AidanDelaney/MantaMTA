@@ -78,13 +78,14 @@
 			<div id="channel-menu" class="span2">
 				<div class="sidebar-nav">
 					<ul class="nav nav-list">
-						<li><a href="/Dashboard"><i class="icon-th-large icon-white"></i> Dashboard</a></li>
-						<li><a href="/Sends/Queue"><i class="icon-time icon-white"></i> Queue</a></li>
-						<li><a href="/Sends"><i class="icon-random icon-white"></i> Sends</a></li>
-						<li><a href="/Bounces"><i class="icon-remove icon-white"></i> Bounces</a></li>
-						<li><a href="/VirtualMTA"><i class="icon-envelope icon-white"></i> Virtual MTAs</a></li>
-						<li><a href="/ServerStatus"><i class="icon-tasks icon-white"></i> Server Status</a></li>
-						<li><a href="/OutboundRules"><i class="icon-adjust icon-white"></i> Outbound Rules</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/dashboard", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Dashboard"><i class="icon-th-large"></i> Dashboard</a></li>
+						<li @(Request.Url.PathAndQuery.Equals("/Sends/Queue", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Sends/Queue"><i class="icon-time"></i> Queue</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/Sends", StringComparison.OrdinalIgnoreCase) &&
+								!Request.Url.PathAndQuery.Equals("/Sends/Queue") ?"class=active":string.Empty)><a href="/Sends"><i class="icon-random"></i> Sends</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/Bounces", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Bounces"><i class="icon-remove"></i> Bounces</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/VirtualMTA", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/VirtualMTA"><i class="icon-envelope"></i> Virtual MTAs</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/OutboundRules", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/OutboundRules"><i class="icon-adjust"></i> Outbound Rules</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/ServerStatus", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/ServerStatus"><i class="icon-tasks"></i> Server Status</a></li>
 					</ul>
 				</div>
 			</div>
