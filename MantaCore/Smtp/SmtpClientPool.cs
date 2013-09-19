@@ -127,6 +127,7 @@ namespace MantaMTA.Core.Smtp
 				// Create the new client and make the connection
 				smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.Connect(mxRecord);
+				smtpClient.IsActive = true;
 				this.InUseConnections.Add(smtpClient);
 			}
 			catch (Exception ex)
@@ -143,6 +144,8 @@ namespace MantaMTA.Core.Smtp
 			{
 				// Reduce the current attempts as were done.
 				_ConnectionAttemptsInProgress--;
+				if(smtpClient != null)
+					smtpClient.IsActive = false;
 			}
 
 			// Return connected client or null.
@@ -170,6 +173,9 @@ namespace MantaMTA.Core.Smtp
 
 		/// <summary>
 		/// Attempts to get a SmtpClient using the outbound IP address and the specified MX records collection.
+		/// 
+		/// WARNING: returned SmtpOutboundClient will have it's IsActive flag set to true make sure to set it to
+		///		     false when done with it or it will never be removed by the idle timeout.
 		/// </summary>
 		/// <param name="outboundEndpoint">The local outbound endpoint we wan't to use.</param>
 		/// <param name="mxs">The MX records for the domain we wan't a client to connect to.</param>
@@ -209,6 +215,8 @@ namespace MantaMTA.Core.Smtp
 							if (smtpClient.Connected)
 							{
 								clientQueue.InUseConnections.Add(smtpClient);
+								smtpClient.LastActive = DateTime.UtcNow;
+								smtpClient.IsActive = true;
 								return smtpClient;
 							}
 						}

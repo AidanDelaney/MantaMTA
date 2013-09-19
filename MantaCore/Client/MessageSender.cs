@@ -308,6 +308,14 @@ namespace MantaMTA.Core.Client
 					msg.HandleDeliveryDeferral("Connection was established but ended abruptly.", sndIpAddress, smtpClient.MXRecord);
 				return false;
 			}
+			finally
+			{
+				if (smtpClient != null)
+				{
+					smtpClient.IsActive = false;
+					smtpClient.LastActive = DateTime.UtcNow;
+				}
+			}
 		}
 
 		/// <summary>

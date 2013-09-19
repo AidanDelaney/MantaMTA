@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.DNS;
@@ -10,10 +12,95 @@ using MantaMTA.Core.Enums;
 namespace MantaMTA.Core.Smtp
 {
 	/// <summary>
+	/// Singleton object will hold all connections that MantaMTA creates. If ensure that connections are closed when they are finished with.
+	/// </summary>
+	internal class SmtpOutboundClientCollection : List<SmtpOutboundClient>
+	{
+		/// <summary>
+		/// The actual instance of the SmtpOutboundClientCollection
+		/// </summary>
+		private static SmtpOutboundClientCollection _Instance = new SmtpOutboundClientCollection();
+		/// <summary>
+		/// Gets the instance of the SmtpOutboundClientCollection
+		/// </summary>
+		public static SmtpOutboundClientCollection Instance { get { return _Instance; } }
+		
+		private SmtpOutboundClientCollection() : base()
+		{
+			// Thread responsable for removing inactive connections.
+			Thread t = new Thread(new ThreadStart(delegate()
+			{
+				// Loop forever
+				while (true)
+				{
+					try
+					{
+						int removedCount = 0;
+
+						// Loop through all of the connections.
+						for (int i = 0; i < _Instance.Count; i++)
+						{
+							SmtpOutboundClient client = _Instance[i];
+							if (client != null && 
+								client.IsActive == false &&
+								client.LastActive.AddSeconds(MtaParameters.Client.ConnectionIdleTimeoutInterval) <= DateTime.UtcNow)
+							{
+								// The connection is not null and appears to have been inactive for the idle timeout interval.
+
+								try
+								{
+									if (!client.ExecQuitAsync().Result)
+									{
+										if(client.Connected)
+											client.GetStream().Close();
+										client.Close();
+									}
+								}
+								catch (Exception) 
+								{
+									client.Close();
+								}
+								i--; // ExecQuitAsync will remove from the list.
+								removedCount++;
+							}
+						}
+
+						if (removedCount > 0)
+							Logging.Debug("Removed " + removedCount + " idle connections");
+					}
+					catch (Exception ex)
+					{
+						Logging.Fatal("SmtpOutboundClient idle handler failed", ex);
+						MantaCoreEvents.InvokeMantaCoreStopping();
+						Environment.Exit(-1);
+					}
+
+					Thread.Sleep(1000);
+				}
+			}));
+			t.IsBackground = true;
+			t.Start();
+		}
+	}
+
+	/// <summary>
 	/// Handle connection with an SMTP Server.
 	/// </summary>
 	internal class SmtpOutboundClient : TcpClient, IDisposable
 	{
+		private DateTime _LastActive = DateTime.UtcNow;
+		public DateTime LastActive
+		{
+			get	{ return _LastActive; }
+			set	{ _LastActive = value; }
+		}
+
+		/// <summary>
+		/// Set to true when code is using this connection.
+		/// </summary>
+		public bool IsActive { get; set; }
+
+
 		/// <summary>
 		/// Will be false until Disposed is called
 		/// </summary>
@@ -42,12 +129,6 @@ namespace MantaMTA.Core.Smtp
 		private SmtpTransportMIME _DataTransportMime = SmtpTransportMIME._7BitASCII;
 
 		/// <summary>
-		/// Timer to use to cause idle timeouts. Need this as connections will be left
-		/// open after message sent. Should self quit after period.
-		/// </summary>
-		private SmtpClientTimeoutTimer _IdleTimeoutTimer { get; set; }
-
-		/// <summary>
 		/// Count of the DATA commands sent by this client.
 		/// </summary>
 		private int _DataCommands = 0;
@@ -68,13 +149,14 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="ipAddress">The local IP address to bind to.</param>
 		public SmtpOutboundClient(VirtualMta.VirtualMTA ipAddress) : base(new IPEndPoint(ipAddress.IPAddress, 0)) 
 		{
+			this.IsActive = true;
 			this.MtaIpAddress = ipAddress;
 			base.ReceiveTimeout = MtaParameters.Client.ConnectionReceiveTimeoutInterval * 1000;
 			base.SendTimeout = MtaParameters.Client.ConnectionSendTimeoutInterval * 1000;
 			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+			SmtpOutboundClientCollection.Instance.Add(this);
+			this.IsActive = false;
 		}
-
-		
 
 		/// <summary>
 		/// Finaliser, ensure dispose is always called.
@@ -100,6 +182,7 @@ namespace MantaMTA.Core.Smtp
 		public new void Dispose(bool disposing)
 		{
 			base.Dispose(disposing);
+			SmtpOutboundClientCollection.Instance.Remove(this);
 		}
 
 		/// <summary>
@@ -108,12 +191,17 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="mx">MX Record of the server to connect to.</param>
 		public void Connect(MXRecord mx)
 		{
+			_LastActive = DateTime.UtcNow;
+			IsActive = true;
 			base.Connect(mx.Host, MtaParameters.Client.SMTP_PORT);
+			_LastActive = DateTime.UtcNow;
 			SmtpStream = new SmtpStreamHandler(this as TcpClient);
 			_MXRecord = mx;
 
 			// Read the Server greeting.
 			string response = SmtpStream.ReadAllLines();
+			_LastActive = DateTime.UtcNow;
+
 			if (!response.StartsWith("2"))
 			{
 				// If the MX is actively denying use service access, SMTP code 421 then we should inform
@@ -125,10 +213,8 @@ namespace MantaMTA.Core.Smtp
 				return;
 			}
 
-			// Were connected so setup the idle timeout.
-			// Quits the connection nicely if it isn't being used.
-			_IdleTimeoutTimer = new SmtpClientTimeoutTimer(MtaParameters.Client.ConnectionIdleTimeoutInterval, delegate() { Task.Run(() => ExecQuitAsync()).Wait(); });
-			_IdleTimeoutTimer.Start();
+			IsActive = false;
+			_LastActive = DateTime.UtcNow;
 		}
 
 		/// <summary>
@@ -141,20 +227,24 @@ namespace MantaMTA.Core.Smtp
 			if (!base.Connected)
 				return false;
 
-			_IdleTimeoutTimer.Stop();
+			_LastActive = DateTime.UtcNow;
+			IsActive = true;
 
 			// Get the hostname of the IP address that we are connecting from.
 			string hostname = System.Net.Dns.GetHostEntry(this.SmtpStream.LocalAddress).HostName;
 
 			// We have connected to the MX, Say EHLO.
+			_LastActive = DateTime.UtcNow;
 			await SmtpStream.WriteLineAsync("EHLO " + hostname);
 			string response = await SmtpStream.ReadAllLinesAsync();
+			_LastActive = DateTime.UtcNow;
 
 			if (!response.StartsWith("2"))
 			{
 				// If server didn't respond with a success code on hello then we should retry with HELO
 				await SmtpStream.WriteLineAsync("HELO " + hostname);
 				response = await SmtpStream.ReadAllLinesAsync();
+				_LastActive = DateTime.UtcNow;
 				if (!response.StartsWith("250"))
 				{
 					failedCallback(response);
@@ -170,8 +260,8 @@ namespace MantaMTA.Core.Smtp
 			}
 
 			_HasHelloed = true;
-			_IdleTimeoutTimer.Start();
-
+			_LastActive = DateTime.UtcNow;
+			IsActive = false;
 			return true;
 		}
 
@@ -185,13 +275,15 @@ namespace MantaMTA.Core.Smtp
 			if (!base.Connected)
 				return false;
 
-			_IdleTimeoutTimer.Stop();
-
+			_LastActive = DateTime.UtcNow;
+			IsActive = true;
 			await SmtpStream.WriteLineAsync("MAIL FROM: <" +
 										(mailFrom == null ? string.Empty : mailFrom.Address) + ">" +
 										(_DataTransportMime == SmtpTransportMIME._8BitUTF ? " BODY=8BITMIME" : string.Empty));
 			string response = await SmtpStream.ReadAllLinesAsync();
-			_IdleTimeoutTimer.Start();
+			_LastActive = DateTime.UtcNow;
+			IsActive = false;
+
 			if (!response.StartsWith("250"))
 				failedCallback(response);
 
@@ -207,14 +299,13 @@ namespace MantaMTA.Core.Smtp
 		{
 			if (!base.Connected)
 				return false;
-
-			_IdleTimeoutTimer.Stop();
-
+			
+			IsActive = true;
+			_LastActive = DateTime.UtcNow;
 			await SmtpStream.WriteLineAsync("RCPT TO: <" + rcptTo.Address + ">");
-			
 			string response = await SmtpStream.ReadAllLinesAsync();
-			
-			_IdleTimeoutTimer.Start();
+			_LastActive = DateTime.UtcNow;
+			IsActive = false;
 
 			if (!response.StartsWith("250"))
 				failedCallback(response);
@@ -232,13 +323,17 @@ namespace MantaMTA.Core.Smtp
 			if (!base.Connected)
 				return false;
 
-			_IdleTimeoutTimer.Stop();
+			_LastActive = DateTime.UtcNow;
+			IsActive = true;
 
 			await SmtpStream.WriteLineAsync("DATA");
 			string response = await SmtpStream.ReadAllLinesAsync();
+			_LastActive = DateTime.UtcNow;
+
 			if (!response.StartsWith("354"))
 			{
 				failedCallback(response);
+				IsActive = false;
 				return false;
 			}
 
@@ -249,13 +344,15 @@ namespace MantaMTA.Core.Smtp
 			SmtpStream.SetSmtpTransportMIME(_DataTransportMime);
 			await SmtpStream.WriteAsync(data, false);
 			await SmtpStream.WriteAsync(MtaParameters.NewLine + "." + MtaParameters.NewLine, false);
+			_LastActive = DateTime.UtcNow;
 
 			// Data done so return to 7-Bit mode.
 			SmtpStream.SetSmtpTransportMIME(SmtpTransportMIME._7BitASCII);
 
 
 			response = await SmtpStream.ReadAllLinesAsync();
-			_IdleTimeoutTimer.Start();
+			_LastActive = DateTime.UtcNow;
+			IsActive = false;
 
 
 			if (!response.StartsWith("250"))
@@ -277,11 +374,13 @@ namespace MantaMTA.Core.Smtp
 			if (!base.Connected)
 				return false;
 
-			_IdleTimeoutTimer.Stop();
+			IsActive = true;
 			await SmtpStream.WriteLineAsync("QUIT");
 			// Don't read response as don't care.
 			// Close the TCP connection.
+			base.GetStream().Close();
 			base.Close();
+			IsActive = false;
 			return true;
 		}
 
@@ -295,10 +394,11 @@ namespace MantaMTA.Core.Smtp
 				Logging.Debug("Cannot RSET connection has been closed.");
 				throw new Exception();
 			}
-			_IdleTimeoutTimer.Stop();
+			IsActive = true;
 			await SmtpStream.WriteLineAsync("RSET");
 			await SmtpStream.ReadAllLinesAsync();
-			_IdleTimeoutTimer.Start();
+			_LastActive = DateTime.UtcNow;
+			IsActive = false;
 
 			return true;
 		}
@@ -315,49 +415,6 @@ namespace MantaMTA.Core.Smtp
 				await ExecRsetAsync();
 
 			return true;
-		}
-	}
-
-	/// <summary>
-	/// Class is used to cause idle timeouts.
-	/// </summary>
-	internal class SmtpClientTimeoutTimer
-	{
-		/// <summary>
-		/// Internal timer.
-		/// </summary>
-		private System.Timers.Timer _Timer { get; set; }
-
-		/// <summary>
-		/// Creates a timer that will call the specified action after interval.
-		/// </summary>
-		/// <param name="interval">Seconds idle before timeout (seconds).</param>
-		/// <param name="timeoutAction">Action to call on timeout.</param>
-		public SmtpClientTimeoutTimer(int interval, Action timeoutAction)
-		{
-			_Timer = new System.Timers.Timer(interval * 1000);
-			_Timer.Elapsed += new System.Timers.ElapsedEventHandler(
-				delegate(object sender, System.Timers.ElapsedEventArgs e)
-				{
-					Logging.Debug("TCP Client Timeout");
-					timeoutAction();
-				});
-		}
-
-		/// <summary>
-		/// Start the Timer.
-		/// </summary>
-		public void Start()
-		{
-			_Timer.Start();
-		}
-
-		/// <summary>
-		/// Stop the Timer.
-		/// </summary>
-		public void Stop()
-		{
-			_Timer.Stop();
 		}
 	}
 }

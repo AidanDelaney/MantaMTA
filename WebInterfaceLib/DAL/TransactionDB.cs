@@ -49,7 +49,7 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				cmd.CommandText = @"
 SELECT COUNT(*) AS 'Count', [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp) as 'mta_transaction_timestamp'
 FROM man_mta_transaction as [tran]
-WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE())
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp)
 ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				return new SendSpeedInfo(DataRetrieval.GetCollectionFromDatabase<SendSpeedInfoItem>(cmd, CreateAndFillSendSpeedInfoItemFromRecord));
@@ -195,7 +195,7 @@ SELECT TOP " + count + @" mta_transactionStatus_id, mta_transaction_serverRespon
 FROM man_mta_transaction as [tran]
 JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
-WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE()) 
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE()) 
 AND mta_transactionStatus_id IN (1, 2, 3, 6)
 AND mta_transaction_serverHostname NOT LIKE ''
 GROUP BY mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname,[ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress
@@ -366,7 +366,7 @@ SELECT @deferred as 'Deferred', @rejected as 'Rejected'";
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT [tran].mta_transactionStatus_id, COUNT(*) AS 'Count'
 FROM man_mta_transaction as [tran]
-WHERE [tran].mta_transaction_timestamp >= DATEADD(YEAR, -1, GETUTCDATE())
+WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id";
 				return new SendTransactionSummaryCollection(DataRetrieval.GetCollectionFromDatabase<SendTransactionSummary>(cmd, CreateAndFillTransactionSummary));
 			}
