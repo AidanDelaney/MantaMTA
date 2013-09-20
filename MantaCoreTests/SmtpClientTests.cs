@@ -25,7 +25,7 @@ namespace MantaMTA.Core.Tests
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.Connect(mxRecord);
 				MantaMTA.Core.Smtp.SmtpClientPool.Enqueue(smtpClient);
-				smtpClient = MantaMTA.Core.Smtp.SmtpClientPool.Dequeue(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }),new Action(delegate() { }));
+				smtpClient = MantaMTA.Core.Smtp.SmtpClientPool.Dequeue(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }), new Action(delegate() { }), new Action(delegate() { }));
 
 				Assert.NotNull(smtpClient);
 				Assert.IsTrue(smtpClient.Connected);

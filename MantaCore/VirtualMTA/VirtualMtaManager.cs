@@ -139,7 +139,10 @@ namespace MantaMTA.Core.VirtualMta
 				group.VirtualMtaCollection = DAL.VirtualMtaDB.GetVirtualMtasInVirtualMtaGroup(id);
 
 				// Add the group to collection, so others can use it.
-				_vmtaGroups.TryAdd(id, group);
+				_vmtaGroups.AddOrUpdate(id, group, new Func<int, VirtualMtaGroup, VirtualMtaGroup>(delegate(int key, VirtualMtaGroup existing)
+				{
+					return group;
+				}));
 				return group;
 			}
 		}

@@ -33,7 +33,7 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		private static object _ConnectionAttemptsInProgressLock = new object();
 
-		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 5;
+		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 10;
 
 		/// <summary>
 		/// Create an SmtpClientQueue instance.
@@ -181,11 +181,23 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="mxs">The MX records for the domain we wan't a client to connect to.</param>
 		/// <param name="deferalAction">The action to be called if service is unavalible or we are unable to 
 		/// connect to any of the MX's in the MX records.</param>
+		/// <param name="throttleAction">The Action to be called if the throttling outbound rule is being applied.</param>
 		/// <returns>SmtpOutboundClient or Null.</returns>
-		public static SmtpOutboundClient Dequeue(VirtualMta.VirtualMTA ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction)
+		public static SmtpOutboundClient Dequeue(VirtualMta.VirtualMTA ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction, Action throttleAction)
 		{
+			// If there aren't any remote mx records then we can't send
+			if (mxs.Length < 1)
+				return null;
+
 			SmtpClientMxRecords mxConnections = _OutboundConnections.GetOrAdd(ipAddress.IPAddress.ToString(), new SmtpClientMxRecords());
 			SmtpOutboundClient smtpClient = null;
+
+			// Check that we aren't being throttled.
+			if (!OutboundRules.ThrottleManager.Instance.TryGetSendAuth(ipAddress, mxs[0]))
+			{
+				throttleAction();
+				return null;
+			}
 
 			// Loop through all the MX Records.
 			for (int i = 0; i < mxs.Length; i++)

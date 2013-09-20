@@ -35,7 +35,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
 		/// </summary>
-		private const int _MAX_SENDING_WORKER_TASKS = 100;
+		private const int _MAX_SENDING_WORKER_TASKS = 150;
 		
 		/// <summary>
 		/// Client thread.
@@ -235,29 +235,16 @@ namespace MantaMTA.Core.Client
 			VirtualMta.VirtualMtaGroup messageIpGroup = VirtualMta.VirtualMtaManager.GetVirtualMtaGroup(msg.IPGroupID);
 			VirtualMta.VirtualMTA sndIpAddress = messageIpGroup.GetVirtualMtasForSending(mxs[0]);
 
-			ArrayList noneThrottledMXs = new ArrayList();
-			for (int i = 0; i < mxs.Length; i++)
-			{
-				// Check not throttled
-				if (OutboundRules.ThrottleManager.Instance.TryGetSendAuth(sndIpAddress, mxs[i]))
-					noneThrottledMXs.Add(mxs[i]);
-			}
-
-			// If there are no MXs to send to then we are currently being throttled.
-			if (noneThrottledMXs.Count == 0)
-			{
-				msg.HandleDeliveryThrottle(sndIpAddress, null);
-				return false;
-			}
-
-
-			SmtpOutboundClient smtpClient = SmtpClientPool.Dequeue(sndIpAddress, (DNS.MXRecord[])noneThrottledMXs.ToArray(typeof(DNS.MXRecord)),
+			SmtpOutboundClient smtpClient = SmtpClientPool.Dequeue(sndIpAddress, mxs,
 				delegate(string message)
 				{
 					msg.HandleDeliveryDeferral(message, sndIpAddress, null);
 				}, delegate()
 				{
 					msg.HandleServiceUnavailable(sndIpAddress);
+				}, delegate()
+				{
+					msg.HandleDeliveryThrottle(sndIpAddress, null);
 				});
 
 			// If no client was dequeued then we can't currently send.
