@@ -48,7 +48,7 @@ namespace MantaMTA.Core.VirtualMta
 		/// <summary>
 		/// Object used for locking in GetIpAddressForSending method.
 		/// </summary>
-		private object _SyncLock = new object();
+		private static object _SyncLock = new object();
 
 		/// <summary>
 		/// Gets an IP Address. Uses <paramref name="mxRecord"/> to load balance accross all IPs in group.

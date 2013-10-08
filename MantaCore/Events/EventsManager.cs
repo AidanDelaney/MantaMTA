@@ -667,10 +667,13 @@ namespace MantaMTA.Core.Events
 				BodyPart childMessageBodyPart;
 				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/rfc822", out childMessageBodyPart))
 				{
-					if (checkForReturnPathHeaders(childMessageBodyPart.Headers))
+					if (childMessageBodyPart.ChildMimeMessage != null)
 					{
-						processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
-						return processingDetails;
+						if (checkForReturnPathHeaders(childMessageBodyPart.ChildMimeMessage.Headers))
+						{
+							processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
+							return processingDetails;
+						}
 					}
 				}
 

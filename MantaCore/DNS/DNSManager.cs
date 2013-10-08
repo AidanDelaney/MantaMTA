@@ -59,9 +59,6 @@ namespace MantaMTA.Core.DNS
 				}));
 				return mxs;
 			}
-			else
-				// Order by preferance
-				records = records.OrderBy(s => s).ToArray();
 
 			mxRecords = new MXRecord[records.Length];
 			for (int i = 0; i < mxRecords.Length; i++)
@@ -69,7 +66,9 @@ namespace MantaMTA.Core.DNS
 				string[] split = records[i].Split(new char[]{','});
 				mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
 			}
-
+			
+			// Order by preferance
+			mxRecords = mxRecords.OrderBy(mx => mx.Preference).ToArray();
 			_Records.TryAdd(domain, mxRecords);
 			return mxRecords;
 		}
