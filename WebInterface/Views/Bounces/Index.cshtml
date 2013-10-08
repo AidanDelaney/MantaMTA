@@ -30,6 +30,7 @@
 			<th>Remote</th>
 			<th>Response</th>
 			<th>Count</th>
+			<th>Last Occurred</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -55,6 +56,7 @@
 				<td>@bounce.RemoteHostname</td>
 				<td>@bounce.Message</td>
 				<td>@bounce.Count.ToString("N0")</td>
+				<td>@bounce.LastOccurred</td>
 			</tr>
 		}
 	</tbody>

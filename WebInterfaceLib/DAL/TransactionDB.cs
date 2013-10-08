@@ -93,7 +93,13 @@ WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT [sorted].*
 FROM (
-		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row', mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row',
+			   mta_transactionStatus_id, 
+			   mta_transaction_serverResponse, 
+			   mta_transaction_serverHostname as 'mta_transaction_serverHostname', 
+			   [ip].ip_ipAddress_hostname, 
+			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
+			   MAX(mta_transaction_timestamp) as 'LastOccurred'
 		FROM man_mta_transaction as [tran]
 		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
@@ -129,7 +135,13 @@ WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT [sorted].*
 FROM (
-		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row', mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+		SELECT ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, mta_transaction_serverHostname) as 'Row', 
+			   mta_transactionStatus_id, 
+			   mta_transaction_serverResponse, 
+			   mta_transaction_serverHostname as 'mta_transaction_serverHostname', 
+			   [ip].ip_ipAddress_hostname, 
+			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
+			   MAX(mta_transaction_timestamp) as 'LastOccurred'
 		FROM man_mta_transaction as [tran]
 		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
@@ -165,7 +177,13 @@ WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT [sorted].*
 FROM (
-		SELECT ROW_NUMBER() OVER (ORDER BY count(*) DESC, mta_transaction_serverHostname) as 'Row', mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+		SELECT ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, mta_transaction_serverHostname) as 'Row', 
+			   mta_transactionStatus_id, 
+			   mta_transaction_serverResponse, 
+			   mta_transaction_serverHostname as 'mta_transaction_serverHostname', 
+			   [ip].ip_ipAddress_hostname, 
+			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
+			   MAX(mta_transaction_timestamp) as 'LastOccurred'
 		FROM man_mta_transaction as [tran]
 		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
@@ -191,7 +209,13 @@ WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + 
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
-SELECT TOP " + count + @" mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname as 'mta_transaction_serverHostname', [ip].ip_ipAddress_hostname, [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count'
+SELECT TOP " + count + @" ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, mta_transaction_serverHostname) as 'Row', 
+			   mta_transactionStatus_id, 
+			   mta_transaction_serverResponse, 
+			   mta_transaction_serverHostname as 'mta_transaction_serverHostname', 
+			   [ip].ip_ipAddress_hostname, 
+			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
+			   MAX(mta_transaction_timestamp) as 'LastOccurred'
 FROM man_mta_transaction as [tran]
 JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
 JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
@@ -352,6 +376,7 @@ SELECT @deferred as 'Deferred', @rejected as 'Rejected'";
 			bounceInfo.Message = record.GetString("mta_transaction_serverResponse");
 			bounceInfo.RemoteHostname = record.GetStringOrEmpty("mta_transaction_serverHostname");
 			bounceInfo.TransactionStatus = (TransactionStatus)record.GetInt64("mta_transactionStatus_id");
+			bounceInfo.LastOccurred = record.GetDateTime("LastOccurred");
 			return bounceInfo;
 		}
 
@@ -372,11 +397,67 @@ GROUP BY [tran].mta_transactionStatus_id";
 			}
 		}
 
+		/// <summary>
+		/// Creates a SendTransactionSummary page and fills it with data from the record.
+		/// </summary>
+		/// <param name="record">Record containing the data to fill with.</param>
+		/// <returns>The filled SendTransactionSummary object.</returns>
 		private static SendTransactionSummary CreateAndFillTransactionSummary(IDataRecord record)
 		{
 			return new SendTransactionSummary { 
 				Count = record.GetInt64("Count"),
 				Status = (TransactionStatus)record.GetInt64("mta_transactionStatus_id")
+			};
+		}
+
+		/// <summary>
+		/// Gets information about a sends waiting messages and their next attempt number.
+		/// </summary>
+		/// <param name="sendID">ID of the send.</param>
+		/// <returns>SendWaitingInfoCollection for the send.</returns>
+		public static SendWaitingInfoCollection GetSendWaitingInfo(string sendID)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+declare @internalSendID int
+
+SELECT @internalSendID = mta_send_internalId
+FROM man_mta_send
+WHERE man_mta_send.mta_send_id = @sendID
+
+SELECT [msgAttempts].Attempts, COUNT(*) as 'EmailsWaiting'
+FROM (
+		SELECT
+			(
+			  SELECT COUNT(*) + 1
+			  FROM man_mta_transaction AS [tran] 
+			  WHERE [msg].mta_msg_id = [tran].mta_msg_id
+				AND [tran].mta_transactionStatus_id = 1
+			) as 'Attempts'
+		FROM man_mta_queue AS [queue]
+		JOIN man_mta_msg AS [msg] ON [queue].mta_msg_id = [msg].mta_msg_id
+		WHERE [msg].mta_send_internalId = @internalSendID
+	) as [msgAttempts]
+GROUP BY [msgAttempts].Attempts
+ORDER BY [msgAttempts].Attempts DESC";
+				cmd.Parameters.AddWithValue("@sendID", sendID);
+				return new SendWaitingInfoCollection(DataRetrieval.GetCollectionFromDatabase<SendWaitingInfo>(cmd, CreateAndFillSendWaitingInfoFromRecord));
+			}
+		}
+
+		/// <summary>
+		/// Creates a SendWaitingInfo object and fills it with data from the record.
+		/// </summary>
+		/// <param name="record">DataRecord containing the data to fill from.</param>
+		/// <returns>Filled SendWaitingInfo object.</returns>
+		private static SendWaitingInfo CreateAndFillSendWaitingInfoFromRecord(IDataRecord record)
+		{
+			return new SendWaitingInfo
+			{
+				AttemptNumber = record.GetInt32("Attempts"),
+				EmailsWaiting = record.GetInt32("EmailsWaiting")
 			};
 		}
 	}

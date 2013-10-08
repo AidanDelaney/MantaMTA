@@ -36,5 +36,9 @@ namespace WebInterfaceLib.BO
 		/// The amount of times that this bounce has happened.
 		/// </summary>
 		public long Count { get; set; }
+		/// <summary>
+		/// Timestamp of the time this bounce last happened.
+		/// </summary>
+		public DateTime LastOccurred { get; set; }
 	}
 }

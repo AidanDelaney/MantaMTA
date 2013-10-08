@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System.Data;
+using System.Data.SqlClient;
 using System.Web.Mvc;
 using MantaMTA.Core.ServiceContracts;
 using WebInterface.Models;
@@ -105,6 +104,46 @@ namespace WebInterface.Controllers
 			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
 			sendManager.Discard(internalID);
 			return View(new SendStatusUpdated(redirectURL));
+		}
+
+		//
+		// GET: /Sends/Waiting?sendID=
+		public ActionResult Waiting(string sendID)
+		{
+			SendWaitingInfoCollection sendWaitingInfo = WebInterfaceLib.DAL.TransactionDB.GetSendWaitingInfo(sendID);
+			return View(new SendReportWaiting(sendID, sendWaitingInfo));
+		}
+
+		//
+		// GET: /Sends/GetMessageResultCsv?sendID=
+		public ActionResult GetMessageResultCsv(string sendID)
+		{
+			using (SqlConnection conn = MantaMTA.Core.DAL.MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+DECLARE @sendInternalID int
+SELECT @sendInternalID = mta_send_internalId
+FROM man_mta_send
+WHERE mta_send_id = @sndID
+
+SELECT *
+FROM (
+SELECT mta_msg_rcptTo AS 'RCPT', 
+	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] WHERE [tran].mta_msg_id = [msg].mta_msg_id) as 'Timestamp',
+	(SELECT TOP 1 mta_transactionStatus_id FROM man_mta_transaction as [tran] WHERE [tran].mta_msg_id = [msg].mta_msg_id ORDER BY [tran].mta_transaction_timestamp DESC) as 'Status',
+	(SELECT TOP 1 mta_transaction_serverHostname FROM man_mta_transaction as [tran] WHERE [tran].mta_msg_id = [msg].mta_msg_id ORDER BY [tran].mta_transaction_timestamp DESC) as 'Remote',
+	(SELECT TOP 1 mta_transaction_serverResponse FROM man_mta_transaction as [tran] WHERE [tran].mta_msg_id = [msg].mta_msg_id ORDER BY [tran].mta_transaction_timestamp DESC) as 'Response'
+FROM man_mta_msg as [msg]
+WHERE [msg].mta_send_internalId = @sendInternalID ) as [ExportData]
+ORDER BY [ExportData].Timestamp ASC";
+				cmd.Parameters.AddWithValue("@sndID", sendID);
+				DataTable dt = new DataTable();
+				conn.Open();
+				SqlDataAdapter da = new SqlDataAdapter(cmd);
+				da.Fill(dt);
+				return View(dt);
+			}
 		}
     }
 }

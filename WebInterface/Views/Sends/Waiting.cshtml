@@ -1,0 +1,37 @@
+﻿@{
+	ViewBag.Title = Model.SendID + " > Waiting";
+    Layout = "~/Views/Sends/_ReportLayout.cshtml";
+}
+
+<style type="text/css">
+	table.table {
+		width: initial;
+	}
+
+	table.table tbody tr td {
+		text-align: right;
+	}
+</style>
+
+@if (((WebInterfaceLib.BO.SendWaitingInfoCollection)Model.SendWaitingInfo).Count < 1)
+{
+	<h1>No Emails Waiting</h1>
+}else{
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>Next Attempt</th>
+				<th>Emails Waiting</th>
+			</tr>		
+		</thead>
+		<tbody>
+			@foreach (WebInterfaceLib.BO.SendWaitingInfo sendWaitingInfo in Model.SendWaitingInfo)
+			  {
+				<tr>
+					<td>@sendWaitingInfo.AttemptNumber.ToString("N0")</td>
+					<td>@sendWaitingInfo.EmailsWaiting.ToString("N0")</td>
+				</tr>
+			  }
+		</tbody>
+	</table>
+}

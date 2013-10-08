@@ -11,16 +11,18 @@
 			<th>Remote</th>
 			<th>Response</th>
 			<th>Count</th>
+			<th>Last Occurred</th>
 		</tr>
 	</thead>
 	<tbody>
-		@foreach(WebInterfaceLib.BO.BounceInfo bounce in Model.BounceInfo)
+		@foreach (WebInterfaceLib.BO.BounceInfo bounce in ((WebInterfaceLib.BO.BounceInfo[])Model.BounceInfo).OrderByDescending(b=>b.LastOccurred).ThenByDescending(b=>b.Count))
 		{
 			<tr>
 				<td>@bounce.LocalHostname<br /><small>@bounce.LocalIpAddress</small></td>
 				<td>@bounce.RemoteHostname</td>
 				<td>@bounce.Message</td>
 				<td>@bounce.Count.ToString("N0")</td>
+				<td>@bounce.LastOccurred</td>
 			</tr>
 		}
 	</tbody>
@@ -36,7 +38,7 @@
 	</script>
 	<select id="ddlPages">
 		@for (int i = 1; i <= Model.PageCount; i++)
-		 {
+  {
 			<option selected="@(Model.CurrentPage == i)" value="@i">@i</option>
 		 }
 	</select>

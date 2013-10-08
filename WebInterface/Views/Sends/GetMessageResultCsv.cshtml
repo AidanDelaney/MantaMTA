@@ -1,0 +1,25 @@
+﻿@{
+	Layout = "~/Views/_Layout.cshtml";
+}
+<table class="table table-striped">
+	<thead>
+		<tr>
+			@foreach (System.Data.DataColumn column in ((System.Data.DataTable)Model).Columns)
+		    {
+			   <th>@column.ColumnName</th>
+		    }
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (System.Data.DataRow row in ((System.Data.DataTable)Model).Rows)
+		    {
+				<tr>
+					@foreach (System.Data.DataColumn column in ((System.Data.DataTable)Model).Columns)
+					{
+					   <td>@row[column.ColumnName]</td>
+					}
+				</tr>
+		    }
+		
+	</tbody>
+</table>

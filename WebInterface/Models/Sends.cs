@@ -201,4 +201,25 @@ namespace WebInterface.Models
 			RedirectUrl = redirectUrl;
 		}
 	}
+
+	/// <summary>
+	/// Model for the send "waiting" report.
+	/// </summary>
+	public class SendReportWaiting : SendReportBase
+	{
+		/// <summary>
+		/// Collection of the amount of messages waiting for next attempt numbers.
+		/// </summary>
+		public SendWaitingInfoCollection SendWaitingInfo { get; set; }
+
+		/// <summary>
+		/// Create a SendReportWaiting Model.
+		/// </summary>
+		/// <param name="sendID">The SendID this model represents.</param>
+		/// <param name="sendWaitingInfo">The send waiting information.</param>
+		public SendReportWaiting(string sendID, SendWaitingInfoCollection sendWaitingInfo) : base(sendID)
+		{
+			this.SendWaitingInfo = sendWaitingInfo;
+		}
+	}
 }
