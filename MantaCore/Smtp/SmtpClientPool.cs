@@ -48,9 +48,10 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		private async void RunInUseCleaner()
 		{
-			try
-			{
-				await Task.Run(new Action(async delegate()
+
+			await Task.Run(new Action(async delegate()
+				{
+					try
 					{
 						while (true) // Run forever
 						{
@@ -58,7 +59,7 @@ namespace MantaMTA.Core.Smtp
 							lock (InUseConnections.SyncRoot)
 							{
 								ArrayList toRemove = new ArrayList();
-								
+
 								// Loop through all connections and check they still exist and are connected, if there not then we should remove them.
 								for (int i = 0; i < InUseConnections.Count; i++)
 								{
@@ -68,18 +69,26 @@ namespace MantaMTA.Core.Smtp
 
 								// Remove dead connections.
 								for (int z = toRemove.Count - 1; z >= 0; z--)
-									InUseConnections.RemoveAt((int)toRemove[z]);
+								{
+									if (InUseConnections.Count < z)
+									{
+										((SmtpOutboundClient)InUseConnections[z]).Client.Close();
+										((SmtpOutboundClient)InUseConnections[z]).Dispose();
+										InUseConnections.RemoveAt((int)toRemove[z]);
+									}
+								}
 							}
 
 							// Don't want to loop to often so wait 30 seconds before next iteration.
 							await Task.Delay(30 * 1000);
 						}
-					}));
-			}
-			catch (Exception)
-			{
-				RunInUseCleaner();
-			}
+					}
+					catch (Exception ex)
+					{
+						Logging.Debug("SmtpClientQueue :: RunInUseCleaner", ex);
+						RunInUseCleaner();
+					}
+				}));
 		}
 
 		/// <summary>
@@ -133,7 +142,12 @@ namespace MantaMTA.Core.Smtp
 			catch (Exception ex)
 			{
 				// If something went wrong clear the client so we don't return something odd.
-				smtpClient = null;
+				if (smtpClient != null)
+				{
+					smtpClient.Close();
+					smtpClient.Dispose();
+					smtpClient = null;
+				}
 				if (ex is SocketException)
 					throw ex;
 
@@ -256,6 +270,8 @@ namespace MantaMTA.Core.Smtp
 						continue;
 				}
 			}
+
+			deferalAction("Connect failed");
 
 			return null;
 		}

@@ -182,16 +182,20 @@ namespace MantaMTA.Core.OutboundRules
 					// Loop though the values in the split string array.
 					for (int c = 0; c < strings.Length; c++)
 					{
-						// If they are a match return the rules.
-						if (strings[i].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
+						try
 						{
-							if (pattern.LimitedToOutboundIpAddressID.HasValue)
-								matchedPatterns.Add(pattern.ID, ipAddress);
-							else
-								matchedPatterns.Add(pattern.ID, null);
-							
-							return pattern.ID;
+							// If they are a match return the rules.
+							if (strings[i].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
+							{
+								if (pattern.LimitedToOutboundIpAddressID.HasValue)
+									matchedPatterns.Add(pattern.ID, ipAddress);
+								else
+									matchedPatterns.Add(pattern.ID, null);
+
+								return pattern.ID;
+							}
 						}
+						catch (Exception) { }
 					}
 
 					continue;

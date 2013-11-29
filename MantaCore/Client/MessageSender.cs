@@ -225,7 +225,7 @@ namespace MantaMTA.Core.Client
 			
 			DNS.MXRecord[] mxs = DNS.DNSManager.GetMXRecords(rcptTo.Host);
 			// If mxs is null then there are no MX records.
-			if (mxs == null)
+			if (mxs == null || mxs.Length < 1)
 			{
 				msg.HandleDeliveryFail("Domain doesn't exist.", null, null);
 				return false;
@@ -289,8 +289,9 @@ namespace MantaMTA.Core.Client
 				// Exception is thrown to exit transaction, logging of deferrals/failers already handled.
 				return false;
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
+				Logging.Error("MessageSender error.", ex);
 				if (msg != null)
 					msg.HandleDeliveryDeferral("Connection was established but ended abruptly.", sndIpAddress, smtpClient.MXRecord);
 				return false;

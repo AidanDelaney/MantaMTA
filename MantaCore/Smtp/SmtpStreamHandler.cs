@@ -126,12 +126,28 @@ namespace MantaMTA.Core.Smtp
 		{
 			StringBuilder sb = new StringBuilder();
 
-			string line = await ReadLineAsync(false);
+			string line = string.Empty;
+			try
+			{
+				line = await ReadLineAsync(false);
+			}
+			catch (Exception ex) 
+			{
+				return line;
+			}
 
 			while (line[3] == '-')
 			{
 				sb.AppendLine(line);
-				line = await ReadLineAsync(false);
+				try
+				{
+					line = await ReadLineAsync(false);
+				}
+				catch (Exception)
+				{
+					line = string.Empty;
+					break;
+				}
 			}
 			sb.AppendLine(line);
 

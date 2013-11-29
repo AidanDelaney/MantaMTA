@@ -19,7 +19,7 @@ namespace MantaMTA.Core.Tests
 			{
 				SmtpStreamHandler stream = new SmtpStreamHandler(ms);
 				stream.SetSmtpTransportMIME(SmtpTransportMIME._8BitUTF);
-				stream.WriteLine(unicodeStr, false);
+				stream.WriteAsync(unicodeStr, false).Wait();
 				ms.Position = 0;
 				string result = stream.ReadLineAsync(false).Result;
 				Assert.AreEqual(unicodeStr, result);

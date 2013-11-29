@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using MantaMTA.Core.Client;
 using MantaMTA.Core.DNS;
 using MantaMTA.Core.Enums;
+using MantaMTA.Core.OutboundRules;
 
 namespace MantaMTA.Core.Smtp
 {
@@ -51,14 +53,18 @@ namespace MantaMTA.Core.Smtp
 								{
 									if (!client.ExecQuitAsync().Result)
 									{
-										if(client.Connected)
+										if (client.Connected)
 											client.GetStream().Close();
 										client.Close();
 									}
 								}
-								catch (Exception) 
+								catch (Exception)
 								{
 									client.Close();
+								}
+								finally
+								{
+									client.Dispose();
 								}
 								i--; // ExecQuitAsync will remove from the list.
 								removedCount++;
@@ -237,27 +243,39 @@ namespace MantaMTA.Core.Smtp
 			_LastActive = DateTime.UtcNow;
 			await SmtpStream.WriteLineAsync("EHLO " + hostname);
 			string response = await SmtpStream.ReadAllLinesAsync();
+			if (response.StartsWith("421"))
+			{
+				failedCallback(response);
+			}
 			_LastActive = DateTime.UtcNow;
 
-			if (!response.StartsWith("2"))
+			try
 			{
-				// If server didn't respond with a success code on hello then we should retry with HELO
-				await SmtpStream.WriteLineAsync("HELO " + hostname);
-				response = await SmtpStream.ReadAllLinesAsync();
-				_LastActive = DateTime.UtcNow;
-				if (!response.StartsWith("250"))
+				if (!response.StartsWith("2"))
 				{
-					failedCallback(response);
-					base.Close();
+					// If server didn't respond with a success code on hello then we should retry with HELO
+					await SmtpStream.WriteLineAsync("HELO " + hostname);
+					response = await SmtpStream.ReadAllLinesAsync();
+					_LastActive = DateTime.UtcNow;
+					if (!response.StartsWith("250"))
+					{
+						failedCallback(response);
+						base.Close();
+					}
+				}
+				else
+				{
+					// Server responded to EHLO
+					// Check to see if it supports 8BITMIME
+					if (response.IndexOf("8BITMIME", StringComparison.OrdinalIgnoreCase) > -1)
+						_DataTransportMime = SmtpTransportMIME._8BitUTF;
 				}
 			}
-			else
+			catch (IOException)
 			{
-				// Server responded to EHLO
-				// Check to see if it supports 8BITMIME
-				if (response.IndexOf("8BITMIME", StringComparison.OrdinalIgnoreCase) > -1)
-					_DataTransportMime = SmtpTransportMIME._8BitUTF;
+				// Remote Endpoint Disconnected Mid HELO. Most likly Yahoo throttling.
 			}
+			
 
 			_HasHelloed = true;
 			_LastActive = DateTime.UtcNow;
@@ -375,11 +393,17 @@ namespace MantaMTA.Core.Smtp
 				return false;
 
 			IsActive = true;
-			await SmtpStream.WriteLineAsync("QUIT");
-			// Don't read response as don't care.
-			// Close the TCP connection.
-			base.GetStream().Close();
-			base.Close();
+			try
+			{
+				await SmtpStream.WriteLineAsync("QUIT");
+				// Don't read response as don't care.
+				// Close the TCP connection.
+				base.GetStream().Close();
+				base.Close();
+			}
+			catch (ObjectDisposedException) {
+				Logging.Debug("SmtpOutboundClient: Tried to quit an already disposed client.");
+			}
 			IsActive = false;
 			return true;
 		}

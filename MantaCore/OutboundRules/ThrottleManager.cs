@@ -165,7 +165,7 @@ namespace MantaMTA.Core.OutboundRules
 			{
 				// Remove sends that happened over "Interval" minute(s) ago.
 				DateTime sendsAfterTimestamp = DateTime.UtcNow.AddMinutes(mxSndHist.IntervalMinutes * -1);
-				sndHistory.RemoveAll(d => d < sendsAfterTimestamp);
+				sndHistory.RemoveAll(d => d <= sendsAfterTimestamp);
 
 				// Check for throttling
 				if (sndHistory.Count < mxSndHist.IntervalMaxMessages)

@@ -203,7 +203,7 @@ namespace MantaMTA.Core.Server
 					returnPath = ReturnPathManager.GenerateReturnPath(RcptTo[0], internalSendId);
 
 				// Insert the return path header.
-				headers.Insert(0, new MessageHeader("Return-Path", "<" + returnPath + ">"));
+				Data = MessageManager.AddHeader(Data, new MessageHeader("Return-Path", "<" + returnPath + ">"));
 			}
 			else
 			{
@@ -215,12 +215,12 @@ namespace MantaMTA.Core.Server
 			#region Generate a message ID header
 			string msgIDHeaderVal = "<" + messageID.ToString("N") + MailFrom.Substring(MailFrom.LastIndexOf("@")) + ">";
 
-			// If there is not message header, add it.
-			if (headers.Count(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)) < 1)
-				headers.Add(new MessageHeader("Message-ID", msgIDHeaderVal));
-			// Otherwise replace existing message id header with out own.
-			else
-				headers.Single(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)).Value = msgIDHeaderVal;
+			// If there is already a message header, remove it and add our own. required for feedback loop processing.
+			if (headers.Count(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)) > 0)
+				Data = MessageManager.RemoveHeader(Data, "Message-ID");
+			
+			// Add the new message-id header.
+			Data = MessageManager.AddHeader(Data, new MessageHeader("Message-ID", msgIDHeaderVal));
 			#endregion
 
 			// Remove any control headers.

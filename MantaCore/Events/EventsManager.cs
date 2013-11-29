@@ -617,16 +617,20 @@ namespace MantaMTA.Core.Events
 
 							if (ReturnPathManager.TryDecode(returnPathHeader.Value, out rcptTo, out internalSendID))
 							{
-								// NEED TO LOG TO DB HERE!!!!!
-								Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-								Save(new MantaAbuseEvent
+								if (!rcptTo.StartsWith("redacted@", StringComparison.OrdinalIgnoreCase))
 								{
-									EmailAddress = rcptTo,
-									EventTime = DateTime.UtcNow,
-									EventType = MantaEventType.Abuse,
-									SendID = (snd == null ? string.Empty : snd.ID)
-								});
-								return true;
+
+									// NEED TO LOG TO DB HERE!!!!!
+									Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+									Save(new MantaAbuseEvent
+									{
+										EmailAddress = rcptTo,
+										EventTime = DateTime.UtcNow,
+										EventType = MantaEventType.Abuse,
+										SendID = (snd == null ? string.Empty : snd.ID)
+									});
+									return true;
+								}
 							}
 						}
 

@@ -36,5 +36,15 @@ namespace MantaMTA.Core.Tests
 				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetails.ProcessingResult);
 			}
 		}
+
+		[Test]
+		public void Fastmail()
+		{
+			using (CreateTransactionScopeObject())
+			{
+				EmailProcessingDetails processingDetails = EventsManager.Instance.ProcessFeedbackLoop(FeedbackLoopEmails.FastMail);
+				Assert.AreEqual(EmailProcessingResult.SuccessAbuse, processingDetails.ProcessingResult);
+			}
+		}
 	}
 }
