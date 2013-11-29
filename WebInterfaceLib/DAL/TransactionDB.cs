@@ -460,5 +460,38 @@ ORDER BY [msgAttempts].Attempts DESC";
 				EmailsWaiting = record.GetInt32("EmailsWaiting")
 			};
 		}
+
+		public static SendWaitingByDomainCollection GetSendWaitingByDomain(string sendID)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+SELECT	SUBSTRING(man_mta_msg.mta_msg_rcptTo, CHARINDEX('@',mta_msg_rcptTo) + 1, 999) as 'Domain',
+		COUNT(*) as 'Waiting', 
+		MIN(mta_queue_attemptSendAfter) as 'Next Attempt'
+FROM man_mta_queue
+JOIN man_mta_msg on man_mta_queue.mta_msg_id = man_mta_msg.mta_msg_id
+JOIN man_mta_send on man_mta_msg.mta_send_internalId = man_mta_send.mta_send_internalId
+WHERE man_mta_send.mta_send_id = @sendID
+AND mta_queue_isPickupLocked = 0
+GROUP BY SUBSTRING(man_mta_msg.mta_msg_rcptTo, CHARINDEX('@',mta_msg_rcptTo) + 1, 999)
+ORDER BY COUNT(*) DESC
+				";
+				cmd.Parameters.AddWithValue("@sendID", sendID);
+
+				return new SendWaitingByDomainCollection(DataRetrieval.GetCollectionFromDatabase<SendWaitingByDomainItem>(cmd, CreateAndFillSendWaitingByDomainItem));
+			}
+		}
+
+		private static SendWaitingByDomainItem CreateAndFillSendWaitingByDomainItem(IDataRecord record)
+		{
+			return new SendWaitingByDomainItem
+			{
+				Domain = record.GetString("Domain"),
+				NextAttempt = record.GetDateTime("Next Attempt"),
+				Waiting = record.GetInt32("Waiting")
+			};
+		}
 	}
 }

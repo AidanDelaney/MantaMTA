@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace WebInterfaceLib.BO
 {
@@ -25,5 +26,18 @@ namespace WebInterfaceLib.BO
 	{
 		public SendWaitingInfoCollection() { }
 		public SendWaitingInfoCollection(IEnumerable<SendWaitingInfo> collection) : base(collection) { }
+	}
+
+	public class SendWaitingByDomainItem
+	{
+		public string Domain { get; set; }
+		public int Waiting { get; set; }
+		public DateTime NextAttempt { get; set; }
+	}
+
+	public class SendWaitingByDomainCollection : List<SendWaitingByDomainItem>
+	{
+		public SendWaitingByDomainCollection() { }
+		public SendWaitingByDomainCollection(IEnumerable<SendWaitingByDomainItem> collection) : base(collection) { }
 	}
 }

@@ -212,14 +212,17 @@ namespace WebInterface.Models
 		/// </summary>
 		public SendWaitingInfoCollection SendWaitingInfo { get; set; }
 
+		public SendWaitingByDomainCollection SendWaitingByDomain { get; set; }
+
 		/// <summary>
 		/// Create a SendReportWaiting Model.
 		/// </summary>
 		/// <param name="sendID">The SendID this model represents.</param>
 		/// <param name="sendWaitingInfo">The send waiting information.</param>
-		public SendReportWaiting(string sendID, SendWaitingInfoCollection sendWaitingInfo) : base(sendID)
+		public SendReportWaiting(string sendID, SendWaitingInfoCollection sendWaitingInfo, SendWaitingByDomainCollection sendWaitingByDomain) : base(sendID)
 		{
 			this.SendWaitingInfo = sendWaitingInfo;
+			this.SendWaitingByDomain = sendWaitingByDomain;
 		}
 	}
 }

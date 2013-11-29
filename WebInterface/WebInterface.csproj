@@ -201,6 +201,7 @@
     <Content Include="Views\Settings\Index.cshtml" />
     <Content Include="Views\Sends\Deferred.cshtml" />
     <Content Include="Views\Sends\Failed.cshtml" />
+    <Content Include="Views\Sends\Waiting.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

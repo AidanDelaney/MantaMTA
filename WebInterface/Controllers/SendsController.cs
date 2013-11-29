@@ -111,7 +111,8 @@ namespace WebInterface.Controllers
 		public ActionResult Waiting(string sendID)
 		{
 			SendWaitingInfoCollection sendWaitingInfo = WebInterfaceLib.DAL.TransactionDB.GetSendWaitingInfo(sendID);
-			return View(new SendReportWaiting(sendID, sendWaitingInfo));
+			SendWaitingByDomainCollection sendWaitingByDomain = WebInterfaceLib.DAL.TransactionDB.GetSendWaitingByDomain(sendID);
+			return View(new SendReportWaiting(sendID, sendWaitingInfo, sendWaitingByDomain));
 		}
 
 		//
