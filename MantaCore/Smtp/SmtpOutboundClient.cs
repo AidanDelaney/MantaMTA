@@ -236,12 +236,9 @@ namespace MantaMTA.Core.Smtp
 			_LastActive = DateTime.UtcNow;
 			IsActive = true;
 
-			// Get the hostname of the IP address that we are connecting from.
-			string hostname = System.Net.Dns.GetHostEntry(this.SmtpStream.LocalAddress).HostName;
-
 			// We have connected to the MX, Say EHLO.
 			_LastActive = DateTime.UtcNow;
-			await SmtpStream.WriteLineAsync("EHLO " + hostname);
+			await SmtpStream.WriteLineAsync("EHLO " + MtaIpAddress.Hostname);
 			string response = await SmtpStream.ReadAllLinesAsync();
 			if (response.StartsWith("421"))
 			{
@@ -254,7 +251,7 @@ namespace MantaMTA.Core.Smtp
 				if (!response.StartsWith("2"))
 				{
 					// If server didn't respond with a success code on hello then we should retry with HELO
-					await SmtpStream.WriteLineAsync("HELO " + hostname);
+					await SmtpStream.WriteLineAsync("HELO " + MtaIpAddress.Hostname);
 					response = await SmtpStream.ReadAllLinesAsync();
 					_LastActive = DateTime.UtcNow;
 					if (!response.StartsWith("250"))
