@@ -165,8 +165,12 @@ namespace MantaMTA.Core.Client.BO
 		/// or
 		/// Sets the next rety date time
 		/// </summary>
-		/// <param name="defMsg"></param>
-		public void HandleDeliveryDeferral(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		/// <param name="defMsg">The deferal message from the SMTP server.</param>
+		/// <param name="ipAddress">IP Address that send was attempted from.</param>
+		/// <param name="mxRecord">MX Record of the server tried to send too.</param>
+		/// <param name="isServiceUnavailable">If false will backoff the retry, if true will use the MtaParameters.MtaRetryInterval, 
+		/// this is needed to reduce the tail when sending as a message could get multiple try again laters and soon be 1h+ before next retry.</param>
+		public void HandleDeliveryDeferral(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
 		{
 			// Log the deferral.
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
@@ -180,13 +184,16 @@ namespace MantaMTA.Core.Client.BO
 			// Hold the minutes to wait until next retry.
 			double nextRetryInterval = MtaParameters.MtaRetryInterval;
 
-			// Increase the deferred wait interval by doubling for each retry.
-			for (int i = 1; i < DeferredCount; i++)
+			if (!isServiceUnavailable)
+			{
+				// Increase the deferred wait interval by doubling for each retry.
+				for (int i = 1; i < DeferredCount; i++)
 					nextRetryInterval = nextRetryInterval * 2;
 
-			// If we have gone over the max interval then set to the max interval value.
-			if (nextRetryInterval > maxInterval)
-				nextRetryInterval = maxInterval;
+				// If we have gone over the max interval then set to the max interval value.
+				if (nextRetryInterval > maxInterval)
+					nextRetryInterval = maxInterval;
+			}
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(nextRetryInterval);

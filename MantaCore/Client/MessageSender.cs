@@ -265,10 +265,15 @@ namespace MantaMTA.Core.Client
 						// If the MX is actively denying use service access, SMTP code 421 then we should inform
 						// the ServiceNotAvailableManager manager so it limits our attepts to this MX to 1/minute.
 						if (smtpResponse.StartsWith("421"))
+						{
 							ServiceNotAvailableManager.Add(smtpClient.SmtpStream.LocalAddress.ToString(), smtpClient.MXRecord.Host, DateTime.UtcNow);
-
-						// Otherwise message is deferred
-						msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord);
+							msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord, true);
+						}
+						else
+						{
+							// Otherwise message is deferred
+							msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord);
+						}
 					}
 
 					throw new SmtpTransactionFailedException();
