@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+This file is used by the publish/package process of your Web project. You can customize the behavior of this process
+by editing this MSBuild file. In order to learn more about this please visit http://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>c:\temp\mantamta</_PublishTargetUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="bin/Log4net.config">
+      <publishTime>10/10/2013 12:37:16</publishTime>
+    </File>
+    <File Include="bin/log4net.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/MantaCore.dll">
+      <publishTime>02/12/2014 13:20:47</publishTime>
+    </File>
+    <File Include="bin/MantaEventTypes.dll">
+      <publishTime>02/12/2014 13:20:46</publishTime>
+    </File>
+    <File Include="bin/Microsoft.Web.Infrastructure.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/Microsoft.Web.Mvc.FixedDisplayModes.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/Newtonsoft.Json.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Net.Http.Formatting.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.Helpers.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.Http.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.Http.WebHost.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.Mvc.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.Razor.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.WebPages.Deployment.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.WebPages.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/System.Web.WebPages.Razor.dll">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="bin/WebInterface.dll">
+      <publishTime>02/12/2014 13:20:48</publishTime>
+    </File>
+    <File Include="bin/WebInterfaceLib.dll">
+      <publishTime>02/12/2014 13:20:47</publishTime>
+    </File>
+    <File Include="packages.config">
+      <publishTime>10/10/2013 12:31:39</publishTime>
+    </File>
+    <File Include="PrecompiledApp.config">
+      <publishTime>02/12/2014 13:20:50</publishTime>
+    </File>
+    <File Include="Services/OutboundRulesService.asmx">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Services/SettingsService.asmx">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Services/VirtualMtaService.asmx">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Bounces/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Dashboard/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Home/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/OutboundRules/Delete.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/OutboundRules/Edit.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/OutboundRules/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Bounces.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Deferred.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Discard.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Failed.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Overview.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Pause.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Queue.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Resume.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Speed.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/VirtualMTA.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Sends/Waiting.cshtml">
+      <publishTime>11/07/2013 16:23:48</publishTime>
+    </File>
+    <File Include="Views/Sends/_ReportLayout.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/ServerStatus/Index.cshtml">
+      <publishTime>02/12/2014 13:14:55</publishTime>
+    </File>
+    <File Include="Views/Settings/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/VirtualMta/Edit.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/VirtualMta/EditGroup.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/VirtualMta/Index.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/Web.config">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Views/_Layout.cshtml">
+      <publishTime>10/10/2013 12:31:38</publishTime>
+    </File>
+    <File Include="Web.config">
+      <publishTime>02/12/2014 13:20:48</publishTime>
+    </File>
+  </ItemGroup>
+</Project>

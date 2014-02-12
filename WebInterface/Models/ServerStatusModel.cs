@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -14,6 +15,27 @@ namespace WebInterface.Models
 		public ServerStatusDirectoryInfo QueueDir = new ServerStatusDirectoryInfo(MantaMTA.Core.MtaParameters.MTA_QUEUEFOLDER);
 		public ServerStatusDirectoryInfo LogDir = new ServerStatusDirectoryInfo(MantaMTA.Core.MtaParameters.MTA_SMTP_LOGFOLDER);
 		public ServerStatusDirectoryInfo DropDir = new ServerStatusDirectoryInfo(MantaMTA.Core.MtaParameters.MTA_DROPFOLDER);
+
+        public string MantaResetLog = string.Empty;
+
+        public ServerStatusModel()
+        {
+            List<string> lines = new List<string>();
+            using (StreamReader sr = new StreamReader(ConfigurationManager.AppSettings["MantaResetMtaLogPath"]))
+            {
+                while (sr.Peek() != -1)
+                {
+                    if (lines.Count == 20)
+                        lines.RemoveAt(1);
+                    lines.Add(sr.ReadLine());
+                }
+            }
+
+           // if(lines.Count > 20)
+            //    lines = lines.GetRange(lines.Count - 20, 20);
+
+            MantaResetLog = string.Join(Environment.NewLine, lines);
+        }
 	}
 
 	/// <summary>
