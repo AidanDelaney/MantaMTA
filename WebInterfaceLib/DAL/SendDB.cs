@@ -77,18 +77,66 @@ ORDER BY RowNum ASC";
 			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
 			{
 				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"SELECT [sorted].*
-FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY mta_send_createdTimestamp DESC) as 'RowNum',
-	(SELECT COUNT(*) FROM man_mta_msg WHERE man_mta_msg.mta_send_internalId = man_mta_send.mta_send_internalId) AS 'Messages',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId AND [tran].mta_transactionStatus_id = 4) AS 'Accepted',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId AND ([tran].mta_transactionStatus_id = 2 OR [tran].mta_transactionStatus_id = 3 OR [tran].mta_transactionStatus_id = 6)) AS 'Rejected',
-	(SELECT COUNT(*) FROM man_mta_queue as [queue] JOIN man_mta_msg as [msg] ON [queue].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId) AS 'Waiting',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
-	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = man_mta_send.mta_send_internalId) AS 'LastTransactionTimestamp'
-FROM man_mta_send) as [sorted]
-WHERE [sorted].Waiting > 0
-ORDER BY RowNum ASC";
+				cmd.CommandText = @"
+--// Table holds the result set.
+DECLARE @sends table (RowNum int, 
+					  internalSendID int, 
+					  Messages int, 
+					  Waiting int, 
+					  Accepted int,
+					  Rejected int, 
+					  Throttled int,
+					  Deferred int, 
+					  LastTransactionTimestamp datetime)
+
+--// Get the inprogress sends.
+INSERT INTO @sends(RowNum, internalSendID)
+SELECT ROW_NUMBER() OVER(ORDER BY mta_send_internalId ASC), *
+FROM (SELECT DISTINCT msg.mta_send_internalId
+	  FROM man_mta_queue as [queue]
+	  JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id) BASE
+
+--// Vars for loop
+declare @pos int set @pos = 0
+declare @total int select @total = count(*) from @sends
+
+--// Loop through the active sends and get there stats.
+WHILE(@pos < @total)
+BEGIN
+	set @pos = @pos + 1
+
+	--// Get the internal send ID of the Send we are working with.
+	declare @internalSendID int
+	SELECT @internalSendID = internalSendID
+	FROM @sends
+	WHERE RowNum = @pos
+
+	--// Get the transactions for this send.
+	declare @transactions table ([status] int, [timestamp] datetime)
+	insert into @transactions
+	select [tran].mta_transactionStatus_id, [tran].mta_transaction_timestamp
+	from man_mta_transaction as [tran]
+	join man_mta_msg as [msg] on [tran].mta_msg_id = [msg].mta_msg_id
+	where [msg].mta_send_internalId = @internalSendID
+
+	--// Grab the stats.
+	UPDATE @sends
+	SET messages = (SELECT COUNT(*) FROM man_mta_msg WHERE man_mta_msg.mta_send_internalId = @internalSendID),
+	accepted = (SELECT COUNT(*) FROM @transactions WHERE [status] = 4),
+	rejected = (SELECT COUNT(*) FROM @transactions WHERE [status] = 2 OR [status] = 3 OR [status] = 6),
+	waiting = (SELECT COUNT(*) FROM man_mta_queue as [queue] JOIN man_mta_msg as [msg] ON [queue].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = @internalSendID),
+	throttled = (SELECT COUNT(*) FROM @transactions WHERE [status] = 5),
+	deferred = (SELECT COUNT(*) FROM @transactions WHERE [status] = 1),
+	LastTransactionTimestamp = (SELECT MAX([timestamp]) FROM @transactions)
+	WHERE internalSendID = @internalSendID
+END
+
+--// Select the results.
+SELECT man_mta_send.*, [snds].RowNum, [snds].Messages, [snds].Accepted, [snds].Rejected, [snds].Waiting, [snds].Throttled, [snds].Deferred, [snds].LastTransactionTimestamp
+FROM @sends as [snds]
+JOIN man_mta_send ON [snds].internalSendID = man_mta_send.mta_send_internalId
+ORDER BY LastTransactionTimestamp DESC";
+				cmd.CommandTimeout = 90; // Query can take a while to run due to the size of the Transactions table.
 				return new SendInfoCollection(DataRetrieval.GetCollectionFromDatabase<SendInfo>(cmd, CreateAndFillSendInfo));
 			}
 		}
