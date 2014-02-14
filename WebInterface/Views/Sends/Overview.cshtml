@@ -26,10 +26,10 @@
 
 <div class="row-fluid">
 	<div class="span4">
-		<div class="tile tile-turquoise">
-			<h6>Send Time</h6>
-			<h3>@Model.SendInfo.SendTimeString</h3>
-		</div>
+        <div class="tile tile-orange">
+            <h6>Currently Waiting</h6>
+            <h3>@Model.SendInfo.Waiting.ToString("N0")</h3>
+        </div>
 	</div>
 	<div class="span4">
 		<div class="tile tile-grey">
