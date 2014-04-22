@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
 namespace MantaMTA.Core.Events
@@ -78,33 +79,35 @@ namespace MantaMTA.Core.Events
 					}
 
 					// Forward the events
-					for (int i = 0; i < events.Count; i++)
-					{
+					Parallel.ForEach<MantaEvent>(events, evt => {
 						try
 						{
+							if (_IsStopping)
+								return;
+
 							// Create the HTTP POST request to the remove endpoint.
 							HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(MtaParameters.EventForwardingHttpPostUrl);
 							httpRequest.Method = "POST";
 							httpRequest.ContentType = "text/json";
-							
+
 							// Convert the Event to JSON.
 							string eventJson = string.Empty;
-							switch (events[i].EventType)
+							switch (evt.EventType)
 							{
 								case MantaEventType.Abuse:
-									eventJson = new JavaScriptSerializer().Serialize((MantaAbuseEvent)events[i]);
+									eventJson = new JavaScriptSerializer().Serialize((MantaAbuseEvent)evt);
 									break;
 								case MantaEventType.Bounce:
-									eventJson = new JavaScriptSerializer().Serialize((MantaBounceEvent)events[i]);
+									eventJson = new JavaScriptSerializer().Serialize((MantaBounceEvent)evt);
 									break;
 								default:
-									eventJson = new JavaScriptSerializer().Serialize(events[i]);
+									eventJson = new JavaScriptSerializer().Serialize(evt);
 									break;
 							}
 
 							// Remove the forwarded property as it is internal only.
 							eventJson = Regex.Replace(eventJson, ",\"Forwarded\":(false|true)", string.Empty);
-							
+
 							// Write the event json to the POST body.
 							using (StreamWriter writer = new StreamWriter(httpRequest.GetRequestStream()))
 							{
@@ -125,17 +128,17 @@ namespace MantaMTA.Core.Events
 							if (responseBody.Trim().Equals("."))
 							{
 								// Log that the event forwared.
-								events[i].Forwarded = true;
-								EventsManager.Instance.Save(events[i]);
+								evt.Forwarded = true;
+								EventsManager.Instance.Save(evt);
 							}
 						}
 						catch (Exception ex)
 						{
 							// We failed to forward the event. Most likly because the remote server didn't respond.
-							Logging.Error("Failed to forward event " + events[i].ID, ex);
+							Logging.Error("Failed to forward event " + evt.ID, ex);
 							Thread.Sleep(500);
 						}
-					}
+					});
 				}
 			}
 			catch (Exception ex)
