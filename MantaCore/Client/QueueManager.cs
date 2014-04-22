@@ -1,14 +1,21 @@
-﻿using System;
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.DAL;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using MantaMTA.Core.Client.BO;
 
 namespace MantaMTA.Core.Client
 {
 	internal class QueueManager : IStopRequired
 	{
 		#region Singleton
-		public static QueueManager Instance { get { return _Instance; } }
+		public static QueueManager Instance
+		{
+			get
+			{
+				return QueueManager._Instance;
+			}
+		}
 		private static QueueManager _Instance = new QueueManager();
 		private QueueManager()
 		{
@@ -18,23 +25,19 @@ namespace MantaMTA.Core.Client
 		#endregion
 
 		/// <summary>
+		/// The maximum size of the memory queue.
+		/// </summary>
+		private const int MAX_QUEUE_SIZE = 2000;
+
+		/// <summary>
 		/// When set to TRUE signifies that the MTA is stopping.
 		/// </summary>
 		private bool _IsStopping = false;
 
 		/// <summary>
-		/// The maximum size of the memory queue.
-		/// </summary>
-		private const int MAX_QUEUE_SIZE = 100;
-
-		/// <summary>
 		/// THE QUEUE.
 		/// </summary>
 		private ConcurrentQueue<MtaQueuedMessage> _MemoryQueue = new ConcurrentQueue<MtaQueuedMessage>();
-
-		/// <summary>
-		/// Queue filler thread.
-		/// </summary>
 		private Thread _QueueFillerThread = null;
 
 		/// <summary>
@@ -42,12 +45,11 @@ namespace MantaMTA.Core.Client
 		/// </summary>
 		public void Stop()
 		{
-			_IsStopping = true;
-
+			this._IsStopping = true;
 
 			// Ensure disposal of messages in the queue.
 			MtaQueuedMessage msg = null;
-			while (_MemoryQueue.TryDequeue(out msg))
+			while (this._MemoryQueue.TryDequeue(out msg))
 			{
 				msg.Dispose();
 			}
@@ -71,28 +73,27 @@ namespace MantaMTA.Core.Client
 		/// </summary>
 		private void StartQueueFiller()
 		{
-			if (_QueueFillerThread != null)
+			if (this._QueueFillerThread != null)
 			{
-				if(_QueueFillerThread.ThreadState != ThreadState.Stopped)
+				if (this._QueueFillerThread.ThreadState != ThreadState.Stopped)
 					return; // Thread is already running so nothing to do.
 			}
 
-			
-			_QueueFillerThread = new Thread(new ThreadStart(delegate() 
-			{ 
+			this._QueueFillerThread = new Thread(new ThreadStart(delegate
+			{
 				try
 				{
 					// Keep the thread running until stop is requested.
-					while (!_IsStopping)
+					while (!this._IsStopping)
 					{
 						// This will be set to true if we get messages from the database.
 						bool pickedUpMessages = false;
 
 						// If the MAX_QUEUE_SIZE is greater than the memory queue, then need to get more to fill it.
-						if (_MemoryQueue.Count < MAX_QUEUE_SIZE)
+						if (this._MemoryQueue.Count < (MAX_QUEUE_SIZE / 2))
 						{
 							// Get messages from the database queue.
-							MtaQueuedMessageCollection messages = DAL.MtaMessageDB.PickupForSending(MAX_QUEUE_SIZE - _MemoryQueue.Count);
+							MtaQueuedMessageCollection messages = MtaMessageDB.PickupForSending(MAX_QUEUE_SIZE - this._MemoryQueue.Count);
 							
 							// Set to true if we have messages from the database.
 							pickedUpMessages = (messages.Count > 0);
@@ -111,7 +112,7 @@ namespace MantaMTA.Core.Client
 						}
 
 						// If we have filled up the queue sleep for a bit.
-						if (_MemoryQueue.Count == MAX_QUEUE_SIZE)
+						if (this._MemoryQueue.Count == MAX_QUEUE_SIZE)
 							Thread.Sleep(250);
 						// If there were no more messages in the database sleep for a bit longer.
 						else if (!pickedUpMessages)
@@ -126,7 +127,7 @@ namespace MantaMTA.Core.Client
 					Environment.Exit(-1);
 				}
 			}));
-			_QueueFillerThread.Start();
+			this._QueueFillerThread.Start();
 		}
 	}
 }

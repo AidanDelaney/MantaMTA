@@ -390,8 +390,9 @@ namespace MantaMTA.Core.Server
 							smtpStream.WriteLine("554 Send Discarding.");
 							continue;
 						}
-						catch (Exception)
+						catch (Exception ex)
 						{
+							//Logging.Error("421 local error in processing.", ex);
 							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");
 							continue;
 						}

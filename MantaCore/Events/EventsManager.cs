@@ -23,7 +23,7 @@ namespace MantaMTA.Core.Events
 		public static EventsManager Instance { get { return _Instance; } }
 		private static readonly EventsManager _Instance = new EventsManager();
 		private EventsManager() { }
-			
+
 		/// <summary>
 		/// Class to store any re-usable Regex patterns.
 		/// </summary>
@@ -108,7 +108,7 @@ namespace MantaMTA.Core.Events
 
 				// Abuse report content may have long lines whitespace folded.
 				deliveryReport = MimeMessage.UnfoldHeaders(deliveryReportBodyPart.GetDecodedBody());
-			
+
 				if (ParseNdr(deliveryReport, out bouncePair, out bounceMsg, out bounceDetails))
 				{
 					// Successfully parsed.
@@ -147,7 +147,7 @@ namespace MantaMTA.Core.Events
 			bounceEvent.BounceInfo.BounceType = MantaBounceType.Unknown;
 			bounceEvent.BounceInfo.BounceCode = MantaBounceCode.Unknown;
 			bounceEvent.Message = string.Empty;
-			
+
 			bounceDetails.BounceIdentifier = Core.Enums.BounceIdentifier.NotIdentifiedAsABounce;
 			bounceDetails.ProcessingResult = EmailProcessingResult.Unknown;
 			return bounceDetails;
@@ -192,13 +192,13 @@ namespace MantaMTA.Core.Events
 
 						// Check to see if the disagnostic-code contains an SMTP response.
 						bool isSmtpResponse = line.StartsWith("smtp;", StringComparison.OrdinalIgnoreCase);
-						
+
 						// Add the first line of the diagnostic-code.
 						diagnosticCode.AppendLine(line);
 
 						// Will be set to true when we find the next non diagnostic-code line.
 						bool foundNextLine = false;
-						
+
 						// Loop to read multiline diagnostic-code.
 						while (!foundNextLine)
 						{
@@ -279,7 +279,7 @@ namespace MantaMTA.Core.Events
 			// for the bounce so parse the entire message as a string.
 			if (ParseBounceMessage(message, out bouncePair, out bounceMessage, out bounceIdentification))
 				return true;
-			
+
 
 
 			// Nope - no clues relating to why the bounce occurred.
@@ -494,7 +494,7 @@ namespace MantaMTA.Core.Events
 		/// <returns>true if a reason was found, else false.</returns>
 		internal bool FindBounceReason(BodyPart[] bodyParts, out BouncePair bouncePair, out string bounceMessage, out EmailProcessingDetails bounceIdentification)
 		{
-			foreach(BodyPart b in bodyParts)
+			foreach (BodyPart b in bodyParts)
 			{
 				if (b.ContentType.MediaType.StartsWith("multipart/", StringComparison.OrdinalIgnoreCase))
 				{
@@ -539,7 +539,6 @@ namespace MantaMTA.Core.Events
 		{
 			EmailProcessingDetails processingDetails = new EmailProcessingDetails();
 
-
 			MimeMessage message = MimeMessage.Parse(content);
 			if (message == null)
 			{
@@ -552,15 +551,12 @@ namespace MantaMTA.Core.Events
 				// Step 1: Yahoo! provide useable Abuse Reports (AOL's are all redacted).
 				//Look for abuse report
 				BodyPart abuseBodyPart = null;
-				string abuseReportBody;
-
-				if (FindFirstBodyPartByMediaType(message.BodyParts, "message/feedback-report", out abuseBodyPart))
+				if (this.FindFirstBodyPartByMediaType(message.BodyParts, "message/feedback-report", out abuseBodyPart))
 				{
 					// Found an abuse report body part to examine.
 
 					// Abuse report content may have long lines whitespace folded.
-					abuseReportBody = MimeMessage.UnfoldHeaders(abuseBodyPart.GetDecodedBody());
-
+					string abuseReportBody = MimeMessage.UnfoldHeaders(abuseBodyPart.GetDecodedBody());
 					using (StringReader reader = new StringReader(abuseReportBody))
 					{
 						while (reader.Peek() > -1)
@@ -580,12 +576,12 @@ namespace MantaMTA.Core.Events
 									{
 										// NEED TO LOG TO DB HERE!!!!!
 										Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-										Save(new MantaAbuseEvent 
-										{ 
-											EmailAddress = rcptTo, 
-											EventTime = DateTime.UtcNow, 
-											EventType = MantaEventType.Abuse, 
-											SendID = (snd == null ? string.Empty : snd.ID) 
+										Save(new MantaAbuseEvent
+										{
+											EmailAddress = rcptTo,
+											EventTime = DateTime.UtcNow,
+											EventType = MantaEventType.Abuse,
+											SendID = (snd == null ? string.Empty : snd.ID)
 										});
 
 										processingDetails.ProcessingResult = EmailProcessingResult.SuccessAbuse;
@@ -601,70 +597,63 @@ namespace MantaMTA.Core.Events
 						}
 					}
 				}
-
-
-
-				
 				// Function to use against BodyParts to find a return-path header.
-				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = new Func<MessageHeaderCollection, bool>(delegate(MessageHeaderCollection headers)
+				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = delegate(MessageHeaderCollection headers)
+				{
+					MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
+
+					if (returnPathHeader != null && !string.IsNullOrWhiteSpace(returnPathHeader.Value))
 					{
-						MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
-						if (returnPathHeader != null &&
-							!string.IsNullOrWhiteSpace(returnPathHeader.Value))
+						int internalSendID = -1;
+						string rcptTo = string.Empty;
+						if (ReturnPathManager.TryDecode(returnPathHeader.Value, out rcptTo, out internalSendID))
+						{
+							if (!rcptTo.StartsWith("redacted@", StringComparison.OrdinalIgnoreCase))
+							{
+
+								// NEED TO LOG TO DB HERE!!!!!
+								Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+								Save(new MantaAbuseEvent
+								{
+									EmailAddress = rcptTo,
+									EventTime = DateTime.UtcNow,
+									EventType = MantaEventType.Abuse,
+									SendID = (snd == null ? string.Empty : snd.ID)
+								});
+								return true;
+							}
+						}
+					}
+
+					MessageHeader messageIdHeader = headers.GetFirstOrDefault("Message-ID");
+					if (messageIdHeader != null && messageIdHeader.Value.Length > 33)
+					{
+						string tmp = messageIdHeader.Value.Substring(1, 32);
+						Guid messageID;
+						if (Guid.TryParse(tmp, out messageID))
 						{
 							int internalSendID = -1;
 							string rcptTo = string.Empty;
-
-							if (ReturnPathManager.TryDecode(returnPathHeader.Value, out rcptTo, out internalSendID))
+							tmp = ReturnPathManager.GetReturnPathFromMessageID(messageID);
+							if (ReturnPathManager.TryDecode(tmp, out rcptTo, out internalSendID))
 							{
-								if (!rcptTo.StartsWith("redacted@", StringComparison.OrdinalIgnoreCase))
+								// NEED TO LOG TO DB HERE!!!!!
+								Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
+								Save(new MantaAbuseEvent
 								{
-
-									// NEED TO LOG TO DB HERE!!!!!
-									Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-									Save(new MantaAbuseEvent
-									{
-										EmailAddress = rcptTo,
-										EventTime = DateTime.UtcNow,
-										EventType = MantaEventType.Abuse,
-										SendID = (snd == null ? string.Empty : snd.ID)
-									});
-									return true;
-								}
+									EmailAddress = rcptTo,
+									EventTime = DateTime.UtcNow,
+									EventType = MantaEventType.Abuse,
+									SendID = (snd == null ? string.Empty : snd.ID)
+								});
+								return true;
 							}
 						}
-
-						MessageHeader messageIdHeader = headers.GetFirstOrDefault("Message-ID");
-						if (messageIdHeader != null &&
-							messageIdHeader.Value.Length > 33)
-						{
-							string tmp = messageIdHeader.Value.Substring(1, 32);
-							Guid messageID;
-							if (Guid.TryParse(tmp, out messageID))
-							{
-								int internalSendID = -1;
-								string rcptTo = string.Empty;
-
-								tmp = ReturnPathManager.GetReturnPathFromMessageID(messageID);
-								if (ReturnPathManager.TryDecode(tmp, out rcptTo, out internalSendID))
-								{
-									// NEED TO LOG TO DB HERE!!!!!
-									Sends.Send snd = MantaMTA.Core.DAL.SendDB.GetSend(internalSendID);
-									Save(new MantaAbuseEvent
-									{
-										EmailAddress = rcptTo,
-										EventTime = DateTime.UtcNow,
-										EventType = MantaEventType.Abuse,
-										SendID = (snd == null ? string.Empty : snd.ID)
-									});
-									return true;
-								}
-							}
-						}
-
-						return false;
 					}
-				);
+
+					return false;
+				}
+			;
 
 
 				// Step 2: AOL give redacted Abuse Reports but include the original email as a bodypart; find that.

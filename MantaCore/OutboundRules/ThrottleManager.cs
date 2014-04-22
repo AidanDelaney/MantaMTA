@@ -1,7 +1,10 @@
-﻿using System;
+﻿using MantaMTA.Core.DNS;
+using MantaMTA.Core.VirtualMta;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace MantaMTA.Core.OutboundRules
@@ -18,6 +21,11 @@ namespace MantaMTA.Core.OutboundRules
 		/// <IpAddress, <MxPatternID, DateTime[]>
 		/// </summary>
 		private IPSendHistory _sendHistory = new IPSendHistory();
+
+		/// <summary>
+		/// Holds an IP addresses send history grouped by MX Pattern ID
+		/// </summary>
+		private class IPSendHistory : ConcurrentDictionary<string, ThrottleManager.MxPatternThrottlingSendHistory> { }
 
 		/// <summary>
 		/// Class holds history of sends for an MxPattern
@@ -50,11 +58,6 @@ namespace MantaMTA.Core.OutboundRules
 		}
 
 		/// <summary>
-		/// Holds an IP addresses send history grouped by MX Pattern ID
-		/// </summary>
-		private class IPSendHistory : ConcurrentDictionary<string, MxPatternThrottlingSendHistory> { }
-
-		/// <summary>
 		/// Thread will be used to run in background removing old values from _sendHistory.
 		/// </summary>
 		private Thread _SendHistoryCleaner { get; set; }
@@ -64,14 +67,14 @@ namespace MantaMTA.Core.OutboundRules
 		/// </summary>
 		private void StartSendHistoryCleaner()
 		{
-			if (_SendHistoryCleaner == null ||
-				_SendHistoryCleaner.ThreadState == ThreadState.Stopped ||
-				_SendHistoryCleaner.ThreadState == ThreadState.Suspended ||
-				_SendHistoryCleaner.ThreadState == ThreadState.Aborted)
+			if (this._SendHistoryCleaner == null ||
+				this._SendHistoryCleaner.ThreadState == System.Threading.ThreadState.Stopped ||
+				this._SendHistoryCleaner.ThreadState == System.Threading.ThreadState.Suspended ||
+				this._SendHistoryCleaner.ThreadState == System.Threading.ThreadState.Aborted)
 			{
-				_SendHistoryCleaner = new Thread(new ThreadStart(DoSendHistoryCleaning));
-				_SendHistoryCleaner.IsBackground = true;
-				_SendHistoryCleaner.Start();
+				this._SendHistoryCleaner = new Thread(new ThreadStart(this.DoSendHistoryCleaning));
+				this._SendHistoryCleaner.IsBackground = true;
+				this._SendHistoryCleaner.Start();
 			}
 		}
 
@@ -84,27 +87,25 @@ namespace MantaMTA.Core.OutboundRules
 			while (true)
 			{
 				// Stopwatch is used to time the cleaning process.
-				System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+				Stopwatch timer = new Stopwatch();
 				timer.Start();
-
 				// Loop through all outbound IPs send history
-				foreach (System.Collections.Generic.KeyValuePair<string, MxPatternThrottlingSendHistory> ipHistory in _sendHistory)
+				foreach (KeyValuePair<string, ThrottleManager.MxPatternThrottlingSendHistory> ipHistory in this._sendHistory)
 				{
-					MxPatternThrottlingSendHistory ipMxPtnHistory = ipHistory.Value;
-					
+					ThrottleManager.MxPatternThrottlingSendHistory ipMxPtnHistory = ipHistory.Value;
 					// Loop through each MX Pattern within each outbound IP
-					foreach (System.Collections.Generic.KeyValuePair<int, List<DateTime>> mxPatternHistory in ipMxPtnHistory)
+					foreach (KeyValuePair<int, List<DateTime>> mxPatternHistory in ipMxPtnHistory)
 					{
 						// Lock the ArrayList that contains the send history.
 						lock (mxPatternHistory.Value)
 						{
 							// ArrayList will hold the position of elements to remove from mxPatternHistory.Value
 							ArrayList toRemove = new ArrayList();
-							
+
 							// Go through every log send and check that it hasn't expired.
 							for (int i = 0; i < mxPatternHistory.Value.Count; i++)
 							{
-								if (((DateTime)mxPatternHistory.Value[i]).AddMinutes(ipMxPtnHistory.IntervalMinutes) < DateTime.UtcNow)
+								if (mxPatternHistory.Value[i].AddMinutes((double)ipMxPtnHistory.IntervalMinutes) < DateTime.UtcNow)
 									toRemove.Add(i);
 							}
 
@@ -131,7 +132,7 @@ namespace MantaMTA.Core.OutboundRules
 		/// <param name="ipAddress">The IP Address we wan't to send from.</param>
 		/// <param name="mxRecord">The MX Record of the destination.</param>
 		/// <returns>TRUE if we can send FALSE if we should throttle.</returns>
-		public bool TryGetSendAuth(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public bool TryGetSendAuth(VirtualMTA ipAddress, MXRecord mxRecord)
 		{
 			int mxPatternID = -1;
 			int maxMessagesHour = OutboundRuleManager.GetMaxMessagesDestinationHour(ipAddress, mxRecord, out mxPatternID);
@@ -142,7 +143,13 @@ namespace MantaMTA.Core.OutboundRules
 				return true;
 
 			// Create or get this outbound IP/mx pattern send history.
-			MxPatternThrottlingSendHistory mxSndHist = _sendHistory.GetOrAdd(ipAddress.IPAddress.ToString(), new MxPatternThrottlingSendHistory());
+			ThrottleManager.MxPatternThrottlingSendHistory mxSndHist = null;
+			if (!this._sendHistory.TryGetValue(ipAddress.IPAddress.ToString(), out mxSndHist))
+			{
+				mxSndHist = new ThrottleManager.MxPatternThrottlingSendHistory();
+				this._sendHistory.AddOrUpdate(ipAddress.IPAddress.ToString(), mxSndHist, (string s, ThrottleManager.MxPatternThrottlingSendHistory sh) => mxSndHist);
+			}
+			//this._sendHistory.GetOrAdd(ipAddress.IPAddress.ToString(), new ThrottleManager.MxPatternThrottlingSendHistory());
 			List<DateTime> sndHistory = mxSndHist.GetOrAdd(mxPatternID, new List<DateTime>());
 
 			// Only calculate if needed.
@@ -153,7 +160,7 @@ namespace MantaMTA.Core.OutboundRules
 				while (maxMessages < 1 && maxMessagesIntervalMinute <= 60)
 				{
 					maxMessagesIntervalMinute++;
-					maxMessages = (int)Math.Floor((maxMessagesHour / 60d) * maxMessagesIntervalMinute);
+					maxMessages = (int)Math.Floor((double)maxMessagesHour / 60d * (double)maxMessagesIntervalMinute);
 				}
 
 				mxSndHist.IntervalMaxMessages = maxMessages;
@@ -161,11 +168,12 @@ namespace MantaMTA.Core.OutboundRules
 				mxSndHist.IntervalValuesNeedRecalcTimestamp = DateTime.UtcNow.AddMinutes(MtaParameters.MTA_CACHE_MINUTES);
 			}
 
+
 			lock (sndHistory)
 			{
 				// Remove sends that happened over "Interval" minute(s) ago.
-				DateTime sendsAfterTimestamp = DateTime.UtcNow.AddMinutes(mxSndHist.IntervalMinutes * -1);
-				sndHistory.RemoveAll(d => d <= sendsAfterTimestamp);
+				DateTime sendsAfterTimestamp = DateTime.UtcNow.AddMinutes((double)(mxSndHist.IntervalMinutes * -1));
+				sndHistory.RemoveAll((DateTime d) => d <= sendsAfterTimestamp);
 
 				// Check for throttling
 				if (sndHistory.Count < mxSndHist.IntervalMaxMessages)

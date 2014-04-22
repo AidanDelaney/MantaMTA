@@ -9,7 +9,7 @@ namespace MantaMTA.Core.Client
 	/// only send a maximum of 1 message/minute from IPs that seem to be blocked.
 	/// </summary>
 	internal static class ServiceNotAvailableManager
-	{	
+	{
 		/// <summary>
 		/// Dictionary<IPAddress, Dictionary<Hostname, LastUnavailable>
 		/// </summary>
@@ -24,16 +24,16 @@ namespace MantaMTA.Core.Client
 		public static void Add(string ip, string mxHostname, DateTime lastFail)
 		{
 			mxHostname = mxHostname.ToLower();
-			_ServiceUnavailableLog.TryAdd(ip, new ConcurrentDictionary<string, DateTime>());
-			ConcurrentDictionary<string, DateTime> ipServices = _ServiceUnavailableLog[ip];
-			ipServices.AddOrUpdate(mxHostname, lastFail, new Func<string,DateTime,DateTime>(delegate(string key, DateTime existingValue)
-				{
-					// We should only use the "new" timestamp if it's a later date that the existing value.
+			ServiceNotAvailableManager._ServiceUnavailableLog.TryAdd(ip, new ConcurrentDictionary<string, DateTime>());
+			ConcurrentDictionary<string, DateTime> ipServices = ServiceNotAvailableManager._ServiceUnavailableLog[ip];
+			ipServices.AddOrUpdate(mxHostname, lastFail, delegate(string key, DateTime existingValue)
+			{
+				// We should only use the "new" timestamp if it's a later date that the existing value.
 					// If the existing value is "newer" then a different thread updated already with better data.
 					if (existingValue > lastFail)
 						return existingValue;
 					return lastFail;
-				}));
+			});
 		}
 
 		/// <summary>
@@ -52,7 +52,7 @@ namespace MantaMTA.Core.Client
 
 				if (ipServices.TryGetValue(mxHostname, out lastFail))
 				{
-					if ((DateTime.UtcNow - lastFail) < new TimeSpan(0, 1, 0))
+					if ((DateTime.UtcNow - lastFail) < new TimeSpan(0, 0, 25))
 						return true;
 				}
 			}

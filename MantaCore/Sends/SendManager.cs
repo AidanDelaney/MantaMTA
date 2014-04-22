@@ -1,18 +1,26 @@
-﻿using System;
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.DAL;
+using MantaMTA.Core.ServiceContracts;
+using System;
 using System.Collections.Concurrent;
 using System.ServiceModel;
 using System.Threading.Tasks;
-using MantaMTA.Core.Client.BO;
-using MantaMTA.Core.DAL;
-using MantaMTA.Core.ServiceContracts;
 
 namespace MantaMTA.Core.Sends
 {
 	public class SendManager : ISendManagerContract
 	{
-		public static SendManager Instance { get { return _Instance; } }
+		public static SendManager Instance
+		{
+			get
+			{
+				return SendManager._Instance;
+			}
+		}
 		private static SendManager _Instance = new SendManager();
-		private SendManager() { }
+		private SendManager()
+		{
+		}
 
 		/// <summary>
 		/// ServiceHost to host the service contact.
@@ -29,7 +37,7 @@ namespace MantaMTA.Core.Sends
 		/// Timestamp of when _SendIDs was last cleared. 
 		/// </summary>
 		private DateTime _SendsLastCleared = DateTime.UtcNow;
-
+		
 		/// <summary>
 		/// Gets the internal send ID to be used for the specified sendID.
 		/// If it doesn't exist it will be created in the database.
@@ -39,19 +47,19 @@ namespace MantaMTA.Core.Sends
 		public Send GetSend(string sendId)
 		{
 			// Don't want send IDs sitting in memory for to long so clear every so often.
-			if (_SendsLastCleared.AddHours(1) < DateTime.UtcNow)
-				ClearSendsCache();
+			if (this._SendsLastCleared.AddHours(1) < DateTime.UtcNow)
+				this.ClearSendsCache();
 
 			Send snd;
 
 			// Try to get the send id from the cached collection.
-			if (!_Sends.TryGetValue(sendId, out snd))
+			if (!this._Sends.TryGetValue(sendId, out snd))
 			{
 				// Doesn't exist so need to create or load from datbase.
-				snd = DAL.SendDB.CreateAndGetInternalSendID(sendId);
+				snd = SendDB.CreateAndGetInternalSendID(sendId);
 
 				// Add are new item to the cache.
-				_Sends.TryAdd(sendId, snd);
+				this._Sends.TryAdd(sendId, snd);
 			}
 
 			// return the value.
@@ -65,7 +73,7 @@ namespace MantaMTA.Core.Sends
 		internal Send GetDefaultInternalSendId()
 		{
 			string sendID = DateTime.UtcNow.ToString("yyyyMMdd");
-			return GetSend(sendID);
+			return this.GetSend(sendID);
 		}
 
 		/// <summary>
@@ -73,10 +81,10 @@ namespace MantaMTA.Core.Sends
 		/// </summary>
 		public void ClearSendsCache()
 		{
-			lock (_Sends)
+			lock (this._Sends)
 			{
-				_Sends.Clear();
-				_SendsLastCleared = DateTime.UtcNow;
+				this._Sends.Clear();
+				this._SendsLastCleared = DateTime.UtcNow;
 			}
 		}
 
@@ -86,12 +94,12 @@ namespace MantaMTA.Core.Sends
 													 typeof(ISendManagerContract),
 													 ServiceContractManager.ServiceAddresses.SendManager,
 													 new EventHandler(delegate(object sender, EventArgs e)
-													 {
-														 Logging.Fatal("SendManager ServiceHost Faulted");
-														 MantaCoreEvents.InvokeMantaCoreStopping();
-														 Environment.Exit(-1);
-													 }));
-			_ServiceHost.Open();
+			{
+				Logging.Fatal("SendManager ServiceHost Faulted");
+				MantaCoreEvents.InvokeMantaCoreStopping();
+				Environment.Exit(-1);
+			}));
+			this._ServiceHost.Open();
 		}
 
 		/// <summary>
@@ -121,10 +129,10 @@ namespace MantaMTA.Core.Sends
 		/// <param name="internalSendID">Internal ID of the Send.</param>
 		private void DiscardMessages(int internalSendID)
 		{
-			MtaQueuedMessageCollection messages = DAL.MtaMessageDB.PickupForDiscarding(25);
+			MtaQueuedMessageCollection messages = MtaMessageDB.PickupForDiscarding(25);
 			while (messages.Count > 0)
 			{
-				Parallel.ForEach(messages, delegate(MtaQueuedMessage msg)
+				Parallel.ForEach<MtaQueuedMessage>(messages, delegate(MtaQueuedMessage msg)
 				{
 					msg.HandleMessageDiscard();
 				});

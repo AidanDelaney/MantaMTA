@@ -21,12 +21,17 @@ namespace MantaMTA.Core
 		internal const int MTA_CACHE_MINUTES = 5;
 
 		/// <summary>
+		/// This is the ID of the outbound rule mx pattern that should be used as the default.
+		/// </summary>
+		public const int OUTBOUND_RULES_DEFAULT_PATTERN_ID = -1;
+
+		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.
 		/// This will almost always be 25 & 587.
 		/// </summary>
 		public static int[] ServerListeningPorts
 		{
-			get 
+			get
 			{
 				if (_ServerListeningPorts == null)
 					_ServerListeningPorts = DAL.CfgPara.GetServerListenPorts();
@@ -199,7 +204,7 @@ namespace MantaMTA.Core
 		/// <summary>
 		/// The time in minutes between send retries.
 		/// </summary>
-		internal static int MtaRetryInterval 
+		internal static int MtaRetryInterval
 		{
 			get
 			{
@@ -214,7 +219,7 @@ namespace MantaMTA.Core
 		}
 		private static int _MtaRetryInterval = -1;
 		private static DateTime _MtaRetryIntervalLoadTime = DateTime.MinValue;
-
+		
 		/// <summary>
 		/// The maximum time in minutes that a message can be in the queue.
 		/// </summary>
@@ -268,8 +273,6 @@ namespace MantaMTA.Core
 		private static bool _keepBounceFiles = false;
 		private static DateTime _keepBounceFilesLoadTime = DateTime.MinValue;
 
-
-
 		internal static class Client
 		{
 			/// <summary>
@@ -303,7 +306,7 @@ namespace MantaMTA.Core
 			/// </summary>
 			public static int ConnectionReceiveTimeoutInterval
 			{
-				get 
+				get
 				{
 					if (_ConnectionReceiveTimeoutIntervalLoadTime < DateTime.UtcNow)
 					{
@@ -323,7 +326,7 @@ namespace MantaMTA.Core
 			/// </summary>
 			public static int ConnectionSendTimeoutInterval
 			{
-				get 
+				get
 				{
 					if (_connectionSendTimeoutIntervalLoadTime < DateTime.UtcNow)
 					{
@@ -366,11 +369,6 @@ namespace MantaMTA.Core
 			}
 		}
 		private static string _EventForwardingHttpPostUrl = string.Empty;
-
-		/// <summary>
-		/// This is the ID of the outbound rule mx pattern that should be used as the default.
-		/// </summary>
-		public const int OUTBOUND_RULES_DEFAULT_PATTERN_ID = -1;
 	}
 
 	/// <summary>

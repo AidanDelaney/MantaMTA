@@ -1,6 +1,7 @@
-﻿using System;
-using MantaMTA.Core.Client.BO;
-
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.DAL;
+using System;
+using System.Globalization;
 namespace MantaMTA.Core.Message
 {
 	public static class ReturnPathManager
@@ -50,7 +51,7 @@ namespace MantaMTA.Core.Message
 			{
 				int spos = returnPath.IndexOf("-") + 1;
 				returnPath = returnPath.Substring(spos, returnPath.LastIndexOf("@") - spos);
-				internalSendID = Int32.Parse(returnPath.Substring(returnPath.LastIndexOf("-") + 1), System.Globalization.NumberStyles.HexNumber);
+				internalSendID = int.Parse(returnPath.Substring(returnPath.LastIndexOf("-") + 1), NumberStyles.HexNumber);
 				rcptTo = returnPath.Substring(0, returnPath.LastIndexOf("-")).Replace(RCPT_TO_AT_REPLACEMENT, "@");
 				return true;
 			}
@@ -69,7 +70,7 @@ namespace MantaMTA.Core.Message
 		/// <returns>The generated return path or string.empty if no message with ID found.</returns>
 		public static string GetReturnPathFromMessageID(Guid messageID)
 		{
-			MtaMessage msg = DAL.MtaMessageDB.GetMtaMessage(messageID);
+			MtaMessage msg = MtaMessageDB.GetMtaMessage(messageID);
 			if (msg == null)
 				return string.Empty;
 

@@ -2,8 +2,6 @@
 using System.Collections.Concurrent;
 using System.Linq;
 
-
-
 namespace MantaMTA.Core.DNS
 {
 	internal static class DNSManager
@@ -27,11 +25,11 @@ namespace MantaMTA.Core.DNS
 			MXRecord[] mxRecords = null;
 
 			// Try and get DNS from internal cache.
-			if (_Records.TryGetValue(domain, out mxRecords))
+			if (DNSManager._Records.TryGetValue(domain, out mxRecords))
 			{
 				// Found cached records.
 				// Make sure they haven't expired.
-				if (mxRecords.Count(mx => mx.Dead) < 1)
+				if (mxRecords.Count((MXRecord mx) => mx.Dead) < 1)
 					return mxRecords;
 			}
 
@@ -42,37 +40,39 @@ namespace MantaMTA.Core.DNS
 				// Get the records from DNS
 				records = dnsapi.GetMXRecords(domain);
 			}
-			catch (DNS.DNSDomainNotFoundException)
+			catch (DNSDomainNotFoundException)
 			{
 				// Ensure records is null.
 				records = null;
 			}
-			
+
 			// No MX records for domain.
 			if (records == null)
 			{
 				// If there are no MX records use the hostname as per SMTP RFC.
-				MXRecord[] mxs = new MXRecord[] { new MXRecord(domain, 10, 300) };
-				_Records.AddOrUpdate(domain, mxs, new Func<string, MXRecord[], MXRecord[]>(delegate(string key, MXRecord[] existing)
+				MXRecord[] mxs = new MXRecord[]
 				{
-					return mxs;
-				}));
+					new MXRecord(domain, 10, 300u)
+				};
+				_Records.AddOrUpdate(domain, mxs, (string key, MXRecord[] existing) => mxs);
 				return mxs;
 			}
 
 			mxRecords = new MXRecord[records.Length];
 			for (int i = 0; i < mxRecords.Length; i++)
 			{
-				string[] split = records[i].Split(new char[]{','});
+				string[] split = records[i].Split(new char[] { ',' });
+				Console.WriteLine(split[2]);
 				mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
 			}
-			
+
 			// Order by preferance
-			mxRecords = mxRecords.OrderBy(mx => mx.Preference).ToArray();
-			_Records.TryAdd(domain, mxRecords);
+			mxRecords = (
+				from mx in mxRecords
+				orderby mx.Preference
+				select mx).ToArray<MXRecord>();
+			DNSManager._Records.TryAdd(domain, mxRecords);
 			return mxRecords;
 		}
 	}
-
-
 }
