@@ -11,6 +11,12 @@
 		</div>
 	</div>
 	<div class="span2">
+		<div class="tile tile-orange">
+			<h6>Paused</h6>
+			<h3>@Model.Paused.ToString("N0")</h3>
+		</div>
+	</div>
+	<div class="span2">
 		<div class="tile tile-blue">
 			<h6>Deferred Last Hour</h6>
 			<h3>@Model.SendTransactionSummaryCollection.DeferredPercent.ToString("N1")%</h3>
@@ -22,13 +28,13 @@
 			<h3>@Model.SendTransactionSummaryCollection.ThrottledPercent.ToString("N1")%</h3>
 		</div>
 	</div>
-	<div class="span3">
+	<div class="span2">
 		<div class="tile tile-red">
 			<h6>Rejected Last Hour</h6>
 			<h3>@Model.SendTransactionSummaryCollection.Rejected.ToString("N0")</h3>
 		</div>
 	</div>
-	<div class="span3">
+	<div class="span2">
 		<div class="tile tile-green">
 			<h6>Accepted Last Hour</h6>
 			<h3>@Model.SendTransactionSummaryCollection.Accepted.ToString("N0")</h3>

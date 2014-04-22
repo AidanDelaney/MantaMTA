@@ -15,9 +15,14 @@ namespace WebInterface.Models
 		public SendTransactionSummaryCollection SendTransactionSummaryCollection { get; set; }
 
 		/// <summary>
-		/// Holds the current amount of messages waiting in the queue.
+		/// Holds the current amount of messages waiting in the queue that are not paused.
 		/// </summary>
 		public long Waiting { get; set; }
+
+		/// <summary>
+		/// Holds the current messages in the queue that are paused.
+		/// </summary>
+		public long Paused { get; set; }
 
 		/// <summary>
 		/// Information about bounces in the last hour.

@@ -11,16 +11,19 @@ namespace WebInterfaceLib.DAL
 	public static class SendDB
 	{
 		/// <summary>
-		/// Gets the amount of messages currently waiting in the queue for sending.
+		/// Gets the amount of messages currently the queue with the specified statuses.
 		/// </summary>
 		/// <returns>Count of the messages waiting in the queue.</returns>
-		public static long GetWaitingCount()
+		public static long GetQueueCount(SendStatus[] sendStatus)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"SELECT COUNT(*)
-FROM man_mta_queue";
+				cmd.CommandText = @"SELECT COUNT([q].mta_msg_id)
+FROM man_mta_queue as [q]
+JOIN man_mta_msg as [m] on [q].mta_msg_id = [m].mta_msg_id
+JOIN man_mta_send as [s] on [m].mta_send_internalId = [s].mta_send_internalId
+WHERE [s].mta_sendStatus_id in (" + string.Join(",", Array.ConvertAll<SendStatus, int>(sendStatus, s => (int)s)) + ")";
 				conn.Open();
 				return Convert.ToInt64(cmd.ExecuteScalar());
 			}
