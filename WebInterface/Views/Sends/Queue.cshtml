@@ -11,6 +11,7 @@
 		<thead>
 			<tr>
 				<th>Send</th>
+				<th>Metadata</th>
 				<th class="td-align-center">Status</th>
 				<th class="td-align-right">Started</th>
 				<th class="td-align-right">Total</th>
@@ -36,6 +37,11 @@
 			{
 				<tr>
 					<td>@sndInfo.ID</td>
+					<td>@foreach (WebInterfaceLib.BO.SendMetadata meta in sndInfo.GetMetaData())
+					 {
+						<span><strong>@meta.Value</strong><br/></span>
+					 }
+					</td>
 					<td class="td-align-center">
 						@switch (sndInfo.SendStatus)
 						 {

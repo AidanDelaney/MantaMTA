@@ -108,6 +108,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppendSendMetadata.ashx.cs">
+      <DependentUpon>AppendSendMetadata.ashx</DependentUpon>
+    </Compile>
     <Compile Include="Controllers\BouncesController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -177,6 +180,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="AppendSendMetadata.ashx" />
     <None Include="Properties\PublishProfiles\Default.pubxml" />
     <Content Include="Views\Dashboard\Index.cshtml" />
     <Content Include="Views\Sends\Index.cshtml" />

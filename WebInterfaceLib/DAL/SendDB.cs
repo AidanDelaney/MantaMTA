@@ -140,6 +140,24 @@ WHERE [snd].mta_send_id = @sndID";
 		}
 
 		/// <summary>
+		/// Gets a Sends Metadata from the database.
+		/// </summary>
+		/// <param name="sendID"></param>
+		/// <returns></returns>
+		public static SendMetadataCollection GetSendMetaData(int internalSendID)
+		{
+			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"SELECT *
+FROM man_mta_sendMeta
+WHERE mta_send_internalId = @sndID";
+				cmd.Parameters.AddWithValue("@sndID", internalSendID);
+				return new SendMetadataCollection(DataRetrieval.GetCollectionFromDatabase<SendMetadata>(cmd, CreateAndFillSendMetadata));
+			}
+		}
+
+		/// <summary>
 		/// Creates a send info object filled with data from the data record.
 		/// </summary>
 		/// <param name="record">Where to get the data to fill object from.</param>
@@ -165,6 +183,50 @@ WHERE [snd].mta_send_id = @sndID";
 				sInfo.LastTransactionTimestamp = record.GetDateTime("LastTransactionTimestamp");
 
 			return sInfo;
+		}
+
+		/// <summary>
+		/// Creates a send metadata object from the data record.
+		/// </summary>
+		/// <param name="record">Where to get the data to fill object from.</param>
+		/// <returns>A populated SendMetadata object.</returns>
+		private static SendMetadata CreateAndFillSendMetadata(IDataRecord record)
+		{
+			return new SendMetadata
+			{
+				Name = record.GetStringOrEmpty("mta_sendMeta_name"),
+				Value = record.GetStringOrEmpty("mta_sendMeta_value")
+			};
+		}
+
+		public static bool SaveSendMetadata(int internalSendID, SendMetadata metadata)
+		{
+			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"IF EXISTS(SELECT 1
+FROM man_mta_sendMeta
+WHERE mta_send_internalId = @sndID
+AND mta_sendMeta_name = @name)
+	BEGIN
+		UPDATE man_mta_sendMeta
+		SET mta_sendMeta_value = @value
+		WHERE mta_send_internalId = @sndID
+		AND mta_sendMeta_name = @name
+	END
+ELSE
+	BEGIN
+		INSERT INTO man_mta_sendMeta(mta_send_internalId, mta_sendMeta_name, mta_sendMeta_value)
+		VALUES(@sndID, @name, @value)
+	END";
+				cmd.Parameters.AddWithValue("@sndID", internalSendID);
+				cmd.Parameters.AddWithValue("@name", metadata.Name);
+				cmd.Parameters.AddWithValue("@value", metadata.Value);
+				conn.Open();
+				cmd.ExecuteNonQuery();
+			}
+
+			return true;
 		}
 	}
 }

@@ -93,7 +93,7 @@ rem		-ScriptAsCreate	= stored procedures are scripted as CREATE, rather than ALT
 rem		-Permissions		= script the permissions for each object
 rem		-CreateOnly		= don't generate DROP statements
 
-ScriptDb.exe -con:server=%sqlServer%;database=%databaseName% -outDir:%outputDir% -v -p -TableOneFile -ScriptAsCreate -CreateOnly -Permissions -Username:sa -Password:"$1lv3r&g0ld"
+ScriptDb.exe -con:server=%sqlServer%;database=%databaseName%;trusted_connection=yes -outDir:%outputDir% -v -p -TableOneFile -ScriptAsCreate -CreateOnly -Permissions
 
 if %ERRORLEVEL% GTR 0 goto Error
 

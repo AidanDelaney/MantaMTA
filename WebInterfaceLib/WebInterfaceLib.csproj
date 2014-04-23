@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="BO\BounceInfo.cs" />
     <Compile Include="BO\SendInfo.cs" />
+    <Compile Include="BO\SendMetadataClasses.cs" />
     <Compile Include="BO\SendSpeedInfo.cs" />
     <Compile Include="BO\SendTransaction.cs" />
     <Compile Include="BO\SendWaitingInfo.cs" />

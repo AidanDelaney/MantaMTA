@@ -157,6 +157,11 @@ namespace WebInterfaceLib.BO
 			}
 		}
 
+		public SendMetadataCollection GetMetaData()
+		{
+			return new SendMetadataCollection(DAL.SendDB.GetSendMetaData(InternalID).OrderBy(m => m.Name));
+		}
+
 
 		/// <summary>
 		/// Constructor sets defaults.
