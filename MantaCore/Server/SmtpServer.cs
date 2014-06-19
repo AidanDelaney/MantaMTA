@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MantaMTA.Core.Enums;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -6,7 +7,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Server
 {
@@ -47,47 +47,41 @@ namespace MantaMTA.Core.Server
 		{
 			// Create the TCP Listener using specified port on all IPs
 			_TcpListener = new TcpListener(ipAddress, port);
-			_ServerThread = new Thread(
-				new ThreadStart(delegate()
-				{
-					try
-					{
-						_TcpListener.Start();
-					}
-					catch (SocketException ex)
-					{
-						Logging.Error("Failed to create server on " + ipAddress.ToString() + ":" + port, ex);
-						return;
-					}
+			
+			try
+			{
+				_TcpListener.Start();
+				_TcpListener.BeginAcceptTcpClient(AsyncConnectionHandler, _TcpListener);
+			}
+			catch (SocketException ex)
+			{
+				Logging.Error("Failed to create server on " + ipAddress.ToString() + ":" + port, ex);
+				return;
+			}
 
-					Logging.Info("Server started on " + ipAddress.ToString() + ":" + port);
+			Logging.Info("Server started on " + ipAddress.ToString() + ":" + port);
+		}
 
-					while (_TcpListener != null)
-					{
-						// Connection with client.
-						TcpClient client = null;
+		/// <summary>
+		/// Event fired when a new Connection to the SMTP Server is made.
+		/// </summary>
+		/// <param name="ir">The AsyncResult from the TcpListener.</param>
+		private void AsyncConnectionHandler(IAsyncResult ir)
+		{
+			// If the TCP Listener has been set to null, then we cannot handle any connections.
+			if (_TcpListener == null)
+				return;
 
-						try
-						{
-							// AcceptTcpClient will block until done.
-							client = _TcpListener.AcceptTcpClient();
-						}
-						catch (SocketException ex)
-						{
-							// Error code 10004 is AcceptTcpClient having block removed.
-							// So server is shutting down.
-							if (ex.ErrorCode == 10004)
-								return;
-
-							throw;
-						}
-
-
-						// Create a Task and run it to handle client connection.
-						Task.Run(() => HandleSmtpConnection(client));
-					}
-				}));
-			_ServerThread.Start();
+			try
+			{
+				TcpClient client = _TcpListener.EndAcceptTcpClient(ir);
+				_TcpListener.BeginAcceptTcpClient(AsyncConnectionHandler, _TcpListener);
+				Task.Run(async () => await HandleSmtpConnection(client));
+			}
+			catch (ObjectDisposedException)
+			{
+				// SMTP Server stop was done mid connection handshake, just ignore it.
+			}
 		}
 		
 		/// <summary>
@@ -392,7 +386,7 @@ namespace MantaMTA.Core.Server
 						}
 						catch (Exception ex)
 						{
-							//Logging.Error("421 local error in processing.", ex);
+							Logging.Error("421 local error in processing.", ex);
 							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");
 							continue;
 						}
