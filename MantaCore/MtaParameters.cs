@@ -309,10 +309,10 @@ namespace MantaMTA.Core
 				get
 				{
 					if (_ConnectionReceiveTimeoutIntervalLoadTime < DateTime.UtcNow)
-					{
-						_ConnectionReceiveTimeoutInterval = DAL.CfgPara.GetReceiveTimeout();
-						_ConnectionReceiveTimeoutIntervalLoadTime = _ConnectionReceiveTimeoutIntervalLoadTime.AddMinutes(MTA_CACHE_MINUTES);
-					}
+						{
+							_ConnectionReceiveTimeoutInterval = DAL.CfgPara.GetReceiveTimeout();
+							_ConnectionReceiveTimeoutIntervalLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+						}
 
 					return _ConnectionReceiveTimeoutInterval;
 				}
