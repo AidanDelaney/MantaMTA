@@ -119,7 +119,12 @@ namespace MantaMTA.Core.Client
 								}
 								catch (Exception ex)
 								{
-									if (!(ex is MaxConnectionsException))
+									if(ex is MaxConnectionsException)
+									{
+										taskMessage.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
+										DAL.MtaMessageDB.Save((taskMessage as MtaQueuedMessage));
+									}
+									else
 									{
 										// Log if we can't send the message.
 										Logging.Debug("Failed to send message", ex);

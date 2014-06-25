@@ -19,10 +19,6 @@ namespace MantaMTA.Core.Server
 		/// Listens to TCP socket.
 		/// </summary>
 		private TcpListener _TcpListener = null;
-		/// <summary>
-		/// Thread that this instance of SmtpServer will run on.
-		/// </summary>
-		private Thread _ServerThread = null;
 
 		/// <summary>
 		/// Make default constructor private so code from other classes has to use SmtpServer(port)
