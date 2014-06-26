@@ -195,11 +195,11 @@ namespace MantaMTA.Core.Smtp
 		/// Attempt to connect to the specified MX server.
 		/// </summary>
 		/// <param name="mx">MX Record of the server to connect to.</param>
-		public void Connect(MXRecord mx)
+		public async Task<bool> ConnectAsync(MXRecord mx)
 		{
 			_LastActive = DateTime.UtcNow;
 			IsActive = true;
-			base.Connect(mx.Host, MtaParameters.Client.SMTP_PORT);
+			await base.ConnectAsync(mx.Host, MtaParameters.Client.SMTP_PORT);
 			_LastActive = DateTime.UtcNow;
 			SmtpStream = new SmtpStreamHandler(this as TcpClient);
 			_MXRecord = mx;
@@ -216,11 +216,12 @@ namespace MantaMTA.Core.Smtp
 					ServiceNotAvailableManager.Add(SmtpStream.LocalAddress.ToString(), MXRecord.Host, DateTime.UtcNow);
 
 				base.Close();
-				return;
+				return false;
 			}
 
 			IsActive = false;
 			_LastActive = DateTime.UtcNow;
+			return true;
 		}
 
 		/// <summary>

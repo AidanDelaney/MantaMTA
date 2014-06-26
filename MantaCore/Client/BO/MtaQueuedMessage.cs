@@ -4,6 +4,7 @@ using System.IO;
 using MantaMTA.Core.DAL;
 using MantaMTA.Core.Enums;
 using MantaMTA.Core.Events;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Client.BO
 {
@@ -42,24 +43,26 @@ namespace MantaMTA.Core.Client.BO
 		/// The path to the file containing this messages DATA.
 		/// </summary>
 		public string DataPath { get; set; }
-		/// <summary>
-		/// The DATA for this message. Is read from <paramref name="DataPath"/>
-		/// If DataPath is empty, will throw exception.
-		/// </summary>
-		public string Data
-		{
-			get
-			{
-				// If the DATA path is empty, then Data shouldn't be called.
-				if (string.IsNullOrWhiteSpace(this.DataPath))
-					throw new FileNotFoundException("Data doesn't exist.");
 
-				using (StreamReader reader = new StreamReader(this.DataPath))
-				{
-					return reader.ReadToEnd();
-				}
+		/// <summary>
+		/// Gets the DATA for this message. Is read from <paramref name="DataPath"/>
+		/// If DataPath is empty will return string.Empty.
+		/// </summary>
+		public async Task<string> GetDataAsync()
+		{
+			// If the DATA path is empty, then Data shouldn't be called.
+			if (string.IsNullOrWhiteSpace(this.DataPath))
+				return string.Empty;
+				//throw new FileNotFoundException("Data doesn't exist.");
+
+			using (StreamReader reader = new StreamReader(this.DataPath))
+			{
+				return await reader.ReadToEndAsync();
 			}
 		}
+
+		private string _Data = string.Empty;
+
 		/// <summary>
 		/// The IP address used to send this Message.
 		/// </summary>

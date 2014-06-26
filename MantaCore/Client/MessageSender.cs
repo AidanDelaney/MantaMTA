@@ -119,16 +119,8 @@ namespace MantaMTA.Core.Client
 								}
 								catch (Exception ex)
 								{
-									if(ex is MaxConnectionsException)
-									{
-										taskMessage.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
-										DAL.MtaMessageDB.Save((taskMessage as MtaQueuedMessage));
-									}
-									else
-									{
-										// Log if we can't send the message.
-										Logging.Debug("Failed to send message", ex);
-									}
+									// Log if we can't send the message.
+									Logging.Debug("Failed to send message", ex);
 								}
 								finally
 								{
@@ -220,17 +212,14 @@ namespace MantaMTA.Core.Client
 			}
 			else
 			{
-				string data = string.Empty;
-				try
-				{
-					data = msg.Data;
-				}
-				catch (Exception)
+				string data = await msg.GetDataAsync();
+				if(string.IsNullOrEmpty(data))
 				{
 					msg.HandleDeliveryFail("Email DATA file not found", null, null);
 					result = false;
 					return result;
 				}
+				
 				MailAddress mailAddress = msg.RcptTo[0];
 				MailAddress mailFrom = msg.MailFrom;
 				MXRecord[] mXRecords = DNSManager.GetMXRecords(mailAddress.Host);
@@ -245,16 +234,31 @@ namespace MantaMTA.Core.Client
 					// The IP group that will be used to send the queued message.
 					VirtualMtaGroup virtualMtaGroup = VirtualMtaManager.GetVirtualMtaGroup(msg.IPGroupID);
 					VirtualMTA sndIpAddress = virtualMtaGroup.GetVirtualMtasForSending(mXRecords[0]);
-					SmtpOutboundClient smtpClient = SmtpClientPool.Instance.Dequeue(sndIpAddress, mXRecords, delegate(string message)
+
+					SmtpOutboundClientDequeueResponse dequeueResponse = await SmtpClientPool.Instance.DequeueAsync(sndIpAddress, mXRecords);
+					switch (dequeueResponse.DequeueResult)
 					{
-						msg.HandleDeliveryDeferral(message, sndIpAddress, null, false);
-					}, delegate
-					{
-						msg.HandleServiceUnavailable(sndIpAddress);
-					}, delegate
-					{
-						msg.HandleDeliveryThrottle(sndIpAddress, null);
-					});
+						case SmtpOutboundClientDequeueAsyncResult.Success:
+						case SmtpOutboundClientDequeueAsyncResult.NoMxRecords:
+						case SmtpOutboundClientDequeueAsyncResult.FailedToAddToSmtpClientQueue:
+						case SmtpOutboundClientDequeueAsyncResult.Unknown:
+							break; // Don't need to do anything for these results.
+						case SmtpOutboundClientDequeueAsyncResult.FailedToConnect:
+							msg.HandleDeliveryDeferral("Failed to connect", sndIpAddress, mXRecords[0]);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.ServiceUnavalible:
+							msg.HandleServiceUnavailable(sndIpAddress);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.Throttled:
+							msg.HandleDeliveryThrottle(sndIpAddress, mXRecords[0]);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections:
+							msg.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
+							DAL.MtaMessageDB.Save((msg as MtaQueuedMessage));
+							break;
+					}
+
+					SmtpOutboundClient smtpClient = dequeueResponse.SmtpOutboundClient;
 
 					// If no client was dequeued then we can't currently send.
 					// This is most likely a max connection issue. Return false but don't
