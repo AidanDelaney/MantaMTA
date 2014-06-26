@@ -1,11 +1,12 @@
-﻿using System;
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Mail;
-using MantaMTA.Core.Client.BO;
-using MantaMTA.Core.Enums;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.DAL
 {
@@ -54,6 +55,15 @@ namespace MantaMTA.Core.DAL
 		/// <param name="message"></param>
 		internal static void Save(MtaQueuedMessage message)
 		{
+			SaveAsync(message).Wait();
+		}
+
+		/// <summary>
+		/// Saves the Mta Queued message to the Database.
+		/// </summary>
+		/// <param name="message"></param>
+		internal static async Task<bool> SaveAsync(MtaQueuedMessage message)
+		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
@@ -76,8 +86,9 @@ ELSE
 				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
 				cmd.Parameters.AddWithValue("@sendInternalID", message.InternalSendID);
 
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 

@@ -61,8 +61,6 @@ namespace MantaMTA.Core.Client.BO
 			}
 		}
 
-		private string _Data = string.Empty;
-
 		/// <summary>
 		/// The IP address used to send this Message.
 		/// </summary>
@@ -173,10 +171,10 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="mxRecord">MX Record of the server tried to send too.</param>
 		/// <param name="isServiceUnavailable">If false will backoff the retry, if true will use the MtaParameters.MtaRetryInterval, 
 		/// this is needed to reduce the tail when sending as a message could get multiple try again laters and soon be 1h+ before next retry.</param>
-		public void HandleDeliveryDeferral(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
+		public async Task<bool> HandleDeliveryDeferralAsync(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
 		{
 			// Log the deferral.
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
 		
 			// This holds the maximum interval between send retries. Should be put in the database.
 			int maxInterval = 3 * 60;
@@ -200,7 +198,26 @@ namespace MantaMTA.Core.Client.BO
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(nextRetryInterval);
-			MtaMessageDB.Save(this);
+			await MtaMessageDB.SaveAsync(this);
+
+			return true;
+		}
+
+		/// <summary>
+		/// This method handles message deferal.
+		///	Logs deferral
+		///	Fails the message if timed out
+		/// or
+		/// Sets the next rety date time
+		/// </summary>
+		/// <param name="defMsg">The deferal message from the SMTP server.</param>
+		/// <param name="ipAddress">IP Address that send was attempted from.</param>
+		/// <param name="mxRecord">MX Record of the server tried to send too.</param>
+		/// <param name="isServiceUnavailable">If false will backoff the retry, if true will use the MtaParameters.MtaRetryInterval, 
+		/// this is needed to reduce the tail when sending as a message could get multiple try again laters and soon be 1h+ before next retry.</param>
+		public void HandleDeliveryDeferral(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
+		{
+			HandleDeliveryDeferralAsync(defMsg, ipAddress, mxRecord, isServiceUnavailable).Wait();
 		}
 
 		/// <summary>
@@ -208,14 +225,15 @@ namespace MantaMTA.Core.Client.BO
 		///	Logs throttle
 		/// Sets the next rety date time 
 		/// </summary>
-		internal void HandleDeliveryThrottle(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		internal async Task<bool> HandleDeliveryThrottleAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log deferral
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
-			MtaMessageDB.Save(this);
+			await MtaMessageDB.SaveAsync(this);
+			return true;
 		}
 
 		/// <summary>
@@ -234,14 +252,15 @@ namespace MantaMTA.Core.Client.BO
 		/// Handles a service unavailable event, should be same as defer but only wait 1 minute before next retry.
 		/// </summary>
 		/// <param name="sndIpAddress"></param>
-		internal void HandleServiceUnavailable(VirtualMta.VirtualMTA ipAddress)
+		internal async Task<bool> HandleServiceUnavailableAsync(VirtualMta.VirtualMTA ipAddress)
 		{
 			// Log deferral
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
-			MtaMessageDB.Save(this);
+			await MtaMessageDB.SaveAsync(this);
+			return true;
 		}
 	}
 

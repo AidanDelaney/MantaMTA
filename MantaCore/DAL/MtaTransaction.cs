@@ -1,7 +1,7 @@
-﻿using System;
-using System.Configuration;
+﻿using MantaMTA.Core.Enums;
+using System;
 using System.Data.SqlClient;
-using MantaMTA.Core.Enums;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.DAL
 {
@@ -11,6 +11,14 @@ namespace MantaMTA.Core.DAL
 		/// Logs an MTA Transaction to the database.
 		/// </summary>
 		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		{
+			LogTransactionAsync(msgID, status, svrResponse, ipAddress, mxRecord).Wait();
+		}
+
+		/// <summary>
+		/// Logs an MTA Transaction to the database.
+		/// </summary>
+		public static async Task<bool> LogTransactionAsync(Guid msgID, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -24,15 +32,16 @@ VALUES(@msgID, @ipAddressID, GETUTCDATE(), @status, @serverResponse, @serverHost
 				else
 					cmd.Parameters.AddWithValue("@ipAddressID", DBNull.Value);
 
-				if(mxRecord != null)
+				if (mxRecord != null)
 					cmd.Parameters.AddWithValue("@serverHostname", mxRecord.Host);
 				else
 					cmd.Parameters.AddWithValue("@serverHostname", DBNull.Value);
 
 				cmd.Parameters.AddWithValue("@status", (int)status);
 				cmd.Parameters.AddWithValue("@serverResponse", svrResponse);
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 	}

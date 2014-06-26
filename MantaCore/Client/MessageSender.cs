@@ -244,17 +244,17 @@ namespace MantaMTA.Core.Client
 						case SmtpOutboundClientDequeueAsyncResult.Unknown:
 							break; // Don't need to do anything for these results.
 						case SmtpOutboundClientDequeueAsyncResult.FailedToConnect:
-							msg.HandleDeliveryDeferral("Failed to connect", sndIpAddress, mXRecords[0]);
+							await msg.HandleDeliveryDeferralAsync("Failed to connect", sndIpAddress, mXRecords[0]);
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.ServiceUnavalible:
-							msg.HandleServiceUnavailable(sndIpAddress);
+							await msg.HandleServiceUnavailableAsync(sndIpAddress);
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.Throttled:
-							msg.HandleDeliveryThrottle(sndIpAddress, mXRecords[0]);
+							await msg.HandleDeliveryThrottleAsync(sndIpAddress, mXRecords[0]);
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections:
 							msg.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
-							DAL.MtaMessageDB.Save((msg as MtaQueuedMessage));
+							await DAL.MtaMessageDB.SaveAsync((msg as MtaQueuedMessage));
 							break;
 					}
 
