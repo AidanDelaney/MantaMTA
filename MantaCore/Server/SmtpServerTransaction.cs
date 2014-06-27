@@ -1,10 +1,11 @@
-﻿using System;
+﻿using MantaMTA.Core.Client;
+using MantaMTA.Core.Enums;
+using MantaMTA.Core.Message;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MantaMTA.Core.Client;
-using MantaMTA.Core.Enums;
-using MantaMTA.Core.Message;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Server
 {
@@ -84,28 +85,29 @@ namespace MantaMTA.Core.Server
 		/// OR
 		/// Add message to queue for delivery (relay).
 		/// </summary>
-		public void Save()
+		public async Task<SmtpServerTransactionAsyncResult> SaveAsync()
 		{
-			if (MessageDestination == Enums.MessageDestination.Self)
-				SaveToLocalMailbox();				
-			else if (MessageDestination == Enums.MessageDestination.Relay)
-				QueueForRelaying();
-			else
-				throw new Exception("MessageDestination not set.");
+			SmtpServerTransactionAsyncResult result = SmtpServerTransactionAsyncResult.Unknown;
 
+			if (MessageDestination == Enums.MessageDestination.Self)
+				result = await SaveToLocalMailboxAsync();
+			else if (MessageDestination == Enums.MessageDestination.Relay)
+				result = await QueueForRelayingAsync();
+
+			return result;
 		}
 
 		/// <summary>
 		/// Saves the email to the local drop folder.
 		/// </summary>
-		private void SaveToLocalMailbox()
+		private async Task<SmtpServerTransactionAsyncResult> SaveToLocalMailboxAsync()
 		{
 			// Add the MAIL FROM & RCPT TO headers.
 			Data = MessageManager.AddHeader(Data, new MessageHeader("X-Reciepient", string.Join("; ", RcptTo)));
 			if (HasMailFrom && string.IsNullOrWhiteSpace(MailFrom))
 				Data = MessageManager.AddHeader(Data, new MessageHeader("X-Sender", "<>"));
 			else
-				Data = MessageManager.AddHeader(Data, new MessageHeader("X-Sender", MailFrom));			
+				Data = MessageManager.AddHeader(Data, new MessageHeader("X-Sender", MailFrom));
 
 			// Need to drop a copy of the message for each recipient.
 			for (int i = 0; i < RcptTo.Count; i++)
@@ -137,14 +139,16 @@ namespace MantaMTA.Core.Server
 				// Write the Email File.
 				using (StreamWriter sw = new StreamWriter(Path.Combine(mailDirPath, Guid.NewGuid().ToString()) + ".eml"))
 				{
-					sw.Write(Data);
+					await sw.WriteAsync(Data);
 				}
 			}
+
+			return SmtpServerTransactionAsyncResult.SuccessMessageDelivered;
 		}
 		/// <summary>
 		/// Queues the email for relaying.
 		/// </summary>
-		private void QueueForRelaying()
+		private async Task<SmtpServerTransactionAsyncResult> QueueForRelayingAsync()
 		{
 			// The email is for relaying.
 			Guid messageID = Guid.NewGuid();
@@ -171,14 +175,14 @@ namespace MantaMTA.Core.Server
 			{
 				Sends.Send sndID = Sends.SendManager.Instance.GetSend(sendIdHeader.Value);
 				if (sndID.SendStatus == SendStatus.Discard)
-					throw new SendDiscardingException();
+					return SmtpServerTransactionAsyncResult.FailedSendDiscarding;
 				internalSendId = sndID.InternalID;
 			}
 			else
 			{
 				Sends.Send sndID = Sends.SendManager.Instance.GetDefaultInternalSendId();
 				if (sndID.SendStatus == SendStatus.Discard)
-					throw new SendDiscardingException();
+					return SmtpServerTransactionAsyncResult.FailedSendDiscarding;
 				internalSendId = sndID.InternalID;
 			}
 			#endregion
@@ -218,14 +222,14 @@ namespace MantaMTA.Core.Server
 			// If there is already a message header, remove it and add our own. required for feedback loop processing.
 			if (headers.Count(h => h.Name.Equals("Message-ID", StringComparison.OrdinalIgnoreCase)) > 0)
 				Data = MessageManager.RemoveHeader(Data, "Message-ID");
-			
+
 			// Add the new message-id header.
 			Data = MessageManager.AddHeader(Data, new MessageHeader("Message-ID", msgIDHeaderVal));
 			#endregion
 
 			// Remove any control headers.
 			headers = new MessageHeaderCollection(headers.Where(h => h.Name.StartsWith(MessageHeaderNames.HeaderNamePrefix, StringComparison.OrdinalIgnoreCase)));
-			foreach(MessageHeader header in headers)
+			foreach (MessageHeader header in headers)
 				Data = MessageManager.RemoveHeader(Data, header.Name);
 
 			// If the MTA group doesn't exist or it's not got any IPs, use the default.
@@ -234,7 +238,32 @@ namespace MantaMTA.Core.Server
 				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
 			// Need to put this message in the database for relaying to pickup
-			MessageSender.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+			await MessageSender.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+
+			return SmtpServerTransactionAsyncResult.SuccessMessageQueued;
+		}
+
+		/// <summary>
+		/// Represents the result of a call to an SmtpServerTransaction class async method.
+		/// </summary>
+		public enum SmtpServerTransactionAsyncResult
+		{
+			/// <summary>
+			/// The method call resulted in an unknown state.
+			/// </summary>
+			Unknown = 0,
+			/// <summary>
+			/// The message was successfully queued.
+			/// </summary>
+			SuccessMessageQueued = 1,
+			/// <summary>
+			/// The message was successfully delivered to a local mailbox.
+			/// </summary>
+			SuccessMessageDelivered = 2,
+			/// <summary>
+			/// The message was not queued as the Send it is apart of is discarding.
+			/// </summary>
+			FailedSendDiscarding = 3
 		}
 	}
 }

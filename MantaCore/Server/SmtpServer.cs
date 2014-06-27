@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Server
@@ -102,9 +101,10 @@ namespace MantaMTA.Core.Server
 			try
 			{
 				Smtp.SmtpStreamHandler smtpStream = new Smtp.SmtpStreamHandler(client);
+				string serverHostname = await GetServerHostnameAsync(client);
 
 				// Identify our MTA
-				await smtpStream.WriteLineAsync("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
+				await smtpStream.WriteLineAsync("220 " + serverHostname + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
 
 				// Set to true when the client has sent quit command.
 				bool quit = false;
@@ -366,30 +366,34 @@ namespace MantaMTA.Core.Server
 						mailTransaction.AddHeader("Received", string.Format("from {0}[{1}] by {2}[{3}] on {4}",
 							heloHost,
 							smtpStream.RemoteAddress.ToString(),
-							GetServerHostname(client),
+							serverHostname,
 							smtpStream.LocalAddress.ToString(),
 							DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
 
-						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
-						try
+						
+						// Complete the transaction,either saving to local mailbox or queueing for relay.
+						SmtpServerTransaction.SmtpServerTransactionAsyncResult result = await mailTransaction.SaveAsync();
+
+						// Send a response to the client depending on the result of saving the transaction.
+						switch(result)
 						{
-							mailTransaction.Save();
-						}
-						catch (SendDiscardingException)
-						{
-							smtpStream.WriteLine("554 Send Discarding.");
-							continue;
-						}
-						catch (Exception ex)
-						{
-							Logging.Error("421 local error in processing.", ex);
-							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");
-							continue;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.SuccessMessageDelivered:
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.SuccessMessageQueued:
+								await smtpStream.WriteLineAsync("250 Message queued for delivery");
+								break;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.FailedSendDiscarding:
+								await smtpStream.WriteLineAsync("554 Send Discarding.");
+								break;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.Unknown:
+							default:
+								await smtpStream.WriteLineAsync("451 Requested action aborted: local error in processing.");
+								break;
 						}
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;
-						await smtpStream.WriteLineAsync("250 Message queued for delivery");
+						
+						// Go and wait for the next client command.
 						continue;
 					}
 
@@ -417,13 +421,14 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		/// <param name="client"></param>
 		/// <returns></returns>
-		private string GetServerHostname(TcpClient client)
+		private async Task<string> GetServerHostnameAsync(TcpClient client)
 		{
 			string serverIPAddress = (client.Client.LocalEndPoint as IPEndPoint).Address.ToString();
 			string serverHost = string.Empty;
 			try
 			{
-				serverHost = Dns.GetHostEntry(serverIPAddress).HostName;
+				IPHostEntry hostEntry = await Dns.GetHostEntryAsync(serverIPAddress);
+				serverHost = hostEntry.HostName;
 			}
 			catch (Exception)
 			{

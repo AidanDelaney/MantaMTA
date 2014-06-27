@@ -1,8 +1,9 @@
-﻿using System;
+﻿using MantaMTA.Core.DAL;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Mail;
-using MantaMTA.Core.DAL;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Client.BO
 {
@@ -33,9 +34,10 @@ namespace MantaMTA.Core.Client.BO
 		/// <summary>
 		/// Save this MTA message to the Database.
 		/// </summary>
-		public void Save()
+		public async Task<bool> SaveAsync()
 		{
-			MtaMessageDB.Save(this);
+			await MtaMessageDB.SaveAsync(this);
+			return true;
 		}
 
 		/// <summary>
@@ -45,7 +47,7 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="mailFrom">Mail From used in SMTP.</param>
 		/// <param name="rcptTo">Rcpt To's used in SMTP.</param>
 		/// <returns></returns>
-		public static MtaMessage Create(Guid messageID, int internalSendID, string mailFrom, string[] rcptTo)
+		public static async Task<MtaMessage> CreateAsync(Guid messageID, int internalSendID, string mailFrom, string[] rcptTo)
 		{
 			MtaMessage mtaMessage = new MtaMessage();
 			mtaMessage.ID = messageID;
@@ -60,7 +62,7 @@ namespace MantaMTA.Core.Client.BO
 			for (int i = 0; i < rcptTo.Length; i++)
 				mtaMessage.RcptTo[i] = new MailAddress(rcptTo[i]);
 
-			mtaMessage.Save();
+			await mtaMessage.SaveAsync();
 
 			return mtaMessage;
 		}
@@ -69,7 +71,7 @@ namespace MantaMTA.Core.Client.BO
 		/// Queue the message.
 		/// </summary>
 		/// <returns></returns>
-		public virtual MtaQueuedMessage Queue(string data, int ipGroupID)
+		public async Task<MtaQueuedMessage> QueueAsync(string data, int ipGroupID)
 		{
 			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml");
 
@@ -80,10 +82,10 @@ namespace MantaMTA.Core.Client.BO
 
 			using (StreamWriter writer = new StreamWriter(dataPath))
 			{
-				writer.Write(data);
+				await writer.WriteAsync(data);
 			}
 			
-			MtaMessageDB.Save(qMsg);
+			await MtaMessageDB.SaveAsync(qMsg);
 			return qMsg;
 		}
 	}

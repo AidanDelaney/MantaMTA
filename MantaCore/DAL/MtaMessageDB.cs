@@ -21,19 +21,12 @@ namespace MantaMTA.Core.DAL
 		/// Save the MTA Message to the database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static void Save(MtaMessage message)
+		internal static async Task<bool> SaveAsync(MtaMessage message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
---//IF EXISTS(SELECT 1 FROM man_mta_msg WHERE mta_msg_id = @msgID)
---//	UPDATE man_mta_msg
---//	SET mta_send_internalId = @internalSendID,
---//	mta_msg_rcptTo = @rcptTo,
---//	mta_msg_mailFrom = @mailFrom
---//	WHERE mta_msg_id = @msgID
---//ELSE
 	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
 	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
@@ -44,18 +37,10 @@ namespace MantaMTA.Core.DAL
 				else
 					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
 
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
-		}
-
-		/// <summary>
-		/// Saves the Mta Queued message to the Database.
-		/// </summary>
-		/// <param name="message"></param>
-		internal static void Save(MtaQueuedMessage message)
-		{
-			SaveAsync(message).Wait();
 		}
 
 		/// <summary>
@@ -207,7 +192,7 @@ COMMIT TRANSACTION";
 		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>
 		/// <param name="mtaQueuedMessage"></param>
-		internal static void Delete(MtaQueuedMessage mtaQueuedMessage)
+		internal static async Task<bool> DeleteAsync(MtaQueuedMessage mtaQueuedMessage)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -216,8 +201,9 @@ COMMIT TRANSACTION";
 	DELETE FROM man_mta_queue
 	WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", mtaQueuedMessage.ID);
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 

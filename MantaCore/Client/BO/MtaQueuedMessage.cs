@@ -114,9 +114,10 @@ namespace MantaMTA.Core.Client.BO
 		/// Deletes queued data
 		/// </summary>
 		/// <param name="failMsg"></param>
-		public void HandleDeliveryFail(string failMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public async Task<bool> HandleDeliveryFailAsync(string failMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
+
 			// Send fails to Manta.Core.Events
 			try
 			{
@@ -130,8 +131,10 @@ namespace MantaMTA.Core.Client.BO
 			{
 
 			}
-			MtaMessageDB.Delete(this);
+			
+			await MtaMessageDB.DeleteAsync(this);
 			DeleteMessageData();
+			return true;
 		}
 
 		/// <summary>
@@ -143,7 +146,7 @@ namespace MantaMTA.Core.Client.BO
 		public void HandleMessageDiscard()
 		{
 			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Discarded, string.Empty, null, null);
-			MtaMessageDB.Delete(this);
+			MtaMessageDB.DeleteAsync(this).Wait();
 			DeleteMessageData();
 		}
 
@@ -152,11 +155,12 @@ namespace MantaMTA.Core.Client.BO
 		/// Logs success
 		/// Deletes queued data
 		/// </summary>
-		public void HandleDeliverySuccess(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public async Task<bool> HandleDeliverySuccessAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
-			MtaTransaction.LogTransaction(this.ID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
-			MtaMessageDB.Delete(this);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
+			await MtaMessageDB.DeleteAsync(this);
 			DeleteMessageData();
+			return true;
 		}
 
 		/// <summary>
