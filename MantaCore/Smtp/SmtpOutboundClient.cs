@@ -150,6 +150,11 @@ namespace MantaMTA.Core.Smtp
 		private VirtualMta.VirtualMTA MtaIpAddress { get; set; }
 
 		/// <summary>
+		/// Identifies if the remote MX supports SMTP Pipelining.
+		/// </summary>
+		private bool _CanPipeline { get; set; }
+
+		/// <summary>
 		/// Creates a SmtpOutboundClient bound to the specified endpoint.
 		/// </summary>
 		/// <param name="ipAddress">The local IP address to bind to.</param>
@@ -162,6 +167,7 @@ namespace MantaMTA.Core.Smtp
 			base.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 			SmtpOutboundClientCollection.Instance.Add(this);
 			this.IsActive = false;
+			this._CanPipeline = false;
 		}
 
 		/// <summary>
@@ -267,6 +273,10 @@ namespace MantaMTA.Core.Smtp
 					// Check to see if it supports 8BITMIME
 					if (response.IndexOf("8BITMIME", StringComparison.OrdinalIgnoreCase) > -1)
 						_DataTransportMime = SmtpTransportMIME._8BitUTF;
+
+					// Check to see if the server supports pipelining
+					if (response.IndexOf("PIPELINING", StringComparison.OrdinalIgnoreCase) > -1)
+						_CanPipeline = true;
 				}
 			}
 			catch (IOException)
@@ -285,7 +295,7 @@ namespace MantaMTA.Core.Smtp
 		/// Send the MAIL FROM command to the server using <paramref name="mailFrom"/> as parameter.
 		/// </summary>
 		/// <param name="mailFrom">Email address to use as parameter.</param>
-		/// <param name="failed">Action to call if command fails.</param>
+		/// <param name="failedCallback">Action to call if command fails.</param>
 		public async Task<bool> ExecMailFromAsync(MailAddress mailFrom, Action<string> failedCallback)
 		{
 			if (!base.Connected)
@@ -296,12 +306,18 @@ namespace MantaMTA.Core.Smtp
 			await SmtpStream.WriteLineAsync("MAIL FROM: <" +
 										(mailFrom == null ? string.Empty : mailFrom.Address) + ">" +
 										(_DataTransportMime == SmtpTransportMIME._8BitUTF ? " BODY=8BITMIME" : string.Empty));
-			string response = await SmtpStream.ReadAllLinesAsync();
+
+			// If the remote MX doesn't support pipelining then wait and check the response.
+			if (!_CanPipeline)
+			{
+				string response = await SmtpStream.ReadAllLinesAsync();
+				
+				if (!response.StartsWith("250"))
+					failedCallback(response);
+			}
+
 			_LastActive = DateTime.UtcNow;
 			IsActive = false;
-
-			if (!response.StartsWith("250"))
-				failedCallback(response);
 
 			return true;
 		}
@@ -319,12 +335,18 @@ namespace MantaMTA.Core.Smtp
 			IsActive = true;
 			_LastActive = DateTime.UtcNow;
 			await SmtpStream.WriteLineAsync("RCPT TO: <" + rcptTo.Address + ">");
-			string response = await SmtpStream.ReadAllLinesAsync();
+
+			// If the remote MX doesn't support pipelining then wait and check the response.
+			if (!_CanPipeline)
+			{
+				string response = await SmtpStream.ReadAllLinesAsync();
+				
+				if (!response.StartsWith("250"))
+					failedCallback(response);
+			}
+
 			_LastActive = DateTime.UtcNow;
 			IsActive = false;
-
-			if (!response.StartsWith("250"))
-				failedCallback(response);
 
 			return true;
 		}
@@ -344,6 +366,32 @@ namespace MantaMTA.Core.Smtp
 
 			await SmtpStream.WriteLineAsync("DATA");
 			string response = await SmtpStream.ReadAllLinesAsync();
+
+			// If the remote MX supports pipelining then we need to check the MAIL FROM and RCPT to responses.
+			if (_CanPipeline)
+			{
+				// Check MAIL FROM OK.
+				if (!response.StartsWith("250"))
+				{
+					failedCallback(response);
+					IsActive = false;
+					return false;
+				}
+					
+
+				// Check RCPT TO OK.
+				response = await SmtpStream.ReadAllLinesAsync();
+				if (!response.StartsWith("250"))
+				{
+					failedCallback(response);
+					IsActive = false;
+					return false;
+				}
+
+				// Get the Data Command response.
+				response = await SmtpStream.ReadAllLinesAsync();
+			}
+
 			_LastActive = DateTime.UtcNow;
 
 			if (!response.StartsWith("354"))

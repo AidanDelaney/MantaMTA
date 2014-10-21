@@ -187,6 +187,7 @@ namespace MantaMTA.Core.Server
 							// EHLO was sent, let the client know what extensions we support.
 							await smtpStream.WriteLineAsync("250-Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 							await smtpStream.WriteLineAsync("250-8BITMIME");
+							await smtpStream.WriteLineAsync("250-PIPELINING");
 							await smtpStream.WriteLineAsync("250 Ok");
 						}
 						continue;
