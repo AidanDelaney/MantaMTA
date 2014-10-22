@@ -37,6 +37,7 @@ namespace MantaMTA.Core.Events
 
 		public MantaEvent()
 		{
+			ID = 0;
 			Forwarded = false;
 		}
 	}

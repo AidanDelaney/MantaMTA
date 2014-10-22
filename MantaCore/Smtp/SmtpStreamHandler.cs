@@ -1,10 +1,10 @@
-﻿using System;
+﻿using MantaMTA.Core.Enums;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Smtp
 {
@@ -13,6 +13,11 @@ namespace MantaMTA.Core.Smtp
 	/// </summary>
 	public class SmtpStreamHandler
 	{
+		/// <summary>
+		/// Holds a Copy of a UTF8 Encoding without a BOM.
+		/// </summary>
+		private static Encoding _UTF8Encoding = new UTF8Encoding(false);
+
 		/// <summary>
 		/// The local address is the address on the server that the client is connected to.
 		/// </summary>
@@ -66,8 +71,8 @@ namespace MantaMTA.Core.Smtp
 			this._CurrentTransportMIME = SmtpTransportMIME._7BitASCII;
 
 			// Use new UTF8Encoding(false) so we don't send BOM to the network stream.
-			this.ClientStreamReaderUTF8 = new StreamReader(stream, new UTF8Encoding(false));
-			this.ClientStreamWriterUTF8 = new StreamWriter(stream, new UTF8Encoding(false));
+			this.ClientStreamReaderUTF8 = new StreamReader(stream, _UTF8Encoding);
+			this.ClientStreamWriterUTF8 = new StreamWriter(stream, _UTF8Encoding);
 			this.ClientStreamReaderASCII = new StreamReader(stream, Encoding.ASCII);
 			this.ClientStreamWriterASCII = new StreamWriter(stream, Encoding.ASCII);
 		}
@@ -131,7 +136,7 @@ namespace MantaMTA.Core.Smtp
 			{
 				line = await ReadLineAsync(false);
 			}
-			catch (Exception ex) 
+			catch (Exception)
 			{
 				return line;
 			}

@@ -88,8 +88,12 @@ namespace MantaMTA.Core.DAL
 		/// <returns></returns>
 		public static int GetDefaultVirtualMtaGroupID()
 		{
-			return (int)GetColumnValue("cfg_para_defaultIpGroupId");
+			if(_DefaultVirtualMtaGroupID == null)
+				_DefaultVirtualMtaGroupID = (int)GetColumnValue("cfg_para_defaultIpGroupId");
+			return _DefaultVirtualMtaGroupID.Value;
 		}
+
+		public static int? _DefaultVirtualMtaGroupID = null;
 
 		/// <summary>
 		/// Sets the ID of the Virtual MTA Group sends should use by default.

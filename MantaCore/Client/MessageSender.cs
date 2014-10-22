@@ -41,7 +41,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
 		/// </summary>
-		private const int _MAX_SENDING_WORKER_TASKS = 500;
+		private const int _MAX_SENDING_WORKER_TASKS = 400;
 
 		/// <summary>
 		/// Client thread.
@@ -74,10 +74,11 @@ namespace MantaMTA.Core.Client
 		/// <param name="mailFrom"></param>
 		/// <param name="rcptTo"></param>
 		/// <param name="message"></param>
-		public void Enqueue(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
+		public async Task<bool> EnqueueAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
-			MtaMessage msg = MtaMessage.Create(messageID, internalSendID, mailFrom, rcptTo);
-			msg.Queue(message, ipGroupID);
+			MtaMessage msg = await MtaMessage.CreateAsync(messageID, internalSendID, mailFrom, rcptTo);
+			await msg.QueueAsync(message, ipGroupID);
+			return true;
 		}
 
 		/// <summary>
@@ -119,11 +120,8 @@ namespace MantaMTA.Core.Client
 								}
 								catch (Exception ex)
 								{
-									if (!(ex is MaxConnectionsException))
-									{
-										// Log if we can't send the message.
-										Logging.Debug("Failed to send message", ex);
-									}
+									// Log if we can't send the message.
+									Logging.Debug("Failed to send message", ex);
 								}
 								finally
 								{
@@ -210,29 +208,26 @@ namespace MantaMTA.Core.Client
 			// before picking up. The MAX_TIME_IN_QUEUE should always be enforced.
 			if (msg.AttemptSendAfterUtc - msg.QueuedTimestampUtc > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
-				msg.HandleDeliveryFail("Timed out in queue.", null, null);
+				await msg.HandleDeliveryFailAsync("Timed out in queue.", null, null);
 				result = false;
 			}
 			else
 			{
-				string data = string.Empty;
-				try
+				string data = await msg.GetDataAsync();
+				if(string.IsNullOrEmpty(data))
 				{
-					data = msg.Data;
-				}
-				catch (Exception)
-				{
-					msg.HandleDeliveryFail("Email DATA file not found", null, null);
+					await msg.HandleDeliveryFailAsync("Email DATA file not found", null, null);
 					result = false;
 					return result;
 				}
+				
 				MailAddress mailAddress = msg.RcptTo[0];
 				MailAddress mailFrom = msg.MailFrom;
 				MXRecord[] mXRecords = DNSManager.GetMXRecords(mailAddress.Host);
 				// If mxs is null then there are no MX records.
 				if (mXRecords == null || mXRecords.Length < 1)
 				{
-					msg.HandleDeliveryFail("550 Domain Not Found.", null, null);
+					await msg.HandleDeliveryFailAsync("550 Domain Not Found.", null, null);
 					result = false;
 				}
 				else
@@ -240,16 +235,31 @@ namespace MantaMTA.Core.Client
 					// The IP group that will be used to send the queued message.
 					VirtualMtaGroup virtualMtaGroup = VirtualMtaManager.GetVirtualMtaGroup(msg.IPGroupID);
 					VirtualMTA sndIpAddress = virtualMtaGroup.GetVirtualMtasForSending(mXRecords[0]);
-					SmtpOutboundClient smtpClient = SmtpClientPool.Instance.Dequeue(sndIpAddress, mXRecords, delegate(string message)
+
+					SmtpOutboundClientDequeueResponse dequeueResponse = await SmtpClientPool.Instance.DequeueAsync(sndIpAddress, mXRecords);
+					switch (dequeueResponse.DequeueResult)
 					{
-						msg.HandleDeliveryDeferral(message, sndIpAddress, null, false);
-					}, delegate
-					{
-						msg.HandleServiceUnavailable(sndIpAddress);
-					}, delegate
-					{
-						msg.HandleDeliveryThrottle(sndIpAddress, null);
-					});
+						case SmtpOutboundClientDequeueAsyncResult.Success:
+						case SmtpOutboundClientDequeueAsyncResult.NoMxRecords:
+						case SmtpOutboundClientDequeueAsyncResult.FailedToAddToSmtpClientQueue:
+						case SmtpOutboundClientDequeueAsyncResult.Unknown:
+							break; // Don't need to do anything for these results.
+						case SmtpOutboundClientDequeueAsyncResult.FailedToConnect:
+							await msg.HandleDeliveryDeferralAsync("Failed to connect", sndIpAddress, mXRecords[0]);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.ServiceUnavalible:
+							await msg.HandleServiceUnavailableAsync(sndIpAddress);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.Throttled:
+							await msg.HandleDeliveryThrottleAsync(sndIpAddress, mXRecords[0]);
+							break;
+						case SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections:
+							msg.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
+							await DAL.MtaMessageDB.SaveAsync((msg as MtaQueuedMessage));
+							break;
+					}
+
+					SmtpOutboundClient smtpClient = dequeueResponse.SmtpOutboundClient;
 
 					// If no client was dequeued then we can't currently send.
 					// This is most likely a max connection issue. Return false but don't
@@ -266,7 +276,7 @@ namespace MantaMTA.Core.Client
 							{
 								// If smtpRespose starts with 5 then perm error should cause fail
 								if (smtpResponse.StartsWith("5"))
-									msg.HandleDeliveryFail(smtpResponse, sndIpAddress, smtpClient.MXRecord);
+									msg.HandleDeliveryFailAsync(smtpResponse, sndIpAddress, smtpClient.MXRecord).Wait();
 								else
 								{
 									// If the MX is actively denying use service access, SMTP code 421 then we should inform
@@ -290,7 +300,7 @@ namespace MantaMTA.Core.Client
 							await smtpClient.ExecRcptToAsync(mailAddress, failedCallback);
 							await smtpClient.ExecDataAsync(data, failedCallback);
 							SmtpClientPool.Instance.Enqueue(smtpClient);
-							msg.HandleDeliverySuccess(sndIpAddress, smtpClient.MXRecord);
+							await msg.HandleDeliverySuccessAsync(sndIpAddress, smtpClient.MXRecord);
 							result = true;
 						}
 						catch (MessageSender.SmtpTransactionFailedException)

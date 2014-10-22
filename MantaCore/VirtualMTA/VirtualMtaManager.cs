@@ -93,9 +93,16 @@ namespace MantaMTA.Core.VirtualMta
 		/// <returns></returns>
 		public static VirtualMtaGroup GetDefaultVirtualMtaGroup()
 		{
-			int defaultGroupID = DAL.CfgPara.GetDefaultVirtualMtaGroupID();
-			return GetVirtualMtaGroup(defaultGroupID);
+			if (_DefaultVirtualMtaGroup == null)
+			{
+				int defaultGroupID = DAL.CfgPara.GetDefaultVirtualMtaGroupID();
+				_DefaultVirtualMtaGroup = GetVirtualMtaGroup(defaultGroupID);
+			}
+
+			return _DefaultVirtualMtaGroup;
 		}
+
+		private static VirtualMtaGroup _DefaultVirtualMtaGroup { get; set; }
 
 		/// <summary>
 		/// Object used to lock inside the GetMtaIPGroup method.

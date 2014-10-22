@@ -1,12 +1,11 @@
-﻿using System;
+﻿using MantaMTA.Core.Enums;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using MantaMTA.Core.Enums;
 
 namespace MantaMTA.Core.Server
 {
@@ -19,10 +18,6 @@ namespace MantaMTA.Core.Server
 		/// Listens to TCP socket.
 		/// </summary>
 		private TcpListener _TcpListener = null;
-		/// <summary>
-		/// Thread that this instance of SmtpServer will run on.
-		/// </summary>
-		private Thread _ServerThread = null;
 
 		/// <summary>
 		/// Make default constructor private so code from other classes has to use SmtpServer(port)
@@ -47,47 +42,41 @@ namespace MantaMTA.Core.Server
 		{
 			// Create the TCP Listener using specified port on all IPs
 			_TcpListener = new TcpListener(ipAddress, port);
-			_ServerThread = new Thread(
-				new ThreadStart(delegate()
-				{
-					try
-					{
-						_TcpListener.Start();
-					}
-					catch (SocketException ex)
-					{
-						Logging.Error("Failed to create server on " + ipAddress.ToString() + ":" + port, ex);
-						return;
-					}
+			
+			try
+			{
+				_TcpListener.Start();
+				_TcpListener.BeginAcceptTcpClient(AsyncConnectionHandler, _TcpListener);
+			}
+			catch (SocketException ex)
+			{
+				Logging.Error("Failed to create server on " + ipAddress.ToString() + ":" + port, ex);
+				return;
+			}
 
-					Logging.Info("Server started on " + ipAddress.ToString() + ":" + port);
+			Logging.Info("Server started on " + ipAddress.ToString() + ":" + port);
+		}
 
-					while (_TcpListener != null)
-					{
-						// Connection with client.
-						TcpClient client = null;
+		/// <summary>
+		/// Event fired when a new Connection to the SMTP Server is made.
+		/// </summary>
+		/// <param name="ir">The AsyncResult from the TcpListener.</param>
+		private void AsyncConnectionHandler(IAsyncResult ir)
+		{
+			// If the TCP Listener has been set to null, then we cannot handle any connections.
+			if (_TcpListener == null)
+				return;
 
-						try
-						{
-							// AcceptTcpClient will block until done.
-							client = _TcpListener.AcceptTcpClient();
-						}
-						catch (SocketException ex)
-						{
-							// Error code 10004 is AcceptTcpClient having block removed.
-							// So server is shutting down.
-							if (ex.ErrorCode == 10004)
-								return;
-
-							throw;
-						}
-
-
-						// Create a Task and run it to handle client connection.
-						Task.Run(() => HandleSmtpConnection(client));
-					}
-				}));
-			_ServerThread.Start();
+			try
+			{
+				TcpClient client = _TcpListener.EndAcceptTcpClient(ir);
+				_TcpListener.BeginAcceptTcpClient(AsyncConnectionHandler, _TcpListener);
+				Task.Run(async () => await HandleSmtpConnection(client));
+			}
+			catch (ObjectDisposedException)
+			{
+				// SMTP Server stop was done mid connection handshake, just ignore it.
+			}
 		}
 		
 		/// <summary>
@@ -112,9 +101,10 @@ namespace MantaMTA.Core.Server
 			try
 			{
 				Smtp.SmtpStreamHandler smtpStream = new Smtp.SmtpStreamHandler(client);
+				string serverHostname = await GetServerHostnameAsync(client);
 
 				// Identify our MTA
-				await smtpStream.WriteLineAsync("220 " + GetServerHostname(client) + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
+				await smtpStream.WriteLineAsync("220 " + serverHostname + " ESMTP " + MtaParameters.MTA_NAME + " Ready");
 
 				// Set to true when the client has sent quit command.
 				bool quit = false;
@@ -197,6 +187,7 @@ namespace MantaMTA.Core.Server
 							// EHLO was sent, let the client know what extensions we support.
 							await smtpStream.WriteLineAsync("250-Hello " + heloHost + "[" + smtpStream.RemoteAddress.ToString() + "]");
 							await smtpStream.WriteLineAsync("250-8BITMIME");
+							await smtpStream.WriteLineAsync("250-PIPELINING");
 							await smtpStream.WriteLineAsync("250 Ok");
 						}
 						continue;
@@ -376,30 +367,34 @@ namespace MantaMTA.Core.Server
 						mailTransaction.AddHeader("Received", string.Format("from {0}[{1}] by {2}[{3}] on {4}",
 							heloHost,
 							smtpStream.RemoteAddress.ToString(),
-							GetServerHostname(client),
+							serverHostname,
 							smtpStream.LocalAddress.ToString(),
 							DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH':'mm':'ss K")));
 
-						// Use the default IP Group ID. Should add logic to look at some kind of X- header and use that instead.
-						try
+						
+						// Complete the transaction,either saving to local mailbox or queueing for relay.
+						SmtpServerTransaction.SmtpServerTransactionAsyncResult result = await mailTransaction.SaveAsync();
+
+						// Send a response to the client depending on the result of saving the transaction.
+						switch(result)
 						{
-							mailTransaction.Save();
-						}
-						catch (SendDiscardingException)
-						{
-							smtpStream.WriteLine("554 Send Discarding.");
-							continue;
-						}
-						catch (Exception ex)
-						{
-							//Logging.Error("421 local error in processing.", ex);
-							smtpStream.WriteLine("451 Requested action aborted: local error in processing.");
-							continue;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.SuccessMessageDelivered:
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.SuccessMessageQueued:
+								await smtpStream.WriteLineAsync("250 Message queued for delivery");
+								break;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.FailedSendDiscarding:
+								await smtpStream.WriteLineAsync("554 Send Discarding.");
+								break;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.Unknown:
+							default:
+								await smtpStream.WriteLineAsync("451 Requested action aborted: local error in processing.");
+								break;
 						}
 
 						// Done with transaction, clear it and inform client message success and QUEUED
 						mailTransaction = null;
-						await smtpStream.WriteLineAsync("250 Message queued for delivery");
+						
+						// Go and wait for the next client command.
 						continue;
 					}
 
@@ -427,13 +422,14 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		/// <param name="client"></param>
 		/// <returns></returns>
-		private string GetServerHostname(TcpClient client)
+		private async Task<string> GetServerHostnameAsync(TcpClient client)
 		{
 			string serverIPAddress = (client.Client.LocalEndPoint as IPEndPoint).Address.ToString();
 			string serverHost = string.Empty;
 			try
 			{
-				serverHost = Dns.GetHostEntry(serverIPAddress).HostName;
+				IPHostEntry hostEntry = await Dns.GetHostEntryAsync(serverIPAddress);
+				serverHost = hostEntry.HostName;
 			}
 			catch (Exception)
 			{

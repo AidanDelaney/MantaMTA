@@ -1,11 +1,12 @@
-﻿using System;
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Mail;
-using MantaMTA.Core.Client.BO;
-using MantaMTA.Core.Enums;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.DAL
 {
@@ -20,19 +21,12 @@ namespace MantaMTA.Core.DAL
 		/// Save the MTA Message to the database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static void Save(MtaMessage message)
+		internal static async Task<bool> SaveAsync(MtaMessage message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
---//IF EXISTS(SELECT 1 FROM man_mta_msg WHERE mta_msg_id = @msgID)
---//	UPDATE man_mta_msg
---//	SET mta_send_internalId = @internalSendID,
---//	mta_msg_rcptTo = @rcptTo,
---//	mta_msg_mailFrom = @mailFrom
---//	WHERE mta_msg_id = @msgID
---//ELSE
 	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
 	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
@@ -43,8 +37,9 @@ namespace MantaMTA.Core.DAL
 				else
 					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
 
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 
@@ -52,7 +47,7 @@ namespace MantaMTA.Core.DAL
 		/// Saves the Mta Queued message to the Database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static void Save(MtaQueuedMessage message)
+		internal static async Task<bool> SaveAsync(MtaQueuedMessage message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -66,17 +61,19 @@ IF EXISTS(SELECT 1 FROM man_mta_queue WHERE mta_msg_id = @msgID)
 	ip_group_id = @groupID
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id)
-	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID)";
+	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id, mta_send_internalId)
+	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID, @sendInternalID)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestampUtc);
 				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfterUtc);
 				cmd.Parameters.AddWithValue("@isPickupLocked", message.IsPickUpLocked);
 				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
 				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
+				cmd.Parameters.AddWithValue("@sendInternalID", message.InternalSendID);
 
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 
@@ -119,10 +116,9 @@ DECLARE @msgIdTbl table(msgID uniqueidentifier)
 	SELECT	[que].mta_msg_id, 
 			[que].mta_queue_attemptSendAfter, 
 			ROW_NUMBER() OVER(	PARTITION BY [snd].mta_send_internalId 
-								ORDER BY [que].mta_queue_attemptSendAfter DESC	) as 'RowNum'
-	FROM man_mta_queue AS [que]
-		JOIN man_mta_msg AS [msg] ON [que].mta_msg_id = [msg].mta_msg_id
-		JOIN man_mta_send AS [snd] ON [msg].mta_send_internalId = [snd].mta_send_internalId 
+								ORDER BY [que].mta_queue_attemptSendAfter ASC	) as 'RowNum'
+	FROM man_mta_queue AS [que] WITH (READPAST)
+		JOIN man_mta_send AS [snd] WITH (NOLOCK) ON [que].mta_send_internalId = [snd].mta_send_internalId 
 	WHERE [que].mta_queue_attemptSendAfter <= GETUTCDATE()
 		AND [snd].mta_sendStatus_id = 1
 		AND [que].mta_queue_isPickupLocked = 0
@@ -137,12 +133,12 @@ SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 SELECT (SELECT COUNT(*)
-		FROM man_mta_transaction as [tran]
+		FROM man_mta_transaction as [tran] WITH (READPAST) 
 		WHERE [tran].mta_msg_id = [msg].mta_msg_id
 		AND [tran].mta_transactionStatus_id = 1) as 'DeferredCount',
 		[msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
-FROM man_mta_queue as [que]
-JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
+FROM man_mta_queue as [que] WITH (READPAST)
+JOIN man_mta_msg as [msg] WITH (READPAST) ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
@@ -196,7 +192,7 @@ COMMIT TRANSACTION";
 		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>
 		/// <param name="mtaQueuedMessage"></param>
-		internal static void Delete(MtaQueuedMessage mtaQueuedMessage)
+		internal static async Task<bool> DeleteAsync(MtaQueuedMessage mtaQueuedMessage)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -205,8 +201,9 @@ COMMIT TRANSACTION";
 	DELETE FROM man_mta_queue
 	WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", mtaQueuedMessage.ID);
-				conn.Open();
-				cmd.ExecuteNonQuery();
+				await conn.OpenAsync();
+				await cmd.ExecuteNonQueryAsync();
+				return true;
 			}
 		}
 

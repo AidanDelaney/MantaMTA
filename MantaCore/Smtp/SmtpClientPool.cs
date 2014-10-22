@@ -37,7 +37,7 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		private static object _ConnectionAttemptsInProgressLock = new object();
 
-		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 100;
+		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 50;
 
 		/// <summary>
 		/// Create an SmtpClientQueue instance.
@@ -100,7 +100,7 @@ namespace MantaMTA.Core.Smtp
 		/// Attempt to create a new connection using the specified ip address and mx record.
 		/// </summary>
 		/// <returns>A connected outbound client or NULL</returns>
-		public SmtpOutboundClient CreateNewConnection(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public async Task<CreateNewConnectionAsyncResult> CreateNewConnectionAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			SmtpOutboundClient smtpClient = null;
 
@@ -118,14 +118,14 @@ namespace MantaMTA.Core.Smtp
 					// the maximum connections then we can create a new connection otherwise
 					// we are maxed out so return null.
 					if (maximumConnections <= (currentConnections + _ConnectionAttemptsInProgress))
-						throw new MaxConnectionsException();
+						return new CreateNewConnectionAsyncResult(new MaxConnectionsException());
 
 
 					// Limit the amount of connection attempts or experiance massive delays 30s+ for client.connect()
 					if (_ConnectionAttemptsInProgress >= SmtpClientQueue.MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS)
 					{
 						//Logging.Debug("Cannot attempt to create new connection.");
-						throw new MaxConnectionsException();
+						return new CreateNewConnectionAsyncResult(new MaxConnectionsException());
 					}
 
 					//Logging.Debug("Attempting to create new connection.");
@@ -140,7 +140,7 @@ namespace MantaMTA.Core.Smtp
 			{
 				// Create the new client and make the connection
 				smtpClient = new SmtpOutboundClient(ipAddress);
-				smtpClient.Connect(mxRecord);
+				await smtpClient.ConnectAsync(mxRecord);
 				smtpClient.IsActive = true;
 				this.InUseConnections.Add(smtpClient);
 			}
@@ -154,10 +154,10 @@ namespace MantaMTA.Core.Smtp
 					smtpClient = null;
 				}
 				if (ex is SocketException)
-					throw ex;
+					return new CreateNewConnectionAsyncResult(ex);
 
 				if (ex is AggregateException && ex.InnerException is System.IO.IOException)
-					throw new SocketException();
+					return new CreateNewConnectionAsyncResult(ex.InnerException);
 			}
 			finally
 			{
@@ -168,7 +168,7 @@ namespace MantaMTA.Core.Smtp
 			}
 
 			// Return connected client or null.
-			return smtpClient;
+			return new CreateNewConnectionAsyncResult(smtpClient);
 		}
 	}
 
@@ -269,27 +269,21 @@ namespace MantaMTA.Core.Smtp
 		/// WARNING: returned SmtpOutboundClient will have it's IsActive flag set to true make sure to set it to
 		///		     false when done with it or it will never be removed by the idle timeout.
 		/// </summary>
-		/// <param name="outboundEndpoint">The local outbound endpoint we wan't to use.</param>
+		/// <param name="ipAddress">The local outbound endpoint we wan't to use.</param>
 		/// <param name="mxs">The MX records for the domain we wan't a client to connect to.</param>
-		/// <param name="deferalAction">The action to be called if service is unavalible or we are unable to 
-		/// connect to any of the MX's in the MX records.</param>
-		/// <param name="throttleAction">The Action to be called if the throttling outbound rule is being applied.</param>
-		/// <returns>SmtpOutboundClient or Null.</returns>
-		public SmtpOutboundClient Dequeue(VirtualMTA ipAddress, MXRecord[] mxs, Action<string> deferalAction, Action serviceUnavailableAction, Action throttleAction)
+		/// <returns>Tuple containing a DequeueAsyncResult and either an SmtpOutboundClient or Null if failed to dequeue.</returns>
+		public async Task<SmtpOutboundClientDequeueResponse> DequeueAsync(VirtualMTA ipAddress, MXRecord[] mxs)
 		{
 			// If there aren't any remote mx records then we can't send
 			if (mxs.Length < 1)
-				return null;
+				return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.NoMxRecords);
 
 			SmtpClientMxRecords mxConnections = this._OutboundConnections.GetOrAdd(ipAddress.IPAddress.ToString(), new SmtpClientMxRecords());
 			SmtpOutboundClient smtpClient = null;
 
 			// Check that we aren't being throttled.
 			if (!ThrottleManager.Instance.TryGetSendAuth(ipAddress, mxs[0]))
-			{
-				throttleAction();
-				return null;
-			}
+				return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.Throttled);
 
 			// Loop through all the MX Records.
 			for (int i = 0; i < mxs.Length; i++)
@@ -302,10 +296,8 @@ namespace MantaMTA.Core.Smtp
 					// This could be improved to allow others to continue, we should however if blocked on all MX's with 
 					// lowest preference  not move on to the others.
 					if (ServiceNotAvailableManager.IsServiceUnavailable(ipAddress.IPAddress.ToString(), mxs[i].Host))
-					{
-						serviceUnavailableAction();
-						return null;
-					}
+						return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.ServiceUnavalible);
+
 					SmtpClientQueue clientQueue = null;
 					lock (this._ClientPoolLock)
 					{
@@ -313,9 +305,7 @@ namespace MantaMTA.Core.Smtp
 						{
 							clientQueue = new SmtpClientQueue();
 							if (!mxConnections.TryAdd(mxs[i].Host, clientQueue))
-							{
-								throw new Exception("Failed to add new SmtpClientQueue");
-							}
+								return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.FailedToAddToSmtpClientQueue);
 						}
 					}
 					// Loop through the client queue and make sure we get one thats still connected.
@@ -329,17 +319,23 @@ namespace MantaMTA.Core.Smtp
 								clientQueue.InUseConnections.Add(smtpClient);
 								smtpClient.LastActive = DateTime.UtcNow;
 								smtpClient.IsActive = true;
-								return smtpClient;
+								return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.Success, smtpClient);
 							}
 						}
 					}
 
 					// Nothing was in the queue or all queued items timed out.
-					smtpClient = clientQueue.CreateNewConnection(ipAddress, mxs[i]);
-					return smtpClient;
+					CreateNewConnectionAsyncResult createNewConnectionResult = await clientQueue.CreateNewConnectionAsync(ipAddress, mxs[i]);
+					if (createNewConnectionResult.Exception == null)
+						return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.Success, createNewConnectionResult.OutboundClient);
+					else if(createNewConnectionResult.Exception is MaxConnectionsException)
+						return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections);
+					else
+						throw createNewConnectionResult.Exception;
 				}
 				catch (SocketException ex)
 				{
+					// We have failed to connect to the remote host.
 					Logging.Warn("Failed to connect to " + mxs[i].Host, ex);
 
 					// If we fail to connect to an MX then don't try again for at least a minute.
@@ -347,17 +343,18 @@ namespace MantaMTA.Core.Smtp
 
 					// Failed to connect to MX
 					if (i == mxs.Length - 1)
-					{
-						// There are no more to test
-						deferalAction("Connect failed");
-						return null;
-					}
+						return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.FailedToConnect);
+				}
+				catch(Exception ex)
+				{
+					// Something unexpected and unhandled has happened, log it and return unknown.
+					Logging.Error("SmtpClientPool.DequeueAsync Unhandled Exception", ex);
+					return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.Unknown);
 				}
 			}
 
-			deferalAction("Connect failed");
-
-			return null;
+			// It we got here then we have failed to connect to the remote host.
+			return new SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult.FailedToConnect);
 		}
 
 		/// <summary>
@@ -389,5 +386,102 @@ namespace MantaMTA.Core.Smtp
 				// Already removed.
 			}
 		}
+	}
+
+	/// <summary>
+	/// Represents a dequeue request response from the SmtpClientPool.DequeueAsync method.
+	/// </summary>
+	internal class SmtpOutboundClientDequeueResponse : Tuple<SmtpOutboundClientDequeueAsyncResult, SmtpOutboundClient>
+	{
+		/// <summary>
+		/// The OutboundClient that was dequeued or created, will be null if one wasn't dequeued.
+		/// </summary>
+		public SmtpOutboundClient SmtpOutboundClient { get { return base.Item2; } }
+
+		/// <summary>
+		/// The result of the dequeue result.
+		/// </summary>
+		public SmtpOutboundClientDequeueAsyncResult DequeueResult { get { return base.Item1; } }
+
+		/// <summary>
+		/// Creates a reponse for a call to the DequeueAsync method.
+		/// </summary>
+		/// <param name="dequeueResult">The result of the method call.</param>
+		/// <param name="client">The SmtpOutboundClient if one was dequeued, should be null if not.</param>
+		public SmtpOutboundClientDequeueResponse(SmtpOutboundClientDequeueAsyncResult dequeueResult, SmtpOutboundClient client = null)
+			: base(dequeueResult, client)
+		{
+
+		}
+	}
+
+	/// <summary>
+	/// Represents the result of a call to the SmtpClientPool.DequeueAsync method.
+	/// </summary>
+	internal enum SmtpOutboundClientDequeueAsyncResult
+	{
+		/// <summary>
+		/// The dequeue call resulted in an Unknown state.
+		/// </summary>
+		Unknown = 0,
+		/// <summary>
+		/// The dequeue was successful.
+		/// </summary>
+		Success = 1,
+		/// <summary>
+		/// The MX Records collection passed in the method call was empty.
+		/// </summary>
+		NoMxRecords = 2,
+		/// <summary>
+		/// A client has not been dequeued as throttling is in effect.
+		/// </summary>
+		Throttled = 3,
+		/// <summary>
+		/// A client to the requested host was not attempted as the service is currently unavalible.
+		/// </summary>
+		ServiceUnavalible = 4,
+		/// <summary>
+		/// This should never happen, it means that a client exists but we couldn't add it to the client tracking library,
+		/// as such it has been disconnected and disposed.
+		/// </summary>
+		FailedToAddToSmtpClientQueue = 5,
+		/// <summary>
+		/// A client was created but it was unable to connect to the remote host.
+		/// </summary>
+		FailedToConnect = 6,
+		/// <summary>
+		/// No attempt was made to dequeue a client as the host has already hit it's maximum connections.
+		/// </summary>
+		FailedMaxConnections = 7
+	}
+
+	/// <summary>
+	/// Represents a result from the SmtpClientPool.CreateNewConnectionAsync method.
+	/// </summary>
+	internal class CreateNewConnectionAsyncResult : Tuple<Exception, SmtpOutboundClient>
+	{
+		/// <summary>
+		/// Represents an Exception that happened within the CreateNewConnectionAsync method. 
+		/// Will be null if none occurred.
+		/// </summary>
+		public Exception Exception { get { return base.Item1; } }
+
+		/// <summary>
+		/// The SmtpOutboundClient that was created and connected to the remote host.
+		/// Will be null if an exception occurred.
+		/// </summary>
+		public SmtpOutboundClient OutboundClient { get { return base.Item2; } }
+
+		/// <summary>
+		/// Creates a new CreateNewConnectionAsyncResult for when the CreateNewConnectionAsync methoid resulted in an exception.
+		/// </summary>
+		/// <param name="exception">The Exception.</param>
+		public CreateNewConnectionAsyncResult(Exception exception) : base(exception, null) { }
+
+		/// <summary>
+		/// Creates a new CreateNewConnectionAsyncResult for when the CreateNewConnectionAsync methoid succeded and created and connected an outbound connection.
+		/// </summary>
+		/// <param name="outboundClient">The SmtpOutboundClient.</param>
+		public CreateNewConnectionAsyncResult(SmtpOutboundClient outboundClient) : base(null, outboundClient) { }
 	}
 }
