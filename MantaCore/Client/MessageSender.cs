@@ -41,7 +41,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
 		/// </summary>
-		private const int _MAX_SENDING_WORKER_TASKS = 500;
+		private const int _MAX_SENDING_WORKER_TASKS = 400;
 
 		/// <summary>
 		/// Client thread.

@@ -37,7 +37,7 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		private static object _ConnectionAttemptsInProgressLock = new object();
 
-		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 100;
+		private const int MAX_SIMULTANEOUS_CLIENT_CONNECT_ATTEMPTS = 50;
 
 		/// <summary>
 		/// Create an SmtpClientQueue instance.
