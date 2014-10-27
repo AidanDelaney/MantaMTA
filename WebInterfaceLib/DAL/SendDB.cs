@@ -1,9 +1,9 @@
-﻿using System;
+﻿using MantaMTA.Core.DAL;
+using MantaMTA.Core.Enums;
+using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using MantaMTA.Core.DAL;
-using MantaMTA.Core.Enums;
 using WebInterfaceLib.BO;
 
 namespace WebInterfaceLib.DAL
@@ -19,10 +19,9 @@ namespace WebInterfaceLib.DAL
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"SELECT COUNT([q].mta_msg_id)
-FROM man_mta_queue as [q]
-JOIN man_mta_msg as [m] on [q].mta_msg_id = [m].mta_msg_id
-JOIN man_mta_send as [s] on [m].mta_send_internalId = [s].mta_send_internalId
+				cmd.CommandText = @"SELECT COUNT(q.mta_msg_id)
+FROM man_mta_queue as q
+JOIN man_mta_send as s on q.mta_send_internalId = s.mta_send_internalId
 WHERE [s].mta_sendStatus_id in (" + string.Join(",", Array.ConvertAll<SendStatus, int>(sendStatus, s => (int)s)) + ")";
 				conn.Open();
 				return Convert.ToInt64(cmd.ExecuteScalar());
@@ -89,15 +88,7 @@ ORDER BY [send].mta_send_createdTimestamp DESC";
 			using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["SqlServer"].ConnectionString))
 			{
 				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"DECLARE @sends table (RowNum int, 
-					  mta_send_internalId int)
-
-INSERT INTO @sends(RowNum, mta_send_internalId)
-SELECT ROW_NUMBER() OVER(ORDER BY mta_send_internalId ASC), *
-FROM (SELECT DISTINCT msg.mta_send_internalId
-	  FROM man_mta_queue as [queue]
-	  JOIN man_mta_msg as [msg] on [queue].mta_msg_id = [msg].mta_msg_id) BASE
-
+				cmd.CommandText = @"
 SELECT [send].*, 
 	(SELECT COUNT(*) FROM man_mta_msg WHERE man_mta_msg.mta_send_internalId = [send].mta_send_internalId) AS 'Messages',
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 4) AS 'Accepted',
@@ -107,7 +98,7 @@ SELECT [send].*,
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
 	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId) AS 'LastTransactionTimestamp'
 FROM man_mta_send as [send]
-WHERE [send].mta_send_internalId in (SELECT [s].mta_send_internalId FROM @sends as [s])
+WHERE [send].mta_send_internalId in (SELECT DISTINCT q.mta_send_internalId FROM man_mta_queue as q)
 ORDER BY [send].mta_send_createdTimestamp DESC";
 				cmd.CommandTimeout = 90; // Query can take a while to run due to the size of the Transactions table.
 				return new SendInfoCollection(DataRetrieval.GetCollectionFromDatabase<SendInfo>(cmd, CreateAndFillSendInfo));
