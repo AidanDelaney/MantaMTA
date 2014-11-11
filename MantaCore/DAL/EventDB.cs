@@ -74,43 +74,30 @@ IF EXISTS (SELECT 1 FROM man_evn_event WHERE evn_event_id = @eventID)
 	BEGIN
 		UPDATE man_evn_event
 		SET evn_type_id = @eventType,
-		evn_event_timestamp = @timestmap,
+		evn_event_timestamp = @timestamp,
 		evn_event_emailAddress = @emailAddress,
 		snd_send_id = @sendId,
 		evn_event_forwarded = @forwarded
 		WHERE evn_event_id = @eventID
-		
-		SELECT @eventID
 	END
 ELSE
 	BEGIN
 		INSERT INTO man_evn_event(evn_type_id, evn_event_timestamp, evn_event_emailAddress, snd_send_id, evn_event_forwarded)
-		VALUES(@eventType, @timestmap, @emailAddress, @sendId, @forwarded)
+		VALUES(@eventType, @timestamp, @emailAddress, @sendId, @forwarded)
 
-		SELECT @@IDENTITY
-	END";
+		SET @eventID = @@IDENTITY
+	END
+";
 				cmd.Parameters.AddWithValue("@eventID", evn.ID);
 				cmd.Parameters.AddWithValue("@eventType", (int)evn.EventType);
-				cmd.Parameters.AddWithValue("@timestmap", evn.EventTime);
+				cmd.Parameters.AddWithValue("@timestamp", evn.EventTime);
 				cmd.Parameters.AddWithValue("@emailAddress", evn.EmailAddress);
 				cmd.Parameters.AddWithValue("@sendId", evn.SendID);
 				cmd.Parameters.AddWithValue("@forwarded", evn.Forwarded);
 
-				conn.Open();
-				return Convert.ToInt32(cmd.ExecuteScalar());
-			}
-		}
-
-		/// <summary>
-		/// Saves the MantaBounceEvent to the database.
-		/// </summary>
-		/// <param name="evn">The bounce event to save.</param>
-		public static void Save(MantaBounceEvent evn)
-		{
-			using (SqlConnection conn = MantaDB.GetSqlConnection())
-			{
-				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"
+				if (evn is MantaBounceEvent)
+				{
+					cmd.CommandText += @"
 IF EXISTS (SELECT 1 FROM man_evn_bounceEvent WHERE evn_event_id = @eventId)
 		UPDATE man_evn_bounceEvent
 		SET evn_bounceCode_id = @bounceCode,
@@ -119,14 +106,19 @@ IF EXISTS (SELECT 1 FROM man_evn_bounceEvent WHERE evn_event_id = @eventId)
 		WHERE evn_event_id = @eventId
 ELSE
 		INSERT INTO man_evn_bounceEvent(evn_event_id, evn_bounceCode_id, evn_bounceEvent_message, evn_bounceType_id)
-		VALUES(@eventId, @bounceCode, @message, @bounceType)";
-				cmd.Parameters.AddWithValue("@eventID", evn.ID);
-				cmd.Parameters.AddWithValue("@bounceCode", (int)evn.BounceInfo.BounceCode);
-				cmd.Parameters.AddWithValue("@message", evn.Message);
-				cmd.Parameters.AddWithValue("@bounceType", (int)evn.BounceInfo.BounceType);
+		VALUES(@eventId, @bounceCode, @message, @bounceType)
+";
+
+					cmd.Parameters.AddWithValue("@bounceCode", (int)(evn as MantaBounceEvent).BounceInfo.BounceCode);
+					cmd.Parameters.AddWithValue("@message", (evn as MantaBounceEvent).Message);
+					cmd.Parameters.AddWithValue("@bounceType", (int)(evn as MantaBounceEvent).BounceInfo.BounceType);
+				}
+
+				cmd.CommandText += @"SELECT @eventID
+";
 
 				conn.Open();
-				cmd.ExecuteNonQuery();
+				return Convert.ToInt32(cmd.ExecuteScalar());
 			}
 		}
 

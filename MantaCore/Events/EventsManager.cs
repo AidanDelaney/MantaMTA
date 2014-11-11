@@ -693,10 +693,7 @@ namespace MantaMTA.Core.Events
 		/// <returns>The Events ID</returns>
 		internal int Save(MantaEvent evt)
 		{
-			evt.ID = MantaMTA.Core.DAL.EventDB.Save(evt);
-			if (evt is MantaBounceEvent)
-				MantaMTA.Core.DAL.EventDB.Save(evt as MantaBounceEvent);
-			return evt.ID;
+			return MantaMTA.Core.DAL.EventDB.Save(evt);
 		}
 
 		/// <summary>
