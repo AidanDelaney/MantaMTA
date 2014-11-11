@@ -23,9 +23,9 @@ namespace MantaMTA.Core.Tests
 				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
-				smtpClient.Connect(mxRecord);
-				MantaMTA.Core.Smtp.SmtpClientPool.Enqueue(smtpClient);
-				smtpClient = MantaMTA.Core.Smtp.SmtpClientPool.Dequeue(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }, new Action<string>(delegate(string str) { }), new Action(delegate() { }), new Action(delegate() { }));
+				smtpClient.ConnectAsync(mxRecord).Wait();
+				MantaMTA.Core.Smtp.SmtpClientPool.Instance.Enqueue(smtpClient);
+				smtpClient = MantaMTA.Core.Smtp.SmtpClientPool.Instance.DequeueAsync(ipAddress, new MantaMTA.Core.DNS.MXRecord[] { mxRecord }).Result.SmtpOutboundClient;
 
 				Assert.NotNull(smtpClient);
 				Assert.IsTrue(smtpClient.Connected);
@@ -44,7 +44,7 @@ namespace MantaMTA.Core.Tests
 				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
-				smtpClient.Connect(mxRecord);
+				smtpClient.ConnectAsync(mxRecord).Wait();
 				Assert.IsTrue(smtpClient.Connected);
 
 				Action sendMessage = new Action(delegate()
@@ -91,7 +91,7 @@ namespace MantaMTA.Core.Tests
 					MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
 
 					SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
-					smtpClient.Connect(mxRecord);
+					smtpClient.ConnectAsync(mxRecord).Wait();
 
 					Assert.IsTrue(smtpClient.Connected);
 					System.Threading.Thread.Sleep((MantaMTA.Core.MtaParameters.Client.ConnectionIdleTimeoutInterval + 5) * 1000);
