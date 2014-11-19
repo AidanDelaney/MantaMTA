@@ -56,9 +56,7 @@ namespace MantaMTA.Core.DAL
 						// If attempts to connect are failing only attempt to connect once a minute so that sending can continue
 						// by going straight to SQL server.
 						if (_LastConnectAttempt < DateTime.UtcNow.AddMinutes(-1))
-						{
 							_RedisConnection = ConnectionMultiplexer.Connect("localhost,connectTimeout=1000");
-						}
 					}
 					catch (TimeoutException)
 					{
@@ -108,7 +106,39 @@ namespace MantaMTA.Core.DAL
 				message);
 
 			// Convert object to JSON and save to Redis.
-			return db.StringSet(key, JsonFormatter.Serialize(recordToSave));
+			try
+			{
+				db.StringSet(key, JsonFormatter.Serialize(recordToSave));
+				return true;
+			}
+			catch (Exception ex)
+			{
+				bool exceptionLogged = false;
+
+				if (ex is RedisException)
+				{
+					if (ex.Message.Equals("OOM command not allowed when used memory > 'maxmemory'."))
+					{
+						Logging.Error("Redis max memory");
+						exceptionLogged = true;
+					}
+					else if (ex is RedisConnectionException)
+					{
+						Logging.Error("Redis not longer connected");
+						exceptionLogged = true;
+					}
+				}
+				else if (ex is TimeoutException)
+				{
+					Logging.Error("Redis command timed out");
+					exceptionLogged = true;
+				}
+
+				if (!exceptionLogged)
+					Logging.Error("Redis StringSet Error", ex);
+
+				return false;
+			}
 		}
 
 		/// <summary>
