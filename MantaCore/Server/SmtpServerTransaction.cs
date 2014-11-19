@@ -237,8 +237,8 @@ namespace MantaMTA.Core.Server
 				mtaGroup.VirtualMtaCollection.Count == 0)
 				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
-			// Need to put this message in the database for relaying to pickup
-			await MessageSender.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+			// Attempt to Enqueue the Email for Relaying.
+			await QueueManager.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
 
 			return SmtpServerTransactionAsyncResult.SuccessMessageQueued;
 		}

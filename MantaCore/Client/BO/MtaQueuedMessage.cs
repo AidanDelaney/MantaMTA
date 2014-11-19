@@ -45,16 +45,26 @@ namespace MantaMTA.Core.Client.BO
 		public string DataPath { get; set; }
 
 		/// <summary>
+		/// The Email data.
+		/// </summary>
+		public string Data { get; set; }
+
+		/// <summary>
 		/// Gets the DATA for this message. Is read from <paramref name="DataPath"/>
 		/// If DataPath is empty will return string.Empty.
 		/// </summary>
 		public async Task<string> GetDataAsync()
 		{
-			// If the DATA path is empty, then Data shouldn't be called.
+			// If the DATA path is empty then data is not in a file so can return Data.
 			if (string.IsNullOrWhiteSpace(this.DataPath))
-				return string.Empty;
-				//throw new FileNotFoundException("Data doesn't exist.");
+			{
+				if (string.IsNullOrWhiteSpace(this.Data))
+					return string.Empty;
 
+				return this.Data;
+			}
+
+			// Read the data from the file.
 			using (StreamReader reader = new StreamReader(this.DataPath))
 			{
 				return await reader.ReadToEndAsync();
@@ -76,7 +86,8 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="dataPath">Path to the email file.</param>
 		/// <param name="ipGroupID">ID of the IP Group to send through.</param>
 		/// <param name="deferredCount">Ammount of times the message has been deferred.</param>
-		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestampUtc, DateTime attemptSendAfterUtc, bool isPickUpLocked, string dataPath, int ipGroupID, int deferredCount)
+		/// <param name="data">The Email Data, if not stored in a file.</param>
+		public MtaQueuedMessage(MtaMessage message, DateTime queuedTimestampUtc, DateTime attemptSendAfterUtc, bool isPickUpLocked, string dataPath, int ipGroupID, int deferredCount, string data = "")
 		{
 			base.ID = message.ID;
 			base.MailFrom = message.MailFrom;
@@ -89,6 +100,7 @@ namespace MantaMTA.Core.Client.BO
 			DataPath = dataPath;
 			IPGroupID = ipGroupID;
 			DeferredCount = deferredCount;
+			Data = data;
 		}
 
 		/// <summary>

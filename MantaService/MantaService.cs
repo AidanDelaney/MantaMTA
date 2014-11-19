@@ -51,6 +51,10 @@ namespace MantaService
 
 			// Start the SMTP Client.
 			MessageSender.Instance.Start();
+
+			// Start the Redis Bulk inserter.
+			QueueManager.Instance.Start();
+
 			// Start the events (bounce/abuse) handler.
 			EventsFileHandler.Instance.Start();
 
