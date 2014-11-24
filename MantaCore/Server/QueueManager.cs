@@ -85,6 +85,7 @@ namespace MantaMTA.Core.Server
 				_bulkInsertThread = new Thread(new ThreadStart(DoSqlBulkInsertFromRedis));
 				_bulkInsertThread.IsBackground = true;
 				_bulkInsertThread.Start();
+				//MantaCoreEvents.RegisterStopRequiredInstance(_Instance);
 			}
 			else
 			{
@@ -98,9 +99,22 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		public void Stop()
 		{
+			Logging.Info("Stopping Bulk Inserter");
 			_isStopping = true;
+
+			int count = 0;
 			while (!_hasStopped)
+			{
+				if(count > 50)
+				{
+					Logging.Error("Failed to stop Bulk Inserter");
+					return;
+				}
 				Thread.Sleep(100);
+				count++;
+			}
+
+			Logging.Info("Stopped Bulk Inserter");
 		}
 
 		/// <summary>
@@ -113,6 +127,7 @@ namespace MantaMTA.Core.Server
 			{
 				try
 				{
+					
 					// Get queued messages for bulk importing.
 					RedisDB.RedisMessageCollection recordsToImportToSql = RedisDB.GetQueuedMessages();
 					
@@ -122,6 +137,10 @@ namespace MantaMTA.Core.Server
 						Thread.Sleep(REDIS_MAX_TIME_IN_QUEUE);
 						continue;
 					}
+
+					// The messages have been imported to SQL Server so we can delete them from Redis now.
+					foreach (RedisDB.RedisMessage msg in recordsToImportToSql)
+						RedisDB.DeleteMessage(msg);
 
 					// Do the SQL Import
 					StringBuilder sbMessageValues = new StringBuilder(string.Empty);
@@ -167,12 +186,17 @@ COMMIT TRANSACTION", sbMessageValues.ToString(), sbQueueValues.ToString());
 						cmd.Parameters.AddWithValue(datetimenow, DateTime.UtcNow);
 						cmd.CommandTimeout = 5 * 60 * 1000;
 						conn.Open();
-						cmd.ExecuteNonQuery();
+						try
+						{
+							cmd.ExecuteNonQuery();
+						}
+						catch(Exception ex)
+						{
+							Logging.Warn("Server Queue Manager", ex);
+						}
 					}
 
-					// The messages have been imported to SQL Server so we can delete them from Redis now.
-					foreach (RedisDB.RedisMessage msg in recordsToImportToSql)
-						RedisDB.DeleteMessage(msg);
+					
 				}
 				catch(Exception ex)
 				{

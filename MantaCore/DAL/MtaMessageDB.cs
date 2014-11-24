@@ -61,8 +61,8 @@ IF EXISTS(SELECT 1 FROM man_mta_queue WHERE mta_msg_id = @msgID)
 	ip_group_id = @groupID
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id, mta_send_internalId)
-	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID, @sendInternalID)";
+	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id, mta_send_internalId, mta_queue_data)
+	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID, @sendInternalID, @data)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestampUtc);
 				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfterUtc);
@@ -70,6 +70,8 @@ ELSE
 				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
 				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
 				cmd.Parameters.AddWithValue("@sendInternalID", message.InternalSendID);
+				cmd.Parameters.AddWithValue("@data", message.Data);
+
 
 				await conn.OpenAsync();
 				await cmd.ExecuteNonQueryAsync();
