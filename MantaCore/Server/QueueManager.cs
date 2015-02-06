@@ -1,5 +1,4 @@
-﻿using MantaMTA.Core.DAL;
-using System;
+﻿using System;
 using System.Data.SqlClient;
 using System.Text;
 using System.Threading;
@@ -15,14 +14,14 @@ namespace MantaMTA.Core.Server
 
 		/// <summary>
 		/// This should be moved to a parameter.
-		/// If set to true attempt to make use of Redis.
+		/// If set to true attempt to make use of RabbitMQ.
 		/// </summary>
-		private bool _UseRedis = true;
+		private bool _UseRabbitMQ = true;
 
 		/// <summary>
-		/// The maximum time between loooking for messages that have been queued in Redis.
+		/// The maximum time between loooking for messages that have been queued in RabbitMQ.
 		/// </summary>
-		private const int REDIS_MAX_TIME_IN_QUEUE = 5 * 1000;
+		private const int RABBITMQ_MAX_TIME_IN_QUEUE = 5 * 1000;
 
 		/// <summary>
 		/// Enqueues the Inbound Message for Relaying.
@@ -36,11 +35,11 @@ namespace MantaMTA.Core.Server
 		/// <returns>True if the Message has been queued, false if not.</returns>
 		public async Task<bool> EnqueueAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
-			// Try to queue the message in Redis.
-			if (_UseRedis && DAL.RedisDB.EnqueueMessage(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
+			// Try to queue the message in RabbitMQ.
+			if (_UseRabbitMQ && RabbitMq.RabbitMqInboundQueueManager.Enqueue(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
 				return true;
 
-			// If we failed to queue in Redis there must be something wrong so try to go to SQL.
+			// If we failed to queue in RabbitMQ there must be something wrong so try to go to SQL.
 			return await EnqueueSqlAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
 		}
 
@@ -61,7 +60,7 @@ namespace MantaMTA.Core.Server
 		}
 
 		/// <summary>
-		/// Thread used for copying data from Redis to SQL Server.
+		/// Thread used for copying data from RabbitMQ to SQL Server.
 		/// </summary>
 		private Thread _bulkInsertThread = null;
 
@@ -80,16 +79,16 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		public void Start()
 		{
-			if (_UseRedis)
+			if (_UseRabbitMQ)
 			{
-				_bulkInsertThread = new Thread(new ThreadStart(DoSqlBulkInsertFromRedis));
+				_bulkInsertThread = new Thread(new ThreadStart(DoSqlBulkInsertFromRabbitMQ));
 				_bulkInsertThread.IsBackground = true;
 				_bulkInsertThread.Start();
 				//MantaCoreEvents.RegisterStopRequiredInstance(_Instance);
 			}
 			else
 			{
-				// Nothing to Start or Stop if not using Redis.
+				// Nothing to Start or Stop if not using RabbitMQ.
 				_hasStopped = true;
 			}
 		}
@@ -118,9 +117,9 @@ namespace MantaMTA.Core.Server
 		}
 
 		/// <summary>
-		/// Does the actual bulk importing from Redis to SQL Server.
+		/// Does the actual bulk importing from RabbitMQ to SQL Server.
 		/// </summary>
-		private void DoSqlBulkInsertFromRedis()
+		private void DoSqlBulkInsertFromRabbitMQ()
 		{
 			// Keep going until Manta is stopping.
 			while(!_isStopping)
@@ -129,18 +128,14 @@ namespace MantaMTA.Core.Server
 				{
 					
 					// Get queued messages for bulk importing.
-					RedisDB.RedisMessageCollection recordsToImportToSql = RedisDB.GetQueuedMessages();
+					RabbitMq.RabbitMqInboundMessageCollection recordsToImportToSql = RabbitMq.RabbitMqInboundQueueManager.Dequeue(50);
 					
 					// If there are no messages to import then sleep and try again.
 					if(recordsToImportToSql == null || recordsToImportToSql.Count == 0)
 					{
-						Thread.Sleep(REDIS_MAX_TIME_IN_QUEUE);
+						Thread.Sleep(RABBITMQ_MAX_TIME_IN_QUEUE);
 						continue;
 					}
-
-					// The messages have been imported to SQL Server so we can delete them from Redis now.
-					foreach (RedisDB.RedisMessage msg in recordsToImportToSql)
-						RedisDB.DeleteMessage(msg);
 
 					// Do the SQL Import
 					StringBuilder sbMessageValues = new StringBuilder(string.Empty);
@@ -189,6 +184,9 @@ COMMIT TRANSACTION", sbMessageValues.ToString(), sbQueueValues.ToString());
 						try
 						{
 							cmd.ExecuteNonQuery();
+
+							// Were done with the messages so tell RabbitMQ were done with them.
+							RabbitMq.RabbitMqInboundQueueManager.Ack(recordsToImportToSql);
 						}
 						catch(Exception ex)
 						{

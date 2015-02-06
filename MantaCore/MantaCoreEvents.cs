@@ -25,7 +25,7 @@ namespace MantaMTA.Core
 		{
 			Logging.Debug("InvokeMantaCoreStopping Started.");
 
-			// Always stop the Redis Queue Manager first.
+			// Always stop the Inbound Queue Manager first.
 			MantaMTA.Core.Server.QueueManager.Instance.Stop();
 
 			// Loop through the things that need stopping and stop them :)
