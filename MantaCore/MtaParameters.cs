@@ -369,6 +369,72 @@ namespace MantaMTA.Core
 			}
 		}
 		private static string _EventForwardingHttpPostUrl = string.Empty;
+
+		/// <summary>
+		/// Parameters regarding RabbitMQ.
+		/// </summary>
+		public static class RabbitMQ
+		{
+			private static bool _IsEnabled = false;
+			private static DateTime _IsEnabledLoadTime = DateTime.MinValue;
+
+			/// <summary>
+			/// Will be true if MantaMTA should make use of RabbitMQ.
+			/// </summary>
+			public static bool IsEnabled
+			{
+				get
+				{
+					if (_IsEnabledLoadTime < DateTime.UtcNow)
+					{
+						_IsEnabled = DAL.CfgPara.GetRabbitMqEnabled();
+						_IsEnabledLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
+
+					return _IsEnabled;
+				}
+			}
+
+			private static string _Username = string.Empty;
+			private static DateTime _UsernameLoadTime = DateTime.MinValue;
+
+			/// <summary>
+			/// Username for connecting to RabbitMQ.
+			/// </summary>
+			public static string Username
+			{
+				get
+				{
+					if (_UsernameLoadTime < DateTime.UtcNow)
+					{
+						_Username = DAL.CfgPara.GetRabbitMqUsername();
+						_UsernameLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
+
+					return _Username;
+				}
+			}
+
+			private static string _Password = string.Empty;
+			private static DateTime _PasswordLoadTime = DateTime.MinValue;
+
+			/// <summary>
+			/// Password for connecting to RabbitMQ.
+			/// </summary>
+			public static string Password
+			{
+				get
+				{
+					if (_PasswordLoadTime < DateTime.UtcNow)
+					{
+						_Password = DAL.CfgPara.GetRabbitMqPassword();
+						_UsernameLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
+
+					return _Password;
+				}
+			}
+		}
 	}
 
 	/// <summary>

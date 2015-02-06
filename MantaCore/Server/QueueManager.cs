@@ -13,12 +13,6 @@ namespace MantaMTA.Core.Server
 		private QueueManager() { }
 
 		/// <summary>
-		/// This should be moved to a parameter.
-		/// If set to true attempt to make use of RabbitMQ.
-		/// </summary>
-		private bool _UseRabbitMQ = true;
-
-		/// <summary>
 		/// The maximum time between loooking for messages that have been queued in RabbitMQ.
 		/// </summary>
 		private const int RABBITMQ_MAX_TIME_IN_QUEUE = 5 * 1000;
@@ -36,7 +30,7 @@ namespace MantaMTA.Core.Server
 		public async Task<bool> EnqueueAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
 			// Try to queue the message in RabbitMQ.
-			if (_UseRabbitMQ && RabbitMq.RabbitMqInboundQueueManager.Enqueue(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
+			if (MtaParameters.RabbitMQ.IsEnabled && RabbitMq.RabbitMqInboundQueueManager.Enqueue(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
 				return true;
 
 			// If we failed to queue in RabbitMQ there must be something wrong so try to go to SQL.
@@ -79,7 +73,7 @@ namespace MantaMTA.Core.Server
 		/// </summary>
 		public void Start()
 		{
-			if (_UseRabbitMQ)
+			if (MtaParameters.RabbitMQ.IsEnabled)
 			{
 				_bulkInsertThread = new Thread(new ThreadStart(DoSqlBulkInsertFromRabbitMQ));
 				_bulkInsertThread.IsBackground = true;
