@@ -288,5 +288,14 @@ SET " + colName + @" = @value";
 		{
 			return GetColumnValue("cfg_para_rabbitMqPassword").ToString();
 		}
+
+		/// <summary>
+		/// Gets the RabbitMQ hostname.
+		/// </summary>
+		/// <returns>RabbitMQ hostname.</returns>
+		internal static string GetRabbitMqHostname()
+		{
+			return GetColumnValue("cfg_para_rabbitMqHostname").ToString();
+		}
 	}
 }

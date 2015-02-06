@@ -14,9 +14,9 @@ namespace MantaMTA.Core.RabbitMq
 		/// </summary>
 		private static readonly IConnection LocalhostConnection = new ConnectionFactory
 		{
-			HostName = "localhost",
-			UserName = "mantamta",
-			Password = "mantamta"
+			HostName = MtaParameters.RabbitMQ.Hostname,
+			UserName = MtaParameters.RabbitMQ.Username,
+			Password = MtaParameters.RabbitMQ.Password
 		}.CreateConnection();
 
 		/// <summary>

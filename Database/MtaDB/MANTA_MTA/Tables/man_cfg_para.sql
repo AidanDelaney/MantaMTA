@@ -13,9 +13,12 @@ CREATE TABLE [dbo].[man_cfg_para](
 	[cfg_para_maxDaysToKeepSmtpLogs] [int] NOT NULL,
 	[cfg_para_eventForwardingHttpPostUrl] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[cfg_para_keepBounceFilesFlag] [bit] NOT NULL,
+	[cfg_para_pickupDirectoryEnabled] [bit] NOT NULL,
+	[cfg_para_pickupDirectory] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
 	[cfg_para_rabbitMqEnabled] [bit] NOT NULL,
 	[cfg_para_rabbitMqUsername] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
-	[cfg_para_rabbitMqPassword] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL
+	[cfg_para_rabbitMqPassword] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL,
+	[cfg_para_rabbitMqHostname] [nvarchar](max) COLLATE Latin1_General_CI_AS NOT NULL
 ) ON [PRIMARY]
 
 GO

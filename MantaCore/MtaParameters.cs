@@ -434,6 +434,26 @@ namespace MantaMTA.Core
 					return _Password;
 				}
 			}
+
+			private static string _Hostname = string.Empty;
+			private static DateTime _HostnameLoadTime = DateTime.MinValue;
+
+			/// <summary>
+			/// Password for connecting to RabbitMQ.
+			/// </summary>
+			public static string Hostname
+			{
+				get
+				{
+					if (_HostnameLoadTime < DateTime.UtcNow)
+					{
+						_Hostname = DAL.CfgPara.GetRabbitMqHostname();
+						_HostnameLoadTime = DateTime.UtcNow.AddMinutes(MTA_CACHE_MINUTES);
+					}
+
+					return _Hostname;
+				}
+			}
 		}
 	}
 
