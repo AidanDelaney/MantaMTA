@@ -39,6 +39,9 @@ namespace MantaService
 			// Start the send manager service.
 			SendManager.Instance.StartService();
 
+			// Start the RabbitMQ Bulk inserter.
+			QueueManager.Instance.Start();
+
 			VirtualMTACollection ipAddresses = VirtualMtaManager.GetVirtualMtasForListeningOn();
 			
 			// Create the SmtpServers
@@ -51,9 +54,6 @@ namespace MantaService
 
 			// Start the SMTP Client.
 			MessageSender.Instance.Start();
-
-			// Start the RabbitMQ Bulk inserter.
-			QueueManager.Instance.Start();
 
 			// Start the events (bounce/abuse) handler.
 			EventsFileHandler.Instance.Start();

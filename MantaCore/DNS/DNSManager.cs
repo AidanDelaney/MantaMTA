@@ -62,12 +62,14 @@ namespace MantaMTA.Core.DNS
 			for (int i = 0; i < mxRecords.Length; i++)
 			{
 				string[] split = records[i].Split(new char[] { ',' });
-				mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
+				if(split.Length == 3)
+					mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
 			}
 
 			// Order by preferance
 			mxRecords = (
 				from mx in mxRecords
+				where mx != null
 				orderby mx.Preference
 				select mx).ToArray<MXRecord>();
 			DNSManager._Records.TryAdd(domain, mxRecords);

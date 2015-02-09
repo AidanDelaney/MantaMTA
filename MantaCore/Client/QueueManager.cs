@@ -27,7 +27,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// The maximum size of the memory queue.
 		/// </summary>
-		private const int MAX_QUEUE_SIZE = 2000;
+		private const int MAX_QUEUE_SIZE = 1500;
 
 		/// <summary>
 		/// When set to TRUE signifies that the MTA is stopping.
