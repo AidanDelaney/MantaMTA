@@ -132,7 +132,7 @@ namespace MantaMTA.Core.Sends
 			MtaQueuedMessageCollection messages = MtaMessageDB.PickupForDiscarding(25);
 			while (messages.Count > 0)
 			{
-				Parallel.ForEach<MtaQueuedMessage>(messages, delegate(MtaQueuedMessage msg)
+				Parallel.ForEach<MtaQueuedMessageSql>(messages, delegate(MtaQueuedMessageSql msg)
 				{
 					msg.HandleMessageDiscard();
 				});

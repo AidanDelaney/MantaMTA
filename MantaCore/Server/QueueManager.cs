@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MantaMTA.Core.Client.BO;
+using System;
 using System.Data.SqlClient;
 using System.Text;
 using System.Threading;
@@ -50,7 +51,7 @@ namespace MantaMTA.Core.Server
 		private async Task<bool> EnqueueSqlAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
 			// Need to put this message in the database for relaying to pickup
-			return await MantaMTA.Core.Client.MessageSender.Instance.EnqueueAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
+			return await MantaMTA.Core.Client.MessageSenderSql.Instance.EnqueueAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
 		}
 
 		/// <summary>
@@ -122,7 +123,7 @@ namespace MantaMTA.Core.Server
 				{
 					
 					// Get queued messages for bulk importing.
-					RabbitMq.RabbitMqInboundMessageCollection recordsToImportToSql = RabbitMq.RabbitMqInboundQueueManager.Dequeue(50);
+					MtaMessageCollection recordsToImportToSql = RabbitMq.RabbitMqInboundQueueManager.Dequeue(50);
 					
 					// If there are no messages to import then sleep and try again.
 					if(recordsToImportToSql == null || recordsToImportToSql.Count == 0)
@@ -151,14 +152,12 @@ namespace MantaMTA.Core.Server
 
 							string lastChar = (recordsToImportToSql.Count - 1) == i ? string.Empty : ",";
 							sbMessageValues.AppendFormat("({0}, {1}, {2}, {3}){4}", mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo, lastChar);
-							sbQueueValues.AppendFormat("({0}, {1}, {2}, {3}, 0, {4}, {4}){5}", mta_msg_id, mta_send_internalId, ip_group_id, mta_queue_data, datetimenow, lastChar);
 							
 							cmd.Parameters.AddWithValue(mta_msg_id, recordsToImportToSql[i].MessageID);
 							cmd.Parameters.AddWithValue(mta_send_internalId, recordsToImportToSql[i].InternalSendID);
 							cmd.Parameters.AddWithValue(mta_msg_mailFrom, recordsToImportToSql[i].MailFrom);
 							cmd.Parameters.AddWithValue(mta_msg_rcptTo, recordsToImportToSql[i].RcptTo[0]);
 							cmd.Parameters.AddWithValue(ip_group_id, recordsToImportToSql[i].VirtualMTAGroupID);
-							cmd.Parameters.AddWithValue(mta_queue_data, recordsToImportToSql[i].Message);
 						}
 
 						cmd.CommandText = string.Format(@"
@@ -167,20 +166,18 @@ BEGIN TRANSACTION
 INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo)
 VALUES {0}
 
-INSERT INTO man_mta_queue(mta_msg_id, mta_send_internalId, ip_group_id, mta_queue_data, mta_queue_isPickupLocked, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter)
-VALUES {1}
-
-COMMIT TRANSACTION", sbMessageValues.ToString(), sbQueueValues.ToString());
+COMMIT TRANSACTION", sbMessageValues.ToString());
 
 						cmd.Parameters.AddWithValue(datetimenow, DateTime.UtcNow);
 						cmd.CommandTimeout = 5 * 60 * 1000;
 						conn.Open();
 						try
 						{
+							// Create a record of the messages in SQL server.
 							cmd.ExecuteNonQuery();
 
-							// Were done with the messages so tell RabbitMQ were done with them.
-							RabbitMq.RabbitMqInboundQueueManager.Ack(recordsToImportToSql);
+							// Queue the messages in the RabbitMQ outbound queue.
+							RabbitMq.RabbitMqOutboundQueueManager.Enqueue(recordsToImportToSql);
 						}
 						catch(Exception ex)
 						{

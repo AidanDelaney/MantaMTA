@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MantaMTA.Core.DNS
 {
-	internal class MXRecord
+	public class MXRecord
 	{
 		/// <summary>
 		/// The hostname or IP address of a MX

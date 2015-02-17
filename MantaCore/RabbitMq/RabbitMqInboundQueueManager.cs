@@ -1,7 +1,7 @@
-﻿using RabbitMQ.Client.Events;
+﻿using MantaMTA.Core.Client.BO;
+using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Web.Script.Serialization;
 
@@ -12,32 +12,23 @@ namespace MantaMTA.Core.RabbitMq
 		private static JavaScriptSerializer JsonFormatter = new JavaScriptSerializer();
 
 		/// <summary>
-		/// Tells RabbitMQ that the inbound messages have been handled and should not be delivered again.
-		/// </summary>
-		/// <param name="messages">Collection of messages that have been handled.</param>
-		public static void Ack(RabbitMqInboundMessageCollection messages)
-		{
-			RabbitMqManager.Ack(RabbitMqManager.RabbitMqQueue.Inbound, messages.DeliveryTag, true);
-		}
-
-		/// <summary>
 		/// Dequeues a collection of inbound messages from RabbitMQ.
 		/// </summary>
 		/// <param name="maxItems">The maximum amount of messages to dequeue.</param>
 		/// <returns>The dequeue messages.</returns>
-		public static RabbitMqInboundMessageCollection Dequeue(int maxItems)
+		public static MtaMessageCollection Dequeue(int maxItems)
 		{
 			List<BasicDeliverEventArgs> items = RabbitMqManager.Dequeue(RabbitMqManager.RabbitMqQueue.Inbound, maxItems, 1 * 1000);
-			RabbitMqInboundMessageCollection messages = new RabbitMqInboundMessageCollection();
+			MtaMessageCollection messages = new MtaMessageCollection();
 			if (items.Count == 0)
 				return messages;
 
-			messages.DeliveryTag = items.Last().DeliveryTag;
 			foreach (BasicDeliverEventArgs ea in items)
 			{
 				string json = Encoding.UTF8.GetString(ea.Body);
-				RabbitMqInboundMessage rmim = JsonFormatter.Deserialize<RabbitMqInboundMessage>(json);
-				messages.Add(rmim);
+				MtaMessage msg = JsonFormatter.Deserialize<MtaMessage>(json);
+				msg.RabbitMqDeliveryTag = ea.DeliveryTag;
+				messages.Add(msg);
 			}
 
 			return messages;
@@ -56,7 +47,7 @@ namespace MantaMTA.Core.RabbitMq
 		public static bool Enqueue(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
 			// Create the thing we are going to queue in RabbitMQ.
-			RabbitMqInboundMessage recordToSave = new RabbitMqInboundMessage(messageID,
+			MtaMessage recordToSave = new MtaMessage(messageID,
 				ipGroupID,
 				internalSendID,
 				mailFrom,

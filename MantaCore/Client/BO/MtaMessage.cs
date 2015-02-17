@@ -1,92 +1,71 @@
-﻿using MantaMTA.Core.DAL;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Mail;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Client.BO
 {
 	/// <summary>
-	/// Holds a single message for the MTA.
+	/// Represents an Inbound Email that is going to be queued for relaying, but has not yet been.
 	/// </summary>
-	internal class MtaMessage
+	public class MtaMessage
 	{
 		/// <summary>
-		/// Unique identifier for this message.
+		/// ID of the RabbitMQ delivery that this message represents.
 		/// </summary>
-		public Guid ID { get; set; }
+		public ulong RabbitMqDeliveryTag { get; set; }
+
 		/// <summary>
-		/// Internal ID that identifies the Send that this 
-		/// message is part of.
+		/// ID of the Message. Same as MessageID header in raw email.
+		/// </summary>
+		public Guid MessageID { get; set; }
+
+		/// <summary>
+		/// The VirtualMTA group that the message should be sent through.
+		/// </summary>
+		public int VirtualMTAGroupID { get; set; }
+
+		/// <summary>
+		/// The Manta internal ID of the Send that this Email is appart of.
 		/// </summary>
 		public int InternalSendID { get; set; }
-		/// <summary>
-		/// The Mail From to used when sending this message.
-		/// May be NULL for NullSender
-		/// </summary>
-		public MailAddress MailFrom { get; set; }
-		/// <summary>
-		/// Array of Rcpt To's for this message.
-		/// </summary>
-		public MailAddress[] RcptTo { get; set; }
 
 		/// <summary>
-		/// Save this MTA message to the Database.
+		/// The Mail From to use in the SMTP conversation when sending the Email.
 		/// </summary>
-		public async Task<bool> SaveAsync()
+		public string MailFrom { get; set; }
+
+		/// <summary>
+		/// The RCPT TO to use in the SMTP conversation.
+		/// </summary>
+		public string[] RcptTo { get; set; }
+
+		/// <summary>
+		/// The raw Email itself.
+		/// </summary>
+		public string Message { get; set; }
+
+		/// <summary>
+		/// Create a new RabbitMqInboundMessage instance.
+		/// </summary>
+		public MtaMessage()
 		{
-			await MtaMessageDB.SaveAsync(this);
-			return true;
+			RabbitMqDeliveryTag = 0;
 		}
 
 		/// <summary>
-		/// Creates and MTA message from the passed in parameters.
+		/// Create a new RabbitMqInboundMessage instance.
 		/// </summary>
-		/// <param name="internalSendID">The internal ID of the Send this message is part of.</param>
-		/// <param name="mailFrom">Mail From used in SMTP.</param>
-		/// <param name="rcptTo">Rcpt To's used in SMTP.</param>
-		/// <returns></returns>
-		public static async Task<MtaMessage> CreateAsync(Guid messageID, int internalSendID, string mailFrom, string[] rcptTo)
+		public MtaMessage(Guid messageID, int virtualMtaGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
-			MtaMessage mtaMessage = new MtaMessage();
-			mtaMessage.ID = messageID;
-			mtaMessage.InternalSendID = internalSendID;
-			
-			if (mailFrom != null)
-				mtaMessage.MailFrom = new MailAddress(mailFrom);
-			else
-				mtaMessage.MailFrom = null;
-
-			mtaMessage.RcptTo = new MailAddress[rcptTo.Length];
-			for (int i = 0; i < rcptTo.Length; i++)
-				mtaMessage.RcptTo[i] = new MailAddress(rcptTo[i]);
-
-			await mtaMessage.SaveAsync();
-
-			return mtaMessage;
-		}
-
-		/// <summary>
-		/// Queue the message.
-		/// </summary>
-		/// <returns></returns>
-		public async Task<MtaQueuedMessage> QueueAsync(string data, int ipGroupID)
-		{
-			string dataPath = Path.Combine(MtaParameters.MTA_QUEUEFOLDER, ID + ".eml");
-
-			if (File.Exists(dataPath))
-				throw new IOException();
-
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(this, DateTime.UtcNow, DateTime.UtcNow, false, dataPath, ipGroupID, 0);
-
-			using (StreamWriter writer = new StreamWriter(dataPath))
-			{
-				await writer.WriteAsync(data);
-			}
-			
-			await MtaMessageDB.SaveAsync(qMsg);
-			return qMsg;
+			MessageID = messageID;
+			VirtualMTAGroupID = virtualMtaGroupID;
+			InternalSendID = internalSendID;
+			MailFrom = mailFrom;
+			RcptTo = rcptTo;
+			Message = message;
+			RabbitMqDeliveryTag = 0;
 		}
 	}
 

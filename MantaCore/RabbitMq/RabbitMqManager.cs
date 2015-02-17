@@ -131,6 +131,8 @@ namespace MantaMTA.Core.RabbitMq
 			{
 				case RabbitMqQueue.Inbound:
 					return "manta_mta_inbound";
+				case RabbitMqQueue.OutboundWaiting:
+					return "manta_mta_outbound_waiting";
 				default:
 					throw new Exception("Cannot get name for RabbitMqQueue");
 			}
@@ -144,7 +146,11 @@ namespace MantaMTA.Core.RabbitMq
 			/// <summary>
 			/// The Inbound Queue is a queue of messages that have been received and will be relayed.
 			/// </summary>
-			Inbound = 0
+			Inbound = 0,
+			/// <summary>
+			/// The Outbound Queue is a queue of messages that have been queued for relaying.
+			/// </summary>
+			OutboundWaiting = 1
 		}
 	}
 }

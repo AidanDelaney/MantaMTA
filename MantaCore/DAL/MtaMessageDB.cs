@@ -21,7 +21,7 @@ namespace MantaMTA.Core.DAL
 		/// Save the MTA Message to the database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static async Task<bool> SaveAsync(MtaMessage message)
+		internal static async Task<bool> SaveAsync(MtaMessageSql message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -47,7 +47,7 @@ namespace MantaMTA.Core.DAL
 		/// Saves the Mta Queued message to the Database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static async Task<bool> SaveAsync(MtaQueuedMessage message)
+		internal static async Task<bool> SaveAsync(MtaQueuedMessageSql message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -145,7 +145,7 @@ WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
 				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Active);
-				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
+				List<MtaQueuedMessageSql> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessageSql>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
 		}
@@ -185,7 +185,7 @@ WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
 				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Discard);
-				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
+				List<MtaQueuedMessageSql> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessageSql>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
 		}
@@ -194,7 +194,7 @@ COMMIT TRANSACTION";
 		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>
 		/// <param name="mtaQueuedMessage"></param>
-		internal static async Task<bool> DeleteAsync(MtaQueuedMessage mtaQueuedMessage)
+		internal static async Task<bool> DeleteAsync(MtaQueuedMessageSql mtaQueuedMessage)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -214,7 +214,7 @@ COMMIT TRANSACTION";
 		/// </summary>
 		/// <param name="messageID">ID of the message to get.</param>
 		/// <returns>The MtaMessage if it exists otherwise null.</returns>
-		internal static MtaMessage GetMtaMessage(Guid messageID)
+		internal static MtaMessageSql GetMtaMessage(Guid messageID)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -224,7 +224,7 @@ SELECT *
 FROM man_mta_msg
 WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", messageID);
-				return DataRetrieval.GetSingleObjectFromDatabase<MtaMessage>(cmd, CreateAndFillMessage);
+				return DataRetrieval.GetSingleObjectFromDatabase<MtaMessageSql>(cmd, CreateAndFillMessage);
 			}
 		}
 
@@ -233,9 +233,9 @@ WHERE mta_msg_id = @msgID";
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		private static MtaQueuedMessage CreateAndFillQueuedMessage(IDataRecord record)
+		private static MtaQueuedMessageSql CreateAndFillQueuedMessage(IDataRecord record)
 		{
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(CreateAndFillMessage(record),
+			MtaQueuedMessageSql qMsg = new MtaQueuedMessageSql(CreateAndFillMessage(record),
 														 record.GetDateTime("mta_queue_queuedTimestamp"),
 														 record.GetDateTime("mta_queue_attemptSendAfter"),
 														 record.GetBoolean("mta_queue_isPickupLocked"),
@@ -251,9 +251,9 @@ WHERE mta_msg_id = @msgID";
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		private static MtaMessage CreateAndFillMessage(IDataRecord record)
+		private static MtaMessageSql CreateAndFillMessage(IDataRecord record)
 		{
-			MtaMessage msg = new MtaMessage();
+			MtaMessageSql msg = new MtaMessageSql();
 			
 			msg.ID = record.GetGuid("mta_msg_id");
 			msg.InternalSendID = record.GetInt32("mta_send_internalId");
