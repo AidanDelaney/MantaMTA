@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,9 +18,9 @@ namespace MantaMTA.Core.Client.BO
 		public ulong RabbitMqDeliveryTag { get; set; }
 
 		/// <summary>
-		/// ID of the Message. Same as MessageID header in raw email.
+		/// Unique identifier for this message.
 		/// </summary>
-		public Guid MessageID { get; set; }
+		public Guid ID { get; set; }
 
 		/// <summary>
 		/// The VirtualMTA group that the message should be sent through.
@@ -27,17 +28,19 @@ namespace MantaMTA.Core.Client.BO
 		public int VirtualMTAGroupID { get; set; }
 
 		/// <summary>
-		/// The Manta internal ID of the Send that this Email is appart of.
+		/// Internal ID that identifies the Send that this 
+		/// message is part of.
 		/// </summary>
 		public int InternalSendID { get; set; }
 
 		/// <summary>
-		/// The Mail From to use in the SMTP conversation when sending the Email.
+		/// The Mail From to used when sending this message.
+		/// May be NULL for NullSender
 		/// </summary>
 		public string MailFrom { get; set; }
 
 		/// <summary>
-		/// The RCPT TO to use in the SMTP conversation.
+		/// Array of Rcpt To's for this message.
 		/// </summary>
 		public string[] RcptTo { get; set; }
 
@@ -59,7 +62,7 @@ namespace MantaMTA.Core.Client.BO
 		/// </summary>
 		public MtaMessage(Guid messageID, int virtualMtaGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
-			MessageID = messageID;
+			ID = messageID;
 			VirtualMTAGroupID = virtualMtaGroupID;
 			InternalSendID = internalSendID;
 			MailFrom = mailFrom;

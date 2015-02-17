@@ -100,7 +100,6 @@
     <Compile Include="Message\ReturnPathManager.cs" />
     <Compile Include="RabbitMq\RabbitMqInboundQueueManager.cs" />
     <Compile Include="RabbitMq\RabbitMqManager.cs" />
-    <Compile Include="RabbitMq\RabbitMqObjects.cs" />
     <Compile Include="RabbitMq\RabbitMqOutboundQueueManager.cs" />
     <Compile Include="Server\QueueManager.cs" />
     <Compile Include="VirtualMTA\VirtualMtaClasses.cs" />

@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Client.BO
@@ -10,27 +9,8 @@ namespace MantaMTA.Core.Client.BO
 	/// <summary>
 	/// Holds a single message for the MTA.
 	/// </summary>
-	internal class MtaMessageSql
+	internal class MtaMessageSql : MtaMessage
 	{
-		/// <summary>
-		/// Unique identifier for this message.
-		/// </summary>
-		public Guid ID { get; set; }
-		/// <summary>
-		/// Internal ID that identifies the Send that this 
-		/// message is part of.
-		/// </summary>
-		public int InternalSendID { get; set; }
-		/// <summary>
-		/// The Mail From to used when sending this message.
-		/// May be NULL for NullSender
-		/// </summary>
-		public MailAddress MailFrom { get; set; }
-		/// <summary>
-		/// Array of Rcpt To's for this message.
-		/// </summary>
-		public MailAddress[] RcptTo { get; set; }
-
 		/// <summary>
 		/// Save this MTA message to the Database.
 		/// </summary>
@@ -52,18 +32,9 @@ namespace MantaMTA.Core.Client.BO
 			MtaMessageSql mtaMessage = new MtaMessageSql();
 			mtaMessage.ID = messageID;
 			mtaMessage.InternalSendID = internalSendID;
-			
-			if (mailFrom != null)
-				mtaMessage.MailFrom = new MailAddress(mailFrom);
-			else
-				mtaMessage.MailFrom = null;
-
-			mtaMessage.RcptTo = new MailAddress[rcptTo.Length];
-			for (int i = 0; i < rcptTo.Length; i++)
-				mtaMessage.RcptTo[i] = new MailAddress(rcptTo[i]);
-
+			mtaMessage.MailFrom = mailFrom;
+			mtaMessage.RcptTo = rcptTo;
 			await mtaMessage.SaveAsync();
-
 			return mtaMessage;
 		}
 

@@ -153,7 +153,7 @@ namespace MantaMTA.Core.Server
 							string lastChar = (recordsToImportToSql.Count - 1) == i ? string.Empty : ",";
 							sbMessageValues.AppendFormat("({0}, {1}, {2}, {3}){4}", mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo, lastChar);
 							
-							cmd.Parameters.AddWithValue(mta_msg_id, recordsToImportToSql[i].MessageID);
+							cmd.Parameters.AddWithValue(mta_msg_id, recordsToImportToSql[i].ID);
 							cmd.Parameters.AddWithValue(mta_send_internalId, recordsToImportToSql[i].InternalSendID);
 							cmd.Parameters.AddWithValue(mta_msg_mailFrom, recordsToImportToSql[i].MailFrom);
 							cmd.Parameters.AddWithValue(mta_msg_rcptTo, recordsToImportToSql[i].RcptTo[0]);

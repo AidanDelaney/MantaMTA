@@ -221,8 +221,8 @@ namespace MantaMTA.Core.Client
 					return result;
 				}
 				
-				MailAddress mailAddress = msg.RcptTo[0];
-				MailAddress mailFrom = msg.MailFrom;
+				MailAddress mailAddress = new MailAddress(msg.RcptTo[0]);
+				MailAddress mailFrom = new MailAddress(msg.MailFrom);
 				MXRecord[] mXRecords = DNSManager.GetMXRecords(mailAddress.Host);
 				// If mxs is null then there are no MX records.
 				if (mXRecords == null || mXRecords.Length < 1)

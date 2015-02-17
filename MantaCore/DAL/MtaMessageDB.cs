@@ -31,11 +31,11 @@ namespace MantaMTA.Core.DAL
 	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@internalSendID", message.InternalSendID);
-				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt.Address));
+				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt));
 				if (message.MailFrom == null)
 					cmd.Parameters.AddWithValue("@mailFrom", DBNull.Value);
 				else
-					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
+					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom);
 
 				await conn.OpenAsync();
 				await cmd.ExecuteNonQueryAsync();
@@ -258,14 +258,14 @@ WHERE mta_msg_id = @msgID";
 			msg.ID = record.GetGuid("mta_msg_id");
 			msg.InternalSendID = record.GetInt32("mta_send_internalId");
 			if (!record.IsDBNull("mta_msg_mailFrom"))
-				msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
+				msg.MailFrom = record.GetString("mta_msg_mailFrom");
 			else
 				msg.MailFrom = null;
 
 			// Get the recipients.
 			msg.RcptTo = (from r
 						  in record.GetString("mta_msg_rcptTo").Split(_RcptToDelimiter.ToCharArray(), StringSplitOptions.RemoveEmptyEntries) 
-						  select new MailAddress(r)).ToArray();
+						  select r).ToArray();
 
 			return msg;
 		}

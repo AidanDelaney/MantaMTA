@@ -136,7 +136,7 @@ namespace MantaMTA.Core.Client.BO
 				for (int i = 0; i < base.RcptTo.Length; i++)
 				{
 					EmailProcessingDetails processingInfo = null;
-					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i].Address, base.InternalSendID, out processingInfo);
+					Events.EventsManager.Instance.ProcessSmtpResponseMessage(failMsg, base.RcptTo[i], base.InternalSendID, out processingInfo);
 				}
 			}
 			catch (Exception)

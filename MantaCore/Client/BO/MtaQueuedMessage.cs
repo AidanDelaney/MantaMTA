@@ -44,7 +44,7 @@ namespace MantaMTA.Core.Client.BO
 				InternalSendID = inbound.InternalSendID,
 				MailFrom = inbound.MailFrom,
 				Message = inbound.Message,
-				MessageID = inbound.MessageID,
+				ID = inbound.ID,
 				AttemptSendAfterUtc = DateTime.UtcNow,
 				QueuedTimestampUtc = DateTime.UtcNow,
 				RcptTo = inbound.RcptTo,
@@ -86,7 +86,7 @@ namespace MantaMTA.Core.Client.BO
 		public async Task<bool> HandleDeliveryDeferralAsync(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
 		{
 			// Log the deferral.
-			await MtaTransaction.LogTransactionAsync(MessageID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
 
 			// This holds the maximum interval between send retries. Should be put in the database.
 			int maxInterval = 3 * 60;
@@ -124,7 +124,7 @@ namespace MantaMTA.Core.Client.BO
 		/// </summary>
 		public async Task<bool> HandleDeliverySuccessAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
-			await MtaTransaction.LogTransactionAsync(this.MessageID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
 			return true;
 		}
 
@@ -136,7 +136,7 @@ namespace MantaMTA.Core.Client.BO
 		internal async Task<bool> HandleDeliveryThrottleAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			// Log deferral
-			await MtaTransaction.LogTransactionAsync(MessageID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Throttled, string.Empty, ipAddress, mxRecord);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
@@ -151,7 +151,7 @@ namespace MantaMTA.Core.Client.BO
 		internal async Task<bool> HandleServiceUnavailableAsync(VirtualMta.VirtualMTA ipAddress)
 		{
 			// Log deferral
-			await MtaTransaction.LogTransactionAsync(MessageID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
@@ -167,7 +167,7 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="failMsg"></param>
 		public async Task<bool> HandleDeliveryFailAsync(string failMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
-			await MtaTransaction.LogTransactionAsync(MessageID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Failed, failMsg, ipAddress, mxRecord);
 
 			try
 			{
