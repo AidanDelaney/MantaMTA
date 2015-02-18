@@ -38,7 +38,7 @@ namespace MantaMTA.Core.RabbitMq
 		/// <returns>A dequeued message or null if there weren't any.</returns>
 		public static MtaQueuedMessage Dequeue()
 		{
-			BasicDeliverEventArgs ea = RabbitMqManager.Dequeue(RabbitMqManager.RabbitMqQueue.OutboundWaiting, 1, 1 * 1000).FirstOrDefault();
+			BasicDeliverEventArgs ea = RabbitMqManager.Dequeue(RabbitMqManager.RabbitMqQueue.OutboundWaiting, 1, 100).FirstOrDefault();
 			if (ea == null)
 				return null;
 

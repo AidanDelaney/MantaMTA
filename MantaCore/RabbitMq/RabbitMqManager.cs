@@ -32,12 +32,8 @@ namespace MantaMTA.Core.RabbitMq
 		/// <param name="multiple">Ack all deliverys upto and including specified.</param>
 		public static void Ack(RabbitMqQueue queue, ulong deliveryTag, bool multiple)
 		{
-			using (IModel channel = GetChannel(queue))
-			{
-				var consumer = new QueueingBasicConsumer(channel);
-				channel.BasicConsume(GetQueueNameFromEnum(queue), false, consumer);
-				channel.BasicAck(deliveryTag, multiple);
-			}
+			IModel channel = GetChannel(queue);
+			channel.BasicAck(deliveryTag, multiple);
 		}
 
 		/// <summary>
@@ -49,38 +45,20 @@ namespace MantaMTA.Core.RabbitMq
 		/// <returns>List of BasicDeliverEventArgs.</returns>
 		public static List<BasicDeliverEventArgs> Dequeue(RabbitMqQueue queue, int maxItems, int millisecondsTimeout)
 		{
-			using (IModel channel = GetChannel(queue))
+			IModel channel = GetChannel(queue);
+			List<BasicDeliverEventArgs> items = new List<BasicDeliverEventArgs>();
+			QueueingBasicConsumer consumer = GetQueueingBasicConsumer(queue);
+				
+			while (items.Count < maxItems)
 			{
-				List<BasicDeliverEventArgs> items = new List<BasicDeliverEventArgs>();
-				QueueingBasicConsumer consumer = new QueueingBasicConsumer(channel);
-				channel.BasicConsume(GetQueueNameFromEnum(queue), false, consumer);
-				while (items.Count < maxItems)
-				{
-					BasicDeliverEventArgs ea = null;
-					if (!consumer.Queue.Dequeue(millisecondsTimeout, out ea))
-						break;
+				BasicDeliverEventArgs ea = null;
+				if (!consumer.Queue.Dequeue(millisecondsTimeout, out ea))
+					break;
 
-					items.Add(ea);
-				}
-
-				return items;
+				items.Add(ea);
 			}
-		}
 
-		/// <summary>
-		/// Gets the Common AMQP model for the specified queue, using the the specified connection.
-		/// </summary>
-		/// <param name="queue">The queue to get the AMQP model for.</param>
-		/// <returns>Common AMQP model.</returns>
-		private static IModel GetChannel(RabbitMqQueue queue)
-		{
-			IModel channel = LocalhostConnection.CreateModel();
-			channel.QueueDeclare(	GetQueueNameFromEnum(queue),	// The Queue to use.
-									true,							// True as we want the queue durable.
-									false,							// Queue isn't exclusive.
-									false,							// Don't auto delete from the queue.
-									null);							// No additional args required.
-			return channel;
+			return items;
 		}
 
 		/// <summary>
@@ -90,12 +68,10 @@ namespace MantaMTA.Core.RabbitMq
 		/// <param name="queue">Queue to place message in.</param>
 		public static void Publish(byte[] message, RabbitMqQueue queue)
 		{
-			using (IModel channel = GetChannel(queue))
-			{
-				IBasicProperties msgProps = channel.CreateBasicProperties();
-				msgProps.SetPersistent(true);
-				channel.BasicPublish(string.Empty, GetQueueNameFromEnum(queue), msgProps, message);
-			}
+			IModel channel = GetChannel(queue);
+			IBasicProperties msgProps = channel.CreateBasicProperties();
+			msgProps.SetPersistent(true);
+			channel.BasicPublish(string.Empty, GetQueueNameFromEnum(queue), msgProps, message);
 		}
 
 		/// <summary>
@@ -135,6 +111,83 @@ namespace MantaMTA.Core.RabbitMq
 					return "manta_mta_outbound_waiting";
 				default:
 					throw new Exception("Cannot get name for RabbitMqQueue");
+			}
+		}
+
+		/// <summary>
+		/// Holds the Channels to the RabbitMQ queues.
+		/// </summary>
+		private static Dictionary<RabbitMqQueue, IModel> _Channels = new Dictionary<RabbitMqQueue, IModel>();
+
+		/// <summary>
+		/// Lock for getting the channels, ensures only one exists per queue.
+		/// </summary>
+		private static object _GetChannelLock = new object();
+
+		/// <summary>
+		/// Gets the Common AMQP model for the specified queue, using the the specified connection.
+		/// </summary>
+		/// <param name="queue">The queue to get the AMQP model for.</param>
+		/// <returns>Common AMQP model.</returns>
+		private static IModel GetChannel(RabbitMqQueue queue)
+		{
+			lock (_GetChannelLock)
+			{
+				if (!_Channels.ContainsKey(queue))
+					_Channels[queue] = null;
+
+				IModel channel = _Channels[queue];
+				
+				// If the channel to the specified queue doesn't exist then we need to create it.
+				if (channel == null)
+				{
+					channel = LocalhostConnection.CreateModel();
+					channel.QueueDeclare(GetQueueNameFromEnum(queue),		// The Queue to use.
+											true,							// True as we want the queue durable.
+											false,							// Queue isn't exclusive.
+											false,							// Don't auto delete from the queue.
+											null);							// No additional args required.
+				}
+
+				_Channels[queue] = channel;
+				return channel;
+			}
+		}
+
+		/// <summary>
+		/// Holds the RabbitMQ queue consumers.
+		/// </summary>
+		private static Dictionary<RabbitMqQueue, QueueingBasicConsumer> _Consumers = new Dictionary<RabbitMqQueue, QueueingBasicConsumer>();
+
+		/// <summary>
+		/// Lock for getting the consumers, ensures only one exists per queue.
+		/// </summary>
+		private static object _GetConsumerLock = new object();
+
+		/// <summary>
+		/// Gets the consumer for the specified queue.
+		/// </summary>
+		/// <param name="queue">The queue to get the consumer for.</param>
+		/// <returns>The consumer for th specified queue.</returns>
+		private static QueueingBasicConsumer GetQueueingBasicConsumer(RabbitMqQueue queue)
+		{
+			lock (_GetConsumerLock)
+			{
+				if (!_Consumers.ContainsKey(queue))
+					_Consumers[queue] = null;
+
+				QueueingBasicConsumer consumer = _Consumers[queue];
+
+				// If the consumer doesn't exist we need to create it.
+				if (consumer == null)
+				{
+					IModel channel = GetChannel(queue);
+					consumer = new QueueingBasicConsumer(channel);
+					channel.BasicConsume(GetQueueNameFromEnum(queue), false, consumer);
+				}
+
+				_Consumers[queue] = consumer;
+				return consumer;
 			}
 		}
 

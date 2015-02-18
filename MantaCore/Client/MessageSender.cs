@@ -40,6 +40,11 @@ namespace MantaMTA.Core.Client
 		#endregion
 
 		/// <summary>
+		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
+		/// </summary>
+		private const int MAX_SENDING_WORKER_TASKS = 50;
+
+		/// <summary>
 		/// If TRUE then request for client to stop has been made.
 		/// </summary>
 		private bool _IsStopping = false;
@@ -59,16 +64,69 @@ namespace MantaMTA.Core.Client
 				// Dictionary will hold a single int for each running task. The int means nothing.
 				ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
 
+				Action<MtaQueuedMessage> taskWorker = (qMsg) => {
+					// Generate a unique ID for this task.
+					Guid taskID = Guid.NewGuid();
+					
+					// Add this task to the running list.
+					if (!runningTasks.TryAdd(taskID, 1))
+						return;
+
+					Task.Run(async () =>
+					{
+						try
+						{
+							// Loop while there is a task message to send.
+							while (qMsg != null && !_IsStopping)
+							{
+								// Send the message.
+								await SendMessageAsync(qMsg);
+
+								// Acknowledge of the message.
+								RabbitMqOutboundQueueManager.Ack(qMsg);
+
+								// Try to get another message to send.
+								qMsg = RabbitMq.RabbitMqOutboundQueueManager.Dequeue();
+							}
+						}
+						catch (Exception ex)
+						{
+							// Log if we can't send the message.
+							Logging.Debug("Failed to send message", ex);
+						}
+						finally
+						{
+							// If there is still a acknowledge of the message.
+							if (qMsg != null)
+								RabbitMqOutboundQueueManager.Ack(qMsg);
+
+							// Remove this task from the dictionary
+							int value;
+							runningTasks.TryRemove(taskID, out value);
+						}
+					});
+				};
+
+				Action startWorkerTasks = () => {
+					while ((runningTasks.Count < MAX_SENDING_WORKER_TASKS) && !_IsStopping)
+					{
+						MtaQueuedMessage qmsg = RabbitMq.RabbitMqOutboundQueueManager.Dequeue();
+						if (qmsg == null)
+							break; // Nothing to do, so don't start anymore workers.
+
+						taskWorker(qmsg);
+					}
+				};
+
 				while(!_IsStopping)
 				{
-					MtaQueuedMessage toSend = RabbitMqOutboundQueueManager.Dequeue();
-					if (toSend == null)
+					if (runningTasks.Count >= MAX_SENDING_WORKER_TASKS)
 					{
 						Thread.Sleep(100);
 						continue;
 					}
-					SendMessageAsync(toSend).Wait();
-					RabbitMqOutboundQueueManager.Ack(toSend);
+
+					startWorkerTasks();
 				}
 			}));
 			t.Start();
@@ -130,6 +188,7 @@ namespace MantaMTA.Core.Client
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections:
 							msg.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
+							RabbitMqOutboundQueueManager.Enqueue(msg);
 							break;
 					}
 
