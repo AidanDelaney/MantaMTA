@@ -54,6 +54,7 @@ namespace MantaService
 
 			// Start the SMTP Client.
 			MessageSenderSql.Instance.Start();
+			MessageSender.Instance.Start();
 
 			// Start the events (bounce/abuse) handler.
 			EventsFileHandler.Instance.Start();
