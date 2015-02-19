@@ -10,6 +10,16 @@ namespace MantaMTA.Core.RabbitMq
 	public static class RabbitMqManager
 	{
 		/// <summary>
+		/// Name of the Exchange in RabbitMQ to route dead letters from the wait* queues back in to the waiting queue.
+		/// </summary>
+		private const string MANTA_WAIT_DEAD_LETTER_EXCHANGE = "manta_mta_wait_exchange";
+
+		/// <summary>
+		/// The routing key to use for routing dead messages back into the waiting queue.
+		/// </summary>
+		private const string MANTA_WAIT_DEAD_LETTER_EXCHANGE_ROUTING_KEY = "manta_outbound_wait_route";
+
+		/// <summary>
 		/// The connection to the RabbitMQ instance.
 		/// </summary>
 		private static readonly IConnection LocalhostConnection = new ConnectionFactory
@@ -103,12 +113,20 @@ namespace MantaMTA.Core.RabbitMq
 		/// <returns>The name of the queue.</returns>
 		private static string GetQueueNameFromEnum(RabbitMqQueue queue)
 		{
+			const string manta_queue_prefix = "manta_mta_";
+
 			switch (queue)
 			{
 				case RabbitMqQueue.Inbound:
-					return "manta_mta_inbound";
+					return manta_queue_prefix + "inbound";
 				case RabbitMqQueue.OutboundWaiting:
-					return "manta_mta_outbound_waiting";
+					return manta_queue_prefix + "outbound_waiting";
+				case RabbitMqQueue.OutboundWait1:
+					return manta_queue_prefix + "outbound_wait_1";
+				case RabbitMqQueue.OutboundWait60:
+					return manta_queue_prefix + "outbound_wait_60";
+				case RabbitMqQueue.OutboundWait300:
+					return manta_queue_prefix + "outbound_wait_300";
 				default:
 					throw new Exception("Cannot get name for RabbitMqQueue");
 			}
@@ -142,11 +160,53 @@ namespace MantaMTA.Core.RabbitMq
 				if (channel == null)
 				{
 					channel = LocalhostConnection.CreateModel();
+					Dictionary<string, object> queueArgs = null;
+					bool isOutboundWaitingQueue = false;
+
+					switch(queue)
+					{
+						case RabbitMqQueue.OutboundWait1:
+						case RabbitMqQueue.OutboundWait60:
+						case RabbitMqQueue.OutboundWait300:
+							isOutboundWaitingQueue = true;
+							channel.ExchangeDeclare(MANTA_WAIT_DEAD_LETTER_EXCHANGE,	// Name of the Exchange to declare.
+													"direct",							// The exchange type.
+													true,								// Exchange is durable.
+													false,								// Don't want the exchange auto deleted.
+													null);								// No additional arguments.
+
+							
+							// The amount of time in milliseconds to allow messages to live in the queue.
+							int messageTTL = 0;
+							
+							// Work out the TTL. 
+							if (queue == RabbitMqQueue.OutboundWait1)
+								messageTTL = 1 * 1000;
+							else if (queue == RabbitMqQueue.OutboundWait60)
+								messageTTL = 60 * 1000;
+							else if (queue == RabbitMqQueue.OutboundWait300)
+								messageTTL = 300 * 1000;
+
+							// We are creating a queue with additional arguments for dead letter routing to the OutboundWaiting queue so set them here.
+							queueArgs = new Dictionary<string, object>();
+							queueArgs.Add("x-message-ttl", messageTTL);
+							queueArgs.Add("x-dead-letter-exchange", MANTA_WAIT_DEAD_LETTER_EXCHANGE);
+							queueArgs.Add("x-dead-letter-routing-key", MANTA_WAIT_DEAD_LETTER_EXCHANGE_ROUTING_KEY);
+							break;
+					}
+					
+					// Declare the Queue in RabbitMQ.
 					channel.QueueDeclare(GetQueueNameFromEnum(queue),		// The Queue to use.
 											true,							// True as we want the queue durable.
 											false,							// Queue isn't exclusive.
 											false,							// Don't auto delete from the queue.
-											null);							// No additional args required.
+											queueArgs);						// Add any additional Queue arguments.
+
+					// If we are getting a channel to an Outbound Wait X queue, then we need to bind the dead letter exchange and the OutboundWaiting queue.
+					if (isOutboundWaitingQueue)
+						channel.QueueBind(GetQueueNameFromEnum(RabbitMqQueue.OutboundWaiting), 
+										  MANTA_WAIT_DEAD_LETTER_EXCHANGE, 
+										  MANTA_WAIT_DEAD_LETTER_EXCHANGE_ROUTING_KEY);
 				}
 
 				_Channels[queue] = channel;
@@ -203,7 +263,19 @@ namespace MantaMTA.Core.RabbitMq
 			/// <summary>
 			/// The Outbound Queue is a queue of messages that have been queued for relaying.
 			/// </summary>
-			OutboundWaiting = 1
+			OutboundWaiting = 1,
+			/// <summary>
+			/// Outbound wait queue, messages live here for one second before routing to OutboundWaiting.
+			/// </summary>
+			OutboundWait1 = 2,
+			/// <summary>
+			/// Outbound wait queue, messages live here for one minute before routing to OutboundWaiting.
+			/// </summary>
+			OutboundWait60 = 3,
+			/// <summary>
+			/// Outbound wait queue, messages live here for five minutes before routing to OutboundWaiting.
+			/// </summary>
+			OutboundWait300 = 4
 		}
 	}
 }

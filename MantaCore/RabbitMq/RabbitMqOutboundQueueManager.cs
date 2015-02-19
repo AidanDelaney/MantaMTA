@@ -1,5 +1,6 @@
 ﻿using MantaMTA.Core.Client.BO;
 using RabbitMQ.Client.Events;
+using System;
 using System.Linq;
 using System.Text;
 using System.Web.Script.Serialization;
@@ -29,7 +30,21 @@ namespace MantaMTA.Core.RabbitMq
 		/// <param name="msg">Message to enqueue.</param>
 		public static void Enqueue(MtaQueuedMessage msg)
 		{
-			RabbitMqManager.Publish(msg, RabbitMqManager.RabbitMqQueue.OutboundWaiting);
+			RabbitMqManager.RabbitMqQueue queue = RabbitMqManager.RabbitMqQueue.OutboundWaiting;
+
+			int secondsUntilNextAttempt = (int)Math.Floor((msg.AttemptSendAfterUtc - DateTime.UtcNow).TotalSeconds);
+
+			if (secondsUntilNextAttempt > 0)
+			{
+				if (secondsUntilNextAttempt < 60)
+					queue = RabbitMqManager.RabbitMqQueue.OutboundWait1;
+				else if (secondsUntilNextAttempt < 300)
+					queue = RabbitMqManager.RabbitMqQueue.OutboundWait60;
+				else
+					queue = RabbitMqManager.RabbitMqQueue.OutboundWait300;
+			}
+
+			RabbitMqManager.Publish(msg, queue);
 		}
 
 		/// <summary>
