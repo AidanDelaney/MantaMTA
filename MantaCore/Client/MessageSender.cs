@@ -1,6 +1,8 @@
 ﻿using MantaMTA.Core.Client.BO;
 using MantaMTA.Core.DNS;
+using MantaMTA.Core.Enums;
 using MantaMTA.Core.RabbitMq;
+using MantaMTA.Core.Sends;
 using MantaMTA.Core.Smtp;
 using MantaMTA.Core.VirtualMta;
 using System;
@@ -141,6 +143,31 @@ namespace MantaMTA.Core.Client
 				RabbitMqOutboundQueueManager.Enqueue(msg);
 				return false;
 			}
+
+			// Get the send that this message belongs to so that we can check the send state.
+			Send snd = SendManager.Instance.GetSend(msg.InternalSendID);
+
+			switch(snd.SendStatus)
+			{
+				// The send is being discarded so we should discard the message.
+				case SendStatus.Discard:
+					await msg.HandleMessageDiscardAsync();
+					return false;
+				// The send is paused, the handle pause state will delay, without deferring, the message for a while so we can move on to other messages.
+				case SendStatus.Paused:
+					msg.HandleSendPaused();
+					return false;
+				// Send is active so we don't need to do anything.
+				case SendStatus.Active:
+					break;
+				// Unknown send state, requeue the message and log error. Cannot send!
+				default:
+					msg.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+					RabbitMqOutboundQueueManager.Enqueue(msg);
+					Logging.Error("Failed to send message. Unknown SendStatus[" + snd.SendStatus + "]!");
+					return false;
+			}
+			
 
 			bool result;
 			// Check the message hasn't timed out. If it has don't attempt to send it.

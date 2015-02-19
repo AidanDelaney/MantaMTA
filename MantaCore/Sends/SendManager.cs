@@ -28,26 +28,37 @@ namespace MantaMTA.Core.Sends
 		private ServiceHost _ServiceHost = null;
 
 		/// <summary>
-		/// Collection of SendIDs
-		/// Overtime this will get big so should be cleared every hourish.
+		/// Collection of cached Sends, key is SendID.
+		/// Objects should be in this and _SendsInternalID with alternate key.
 		/// </summary>
 		private ConcurrentDictionary<string, Send> _Sends = new ConcurrentDictionary<string, Send>();
+
+		/// <summary>
+		/// Collection of cached Sends, key is internal ID.
+		/// Objects should be in this and _Sends with alternate key.
+		/// </summary>
+		private ConcurrentDictionary<int, Send> _SendsInternalID = new ConcurrentDictionary<int, Send>();
 		
 		/// <summary>
-		/// Timestamp of when _SendIDs was last cleared. 
+		/// Timestamp of when cached sends were last cleared. 
 		/// </summary>
 		private DateTime _SendsLastCleared = DateTime.UtcNow;
+
+		/// <summary>
+		/// Sends cache lock, used when clearing the cached items.
+		/// </summary>
+		private object _SendsLock = new object();
 		
 		/// <summary>
-		/// Gets the internal send ID to be used for the specified sendID.
+		/// Gets Send with the specified sendID.
 		/// If it doesn't exist it will be created in the database.
 		/// </summary>
-		/// <param name="sendId"></param>
-		/// <returns></returns>
+		/// <param name="sendId">ID of the Send.</param>
+		/// <returns>The Send.</returns>
 		public Send GetSend(string sendId)
 		{
 			// Don't want send IDs sitting in memory for to long so clear every so often.
-			if (this._SendsLastCleared.AddHours(1) < DateTime.UtcNow)
+			if (this._SendsLastCleared.AddSeconds(10) < DateTime.UtcNow)
 				this.ClearSendsCache();
 
 			Send snd;
@@ -60,9 +71,37 @@ namespace MantaMTA.Core.Sends
 
 				// Add are new item to the cache.
 				this._Sends.TryAdd(sendId, snd);
+				this._SendsInternalID.TryAdd(snd.InternalID, snd);
 			}
 
 			// return the value.
+			return snd;
+		}
+
+		/// <summary>
+		/// Gets the specified Send.
+		/// </summary>
+		/// <param name="internalSendID">Internal ID of the Send.</param>
+		/// <returns>The Send.</returns>
+		public Send GetSend(int internalSendID)
+		{
+			// Don't want send IDs sitting in memory for to long so clear every so often.
+			if (this._SendsLastCleared.AddSeconds(10) < DateTime.UtcNow)
+				this.ClearSendsCache();
+
+			Send snd;
+
+			// Try to get the send id from the cached collection.
+			if (!this._SendsInternalID.TryGetValue(internalSendID, out snd))
+			{
+				// Doesn't exist so need to create or load from datbase.
+				snd = SendDB.GetSend(internalSendID);
+
+				// Add are new item to the cache.
+				this._SendsInternalID.TryAdd(internalSendID, snd);
+				this._Sends.TryAdd(snd.ID, snd);
+			}
+
 			return snd;
 		}
 
@@ -81,10 +120,12 @@ namespace MantaMTA.Core.Sends
 		/// </summary>
 		public void ClearSendsCache()
 		{
-			lock (this._Sends)
+			lock (_SendsLock)
 			{
 				this._Sends.Clear();
+				this._SendsInternalID.Clear();
 				this._SendsLastCleared = DateTime.UtcNow;
+				Logging.Info("Cleared Send Cache");
 			}
 		}
 

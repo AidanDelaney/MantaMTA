@@ -72,6 +72,16 @@ namespace MantaMTA.Core.Client.BO
 		}
 
 		/// <summary>
+		/// Discards the message.
+		/// </summary>
+		/// <param name="failMsg"></param>
+		public async Task<bool> HandleMessageDiscardAsync()
+		{
+			await MtaTransaction.LogTransactionAsync(this.ID, TransactionStatus.Discarded, string.Empty, null, null);
+			return true;
+		}
+
+		/// <summary>
 		/// This method handles message deferal.
 		///	Logs deferral
 		///	Fails the message if timed out
@@ -184,6 +194,16 @@ namespace MantaMTA.Core.Client.BO
 			}
 
 			return true;
+		}
+
+		/// <summary>
+		/// Handle the message for a paused send.
+		/// Should increase attempt send after timestamp and requeue in RabbitMQ.
+		/// </summary>
+		internal void HandleSendPaused()
+		{
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+			Requeue();
 		}
 
 		/// <summary>
