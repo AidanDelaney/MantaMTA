@@ -32,7 +32,7 @@ namespace MantaMTA.Core.RabbitMq
 		{
 			RabbitMqManager.RabbitMqQueue queue = RabbitMqManager.RabbitMqQueue.OutboundWaiting;
 
-			int secondsUntilNextAttempt = (int)Math.Floor((msg.AttemptSendAfterUtc - DateTime.UtcNow).TotalSeconds);
+			int secondsUntilNextAttempt = (int)Math.Ceiling((msg.AttemptSendAfterUtc - DateTime.UtcNow).TotalSeconds);
 
 			if (secondsUntilNextAttempt > 0)
 			{
