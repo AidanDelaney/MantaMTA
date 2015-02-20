@@ -9,7 +9,12 @@
 }
 
 <ul class="breadcrumb">
-	<li><strong>Send: @Model.SendID</strong></li>
+	<li>
+		<strong>
+			Send: @Model.SendID<br/>
+			@Model.GetSendReportPageTitle()
+		</strong>
+	</li>
 </ul>
 
 <div class="row-fluid">
