@@ -27,8 +27,16 @@ namespace MantaMTA.Core.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
+	BEGIN TRANSACTION
 	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
-	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
+	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)
+
+	UPDATE man_mta_send
+	SET mta_send_messages = mta_send_messages + 1
+	WHERE mta_send_internalId = @internalSendID
+
+	COMMIT TRANSACTION
+	";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@internalSendID", message.InternalSendID);
 				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt));
