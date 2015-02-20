@@ -1,0 +1,23 @@
+﻿@{
+    ViewBag.Title = "RabbitMQ";
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<h3>RabbitMQ Queues</h3>
+
+<table class="table">
+	<tr>
+		<th>Queue</th>
+		<th>State</th>
+		<th>Messages</th>
+
+	</tr>
+	@foreach (WebInterface.Models.RabbitMqQueue q in Model)
+	{
+		<tr>
+			<td>@q.Name</td>
+			<td>@q.State</td>
+			<td>@q.Messages.ToString("N0")</td>
+		</tr>
+	}
+</table>
