@@ -115,10 +115,10 @@ ORDER BY [send].mta_send_createdTimestamp DESC";
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT [snd].*,
-	(SELECT COUNT(*) FROM man_mta_msg WHERE man_mta_msg.mta_send_internalId = [snd].mta_send_internalId) AS 'Messages',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 4) AS 'Accepted',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND ([tran].mta_transactionStatus_id = 2 OR [tran].mta_transactionStatus_id = 3 OR [tran].mta_transactionStatus_id = 6)) AS 'Rejected',
-	(SELECT COUNT(*) FROM man_mta_queue as [queue] JOIN man_mta_msg as [msg] ON [queue].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) AS 'Waiting',
+	mta_send_messages AS 'Messages',
+	mta_send_accepted AS 'Accepted',
+	mta_send_rejected AS 'Rejected',
+	([snd].mta_send_messages - (mta_send_accepted + mta_send_rejected)) AS 'Waiting',
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
 	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
 	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) AS 'LastTransactionTimestamp'
