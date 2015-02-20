@@ -122,11 +122,11 @@ namespace MantaMTA.Core.RabbitMq
 				case RabbitMqQueue.OutboundWaiting:
 					return manta_queue_prefix + "outbound_waiting";
 				case RabbitMqQueue.OutboundWait1:
-					return manta_queue_prefix + "outbound_wait_1";
+					return manta_queue_prefix + "outbound_wait_____1";
 				case RabbitMqQueue.OutboundWait60:
-					return manta_queue_prefix + "outbound_wait_60";
+					return manta_queue_prefix + "outbound_wait____60";
 				case RabbitMqQueue.OutboundWait300:
-					return manta_queue_prefix + "outbound_wait_300";
+					return manta_queue_prefix + "outbound_wait___300";
 				default:
 					throw new Exception("Cannot get name for RabbitMqQueue");
 			}

@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace MantaMTA.Core.Server
 {
@@ -160,13 +161,27 @@ namespace MantaMTA.Core.Server
 							cmd.Parameters.AddWithValue(ip_group_id, recordsToImportToSql[i].VirtualMTAGroupID);
 						}
 
+						StringBuilder sbSendUpdate = new StringBuilder();
+						foreach(IGrouping<int, MtaMessage> s in recordsToImportToSql.GroupBy(m=>m.InternalSendID))
+						{
+							int sendID = s.Key;
+							sbMessageValues.AppendFormat(@"
+								UPDATE man_mta_send
+								SET mta_send_messages = mta_send_messages + {0}
+								WHERE mta_send_internalID = {1}
+							", s.Count(), sendID);
+						}
+						
+
 						cmd.CommandText = string.Format(@"
 BEGIN TRANSACTION
 
 INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo)
 VALUES {0}
 
-COMMIT TRANSACTION", sbMessageValues.ToString());
+{1}
+
+COMMIT TRANSACTION", sbMessageValues.ToString(), sbSendUpdate.ToString());
 
 						cmd.Parameters.AddWithValue(datetimenow, DateTime.UtcNow);
 						cmd.CommandTimeout = 5 * 60 * 1000;
