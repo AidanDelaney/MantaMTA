@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using WebInterfaceLib.BO;
 
@@ -46,6 +47,19 @@ namespace WebInterface.Models
 			RabbitMqTotalOutbound = 0;
 		}
 
+		private List<DateTime> GetDashboardChartDates()
+		{
+			DateTime end = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, 0);
+			DateTime start = end.AddMinutes(-60);
+			List<DateTime> dates = new List<DateTime>();
+			while (end >= start)
+			{
+				if (!dates.Contains(end))
+					dates.Add(end);
+				end = end.AddMinutes(-1);
+			}
+			return dates;
+		}
 
 		/// <summary>
 		/// Gets the Accepted Send Rates for chart.
@@ -54,7 +68,8 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+
+			foreach (DateTime timestamp in GetDashboardChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
@@ -76,7 +91,7 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+			foreach (DateTime timestamp in GetDashboardChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
@@ -98,7 +113,7 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+			foreach (DateTime timestamp in GetDashboardChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);

@@ -15,6 +15,9 @@
 			Meta: @Model.GetSendReportPageTitle()
 		</strong>
 	</li>
+	<div class="pull-right">
+		<a href="/Sends/GetMessageResultCsv?sendID=@Model.SendID" target="_blank" class="btn btn-mini btn-primary">Export Data</a>
+	</div>
 </ul>
 
 <div class="row-fluid">
@@ -24,9 +27,7 @@
 		<li @(Request.Path.Equals(PageData["VmtaUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["VmtaUrl"]?sendID=@Model.SendID">Virtual MTAs</a></li>
 		<li @(Request.Path.Equals(PageData["DeferredUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["DeferredUrl"]?sendID=@Model.SendID">Deferred</a></li>
 		<li @(Request.Path.Equals(PageData["FailedUrl"], StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="@PageData["FailedUrl"]?sendID=@Model.SendID">Failed</a></li>
-		<div class="pull-right">
-			<a href="/Sends/GetMessageResultCsv?sendID=@Model.SendID" target="_blank" class="btn btn-mini btn-primary">Export Data</a>
-		</div>
+		
 	</ul>
 </div>
 

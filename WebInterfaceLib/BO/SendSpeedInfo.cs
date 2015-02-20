@@ -14,6 +14,13 @@ namespace WebInterfaceLib.BO
 		public SendSpeedInfo(IEnumerable<SendSpeedInfoItem> collection) : base(collection) { }
 
 		/// <summary>
+		/// Gets the first date for this SendSpeedInfoItem. Will be sending started for Reports. 1 hour ago for dashboard.
+		/// </summary>
+		public DateTime SendingStarted { get {
+			return Dates.Min();
+		} }
+
+		/// <summary>
 		/// An array of all of the timestamps that make up the send speed info.
 		/// </summary>
 		public DateTime[] Dates
