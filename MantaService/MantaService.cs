@@ -36,9 +36,6 @@ namespace MantaService
 				Logging.Fatal(ex.Message, ex);
 			};
 
-			// Start the send manager service.
-			SendManager.Instance.StartService();
-
 			// Start the RabbitMQ Bulk inserter.
 			QueueManager.Instance.Start();
 

@@ -43,6 +43,18 @@
 			});
 		}
 	</script>
+	<style type="text/css">
+		#channel-menu{margin-top:0px;}
+		.tile, .label{border-radius: 3px !important;}
+		.btn-group .btn:first-of-type {
+			border-top-left-radius: 3px !important;
+			border-bottom-left-radius: 3px !important;
+		}
+		.btn-group .btn:last-of-type{
+			border-top-right-radius: 3px !important;
+			border-bottom-right-radius: 3px !important;
+		}
+	</style>
 </head>
 <body>
 <div id="wrap">
@@ -91,11 +103,11 @@
 			</div>
 			
 			<div id="channel" class="span10">
-				<div id="channel-head">
+				<!--<div id="channel-head">
 					<ul class="breadcrumb">
 						<li><strong>@ViewBag.Title</strong></li>
 					</ul>
-				</div>
+				</div>-->
 				<div id="channel-content">					
 					<div class="row-fluid">
 						@RenderBody()								
@@ -104,5 +116,6 @@
 			</div>
 		</div>
 	</div>
+</div>
 </body>
 </html>

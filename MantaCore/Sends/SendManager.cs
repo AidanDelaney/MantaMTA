@@ -1,14 +1,11 @@
-﻿using MantaMTA.Core.Client.BO;
-using MantaMTA.Core.DAL;
-using MantaMTA.Core.ServiceContracts;
+﻿using MantaMTA.Core.DAL;
+using MantaMTA.Core.Enums;
 using System;
 using System.Collections.Concurrent;
-using System.ServiceModel;
-using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Sends
 {
-	public class SendManager : ISendManagerContract
+	public class SendManager
 	{
 		public static SendManager Instance
 		{
@@ -21,11 +18,6 @@ namespace MantaMTA.Core.Sends
 		private SendManager()
 		{
 		}
-
-		/// <summary>
-		/// ServiceHost to host the service contact.
-		/// </summary>
-		private ServiceHost _ServiceHost = null;
 
 		/// <summary>
 		/// Collection of cached Sends, key is SendID.
@@ -125,71 +117,17 @@ namespace MantaMTA.Core.Sends
 				this._Sends.Clear();
 				this._SendsInternalID.Clear();
 				this._SendsLastCleared = DateTime.UtcNow;
-				Logging.Info("Cleared Send Cache");
 			}
 		}
-
-		public void StartService()
-		{
-			_ServiceHost = ServiceContractManager.CreateServiceHost(typeof(SendManager),
-													 typeof(ISendManagerContract),
-													 ServiceContractManager.ServiceAddresses.SendManager,
-													 new EventHandler(delegate(object sender, EventArgs e)
-			{
-				Logging.Fatal("SendManager ServiceHost Faulted");
-				MantaCoreEvents.InvokeMantaCoreStopping();
-				Environment.Exit(-1);
-			}));
-			this._ServiceHost.Open();
-		}
-
+		
 		/// <summary>
-		/// Pause the specified send.
+		/// Sets the status of the specified send to the specified status.
 		/// </summary>
-		/// <param name="internalSendID">Internal ID of the send to pause.</param>
-		public void Pause(int internalSendID)
+		/// <param name="sendID">ID of the send to set the staus of.</param>
+		/// <param name="status">The status to set the send to.</param>
+		internal void SetSendStatus(string sendID, SendStatus status)
 		{
-			SendDB.PauseSend(internalSendID);
-			SendManager.Instance.ClearSendsCache();
-		}
-
-		/// <summary>
-		/// Discards a send.
-		/// </summary>
-		/// <param name="internalSendID">Internal ID of the Send.</param>
-		public void Discard(int internalSendID)
-		{
-			SendDB.DiscardSend(internalSendID);
-			SendManager.Instance.ClearSendsCache();
-			SendManager.Instance.DiscardMessages(internalSendID);
-		}
-
-		/// <summary>
-		/// Discards the messages in send queue.
-		/// </summary>
-		/// <param name="internalSendID">Internal ID of the Send.</param>
-		private void DiscardMessages(int internalSendID)
-		{
-			MtaQueuedMessageCollection messages = MtaMessageDB.PickupForDiscarding(25);
-			while (messages.Count > 0)
-			{
-				Parallel.ForEach<MtaQueuedMessageSql>(messages, delegate(MtaQueuedMessageSql msg)
-				{
-					msg.HandleMessageDiscard();
-				});
-
-				messages = MtaMessageDB.PickupForDiscarding(25);
-			}
-		}
-
-		/// <summary>
-		/// Resumes a send. Sets it to active.
-		/// </summary>
-		/// <param name="internalSendID">Internal ID of the Send.</param>
-		public void Resume(int internalSendID)
-		{
-			SendDB.ResumeSend(internalSendID);
-			SendManager.Instance.ClearSendsCache();
+			SendDB.SetSendStatus(sendID, status);
 		}
 	}
 }

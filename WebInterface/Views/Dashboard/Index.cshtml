@@ -5,190 +5,212 @@
 
 <div class="row-fluid">
 	<div class="span2">
-		<div class="tile tile-orange">
-			<h6>Currently Waiting</h6>
-			<h3>@Model.Waiting.ToString("N0")</h3>
-		</div>
-	</div>
-	<div class="span2">
-		<div class="tile tile-orange">
-			<h6>Paused</h6>
-			<h3>@Model.Paused.ToString("N0")</h3>
-		</div>
-	</div>
-	<div class="span2">
-		<div class="tile tile-blue">
-			<h6>Deferred Last Hour</h6>
-			<h3>@Model.SendTransactionSummaryCollection.DeferredPercent.ToString("N1")%</h3>
-		</div>
-	</div>
-	<div class="span2">
-		<div class="tile tile-midgrey">
-			<h6>Throttled Last Hour</h6>
-			<h3>@Model.SendTransactionSummaryCollection.ThrottledPercent.ToString("N1")%</h3>
-		</div>
-	</div>
-	<div class="span2">
-		<div class="tile tile-red">
-			<h6>Rejected Last Hour</h6>
-			<h3>@Model.SendTransactionSummaryCollection.Rejected.ToString("N0")</h3>
-		</div>
-	</div>
-	<div class="span2">
 		<div class="tile tile-green">
 			<h6>Accepted Last Hour</h6>
 			<h3>@Model.SendTransactionSummaryCollection.Accepted.ToString("N0")</h3>
 		</div>
 	</div>
-</div>
-
-@if (Model.SendSpeedInfo.Count == 0)
-{
-	<div class="row-fluid">
-		<div class="tile tile-lightgrey" style="height: 300px;">
-			<h4 style="text-align: left;">Nothing Sent in the last hour</h4> 
+	<div class="span10">
+		<div class="span3">
+			<div class="tile tile-orange">
+				<h6>Currently Waiting</h6>
+				<h3>@Model.Waiting.ToString("N0")</h3>
+			</div>
+		</div>
+		<div class="span3">
+			<div class="tile tile-orange" style="background-color: #E86F0C;">
+				<h6>Paused</h6>
+				<h3>@Model.Paused.ToString("N0")</h3>
+			</div>
+		</div>
+		<div class="span3">
+			<div class="tile tile-turquoise">
+				<h6>RabbitMQ Outbound</h6>
+				<h3>@Model.RabbitMqTotalOutbound.ToString("N0")</h3>
+			</div>
+		</div>
+		<div class="span3">
+			<div class="tile tile-turquoise">
+				<h6>RabbitMQ Inbound</h6>
+				<h3>@Model.RabbitMqInbound.ToString("N0")</h3>
+			</div>
 		</div>
 	</div>
-}
-else
-{
-	<script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
-	<script type="text/javascript">
-		$(document).ready(function () {
-			var rateAccepted = [@Model.GetAcceptedSendRates()];
-			var rateRejected = [@Model.GetRejectedSendRates()];
-			var rateDeferred = [@Model.GetDeferredSendRates()];
+</div>
 
-			var plot2 = $.jqplot('chart1', [rateAccepted, rateRejected, rateDeferred],
+	<div class="row-fluid">
+		<div class="span2">
+			<div class="row-fluid">
+				<div class="tile tile-red">
+					<h6>Rejected Last Hour</h6>
+					<h3>@Model.SendTransactionSummaryCollection.Rejected.ToString("N0")</h3>
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="tile tile-blue">
+					<h6>Deferred Last Hour</h6>
+					<h3>@Model.SendTransactionSummaryCollection.DeferredPercent.ToString("N1")%</h3>
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="tile tile-midgrey">
+					<h6>Throttled Last Hour</h6>
+					<h3>@Model.SendTransactionSummaryCollection.ThrottledPercent.ToString("N1")%</h3>
+				</div>
+			</div>
+		</div>
+
+		<div class="span10">
+			@if (Model.SendSpeedInfo.Count == 0)
 			{
-				series: [{ label: 'Accepted' }, { label: 'Rejected' }, { label: 'Deferred' }],
-				axes: {
-					// options for each axis are specified in seperate option objects.
-					xaxis: {
-						label: "Minutes Ago",
-						pad: 0
-					},
-					yaxis: {
-						label: "Rate",
-						min: 0
-					}
-				},
-				axesDefaults: {
-					show: false,    // wether or not to renderer the axis.  Determined automatically.
-					min: null,      // minimum numerical value of the axis.  Determined automatically.
-					max: null,      // maximum numverical value of the axis.  Determined automatically.
-					pad: 1.2,       // a factor multiplied by the data range on the axis to give the
-					// axis range so that data points don't fall on the edges of the axis.
-					ticks: [],      // a 1D [val1, val2, ...], or 2D [[val, label], [val, label], ...]
-					// array of ticks to use.  Computed automatically.
-					numberTicks: undefined,
-					renderer: $.jqplot.LinearAxisRenderer,  // renderer to use to draw the axis,
-					rendererOptions: {},    // options to pass to the renderer.  LinearAxisRenderer
-					// has no options,
-					tickOptions: {
-						mark: 'outside',    // Where to put the tick mark on the axis
-						// 'outside', 'inside' or 'cross',
-						showMark: true,
-						showGridline: true, // wether to draw a gridline (across the whole grid) at this tick,
-						markSize: 4,        // length the tick will extend beyond the grid in pixels.  For
-						// 'cross', length will be added above and below the grid boundary,
-						show: true,         // wether to show the tick (mark and label),
-						showLabel: true,    // wether to show the text label at the tick,
-						formatString: '',   // format string to use with the axis tick formatter
-					},
-					showTicks: true,        // wether or not to show the tick labels,
-					showTickMarks: true,    // wether or not to show the tick marks
-				},
-				legend: {
-					renderer: $.jqplot.EnhancedLegendRenderer,
-					show: true
-				},
-				seriesDefaults: {
-					show: true,     // wether to render the series.
-					xaxis: 'xaxis', // either 'xaxis' or 'x2axis'.
-					yaxis: 'yaxis', // either 'yaxis' or 'y2axis'.
-					label: '',      // label to use in the legend for this line.
-					color: '',      // CSS color spec to use for the line.  Determined automatically.
-					lineWidth: 1, // Width of the line in pixels.
-					shadow: false,   // show shadow or not.
-					showLine: true,     // whether to render the line segments or not.
-					showMarker: false,   // render the data point markers or not.
-					fill: false,        // fill under the line,
-					fillAndStroke: false,       // *stroke a line at top of fill area.
-					fillColor: undefined,       // *custom fill color for filled lines (default is line color).
-					fillAlpha: undefined,       // *custom alpha to apply to fillColor.
-					renderer: $.jqplot.LineRenderer,    // renderer used to draw the series.
-					rendererOptions: {}, // options passed to the renderer.  LineRenderer has no options.
-					markerRenderer: $.jqplot.MarkerRenderer    // renderer to use to draw the data
-				},
-				seriesColors: ['#2ecc71','#e74c3c','#3498db'],
-				grid: {
-					drawGridLines: true,        // wether to draw lines across the grid or not.
-					gridLineColor: '#e3e3e3',    // *Color of the grid lines.
-					background: '#ffffff',      // CSS color spec for background color of grid.
-					borderColor: '#cccccc',     // CSS color spec for border around grid.
-					borderWidth: 0,           // pixel width of border around grid.
-					shadow: false,               // draw a shadow for grid.
-					renderer: $.jqplot.CanvasGridRenderer,  // renderer to use to draw the grid.
-					rendererOptions: {}         // options to pass to the renderer.  Note, the default
-				},
-			});
-		});
-	</script>
+				<div class="row-fluid">
+					<div class="tile tile-lightgrey" style="height: 300px;">
+						<h4 style="text-align: left;">Nothing Sent in the last hour</h4>
+					</div>
+				</div>
+			}
+			else
+			{
+				<script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
+				<script type="text/javascript">
+					$(document).ready(function () {
+						var rateAccepted = [@Model.GetAcceptedSendRates()];
+						var rateRejected = [@Model.GetRejectedSendRates()];
+						var rateDeferred = [@Model.GetDeferredSendRates()];
 
-	<div class="row-fluid">
-		<div id="chart1" style="height: 300px; width: 100%; position: relative;" class="jqplot-target"></div>
-	</div>
-}
+						var plot2 = $.jqplot('chart1', [rateAccepted, rateRejected, rateDeferred],
+						{
+							series: [{ label: 'Accepted' }, { label: 'Rejected' }, { label: 'Deferred' }],
+							axes: {
+								// options for each axis are specified in seperate option objects.
+								xaxis: {
+									label: "Minutes Ago",
+									pad: 0
+								},
+								yaxis: {
+									label: "",
+									min: 0
+								}
+							},
+							axesDefaults: {
+								show: false,    // wether or not to renderer the axis.  Determined automatically.
+								min: null,      // minimum numerical value of the axis.  Determined automatically.
+								max: null,      // maximum numverical value of the axis.  Determined automatically.
+								pad: 1.2,       // a factor multiplied by the data range on the axis to give the
+								// axis range so that data points don't fall on the edges of the axis.
+								ticks: [],      // a 1D [val1, val2, ...], or 2D [[val, label], [val, label], ...]
+								// array of ticks to use.  Computed automatically.
+								numberTicks: undefined,
+								renderer: $.jqplot.LinearAxisRenderer,  // renderer to use to draw the axis,
+								rendererOptions: {},    // options to pass to the renderer.  LinearAxisRenderer
+								// has no options,
+								tickOptions: {
+									mark: 'outside',    // Where to put the tick mark on the axis
+									// 'outside', 'inside' or 'cross',
+									showMark: true,
+									showGridline: false, // wether to draw a gridline (across the whole grid) at this tick,
+									markSize: 4,        // length the tick will extend beyond the grid in pixels.  For
+									// 'cross', length will be added above and below the grid boundary,
+									show: true,         // wether to show the tick (mark and label),
+									showLabel: true,    // wether to show the text label at the tick,
+									formatString: '',   // format string to use with the axis tick formatter
+								},
+								showTicks: true,        // wether or not to show the tick labels,
+								showTickMarks: true,    // wether or not to show the tick marks
+							},
+							legend: {
+								renderer: $.jqplot.EnhancedLegendRenderer,
+								show: true
+							},
+							seriesDefaults: {
+								show: true,     // wether to render the series.
+								xaxis: 'xaxis', // either 'xaxis' or 'x2axis'.
+								yaxis: 'yaxis', // either 'yaxis' or 'y2axis'.
+								label: '',      // label to use in the legend for this line.
+								color: '',      // CSS color spec to use for the line.  Determined automatically.
+								lineWidth: 1, // Width of the line in pixels.
+								shadow: false,   // show shadow or not.
+								showLine: true,     // whether to render the line segments or not.
+								showMarker: false,   // render the data point markers or not.
+								fill: false,        // fill under the line,
+								fillAndStroke: false,       // *stroke a line at top of fill area.
+								fillColor: undefined,       // *custom fill color for filled lines (default is line color).
+								fillAlpha: undefined,       // *custom alpha to apply to fillColor.
+								renderer: $.jqplot.LineRenderer,    // renderer used to draw the series.
+								rendererOptions: {}, // options passed to the renderer.  LineRenderer has no options.
+								markerRenderer: $.jqplot.MarkerRenderer    // renderer to use to draw the data
+							},
+							seriesColors: ['#2ecc71', '#e74c3c', '#3498db'],
+							grid: {
+								drawGridLines: true,        // wether to draw lines across the grid or not.
+								gridLineColor: '#e3e3e3',    // *Color of the grid lines.
+								background: '#ffffff',      // CSS color spec for background color of grid.
+								borderColor: '#cccccc',     // CSS color spec for border around grid.
+								borderWidth: 0,           // pixel width of border around grid.
+								shadow: false,               // draw a shadow for grid.
+								renderer: $.jqplot.CanvasGridRenderer,  // renderer to use to draw the grid.
+								rendererOptions: {}         // options to pass to the renderer.  Note, the default
+							},
+						});
+					});
+				</script>
+
+				<div class="row-fluid" style="overflow: hidden;">
+					<div id="chart1" style="height: 300px; width: 100%; position: relative;" class="jqplot-target"></div>
+				</div>
+			}
 
 
 
-<div class="row-fluid">
-	@if (Model.BounceInfo.Length > 0)
- {
-		<h4>Highest Bounces Last Hour</h4>
-		<table class="table table-striped table-hover">
-			<tr>
-				<th>VirtualMTA</th>
-				<th>Status</th>
-				<th>Remote</th>
-				<th>Response</th>
-				<th>Count</th>
-				<th>Last Occurred</th>
-			</tr>
-			<tbody>
-				@foreach (WebInterfaceLib.BO.BounceInfo bounce in Model.BounceInfo)
-	{
-					<tr>
-						<td>@bounce.LocalHostname<br /><small>@bounce.LocalIpAddress</small></td>
-						@switch (bounce.TransactionStatus)
-	  {
-		  case MantaMTA.Core.Enums.TransactionStatus.Deferred:
-								<td class="stat-blue">Deferred</td>
-			  break;
-		  case MantaMTA.Core.Enums.TransactionStatus.Discarded:
-								<td class="stat-red">Discarded</td>
-			  break;
-		  case MantaMTA.Core.Enums.TransactionStatus.Failed:
-								<td class="stat-red">Rejected</td>
-			  break;
-		  case MantaMTA.Core.Enums.TransactionStatus.TimedOut:
-								<td class="stat-red">Timed Out In Queue</td>
-			  break;
-	  }
-						<td>@bounce.RemoteHostname</td>
-						<td>@bounce.Message</td>
-						<td>@bounce.Count.ToString("N0")</td>
-						<td>@bounce.LastOccurred</td>
-					</tr>
-	}
-			</tbody>
-		</table>
- }
- else
- {
-		<div class="tile tile-green">
-			<h4>No bounces in the last hour :)</h4> 
+			<div class="row-fluid">
+				@if (Model.BounceInfo.Length > 0)
+				{
+					<h4>Highest Bounces Last Hour</h4>
+					<table class="table table-striped table-hover">
+						<tr>
+							<th>VirtualMTA</th>
+							<th>Status</th>
+							<th>Remote</th>
+							<th>Response</th>
+							<th>Count</th>
+							<th>Last Occurred</th>
+						</tr>
+						<tbody>
+							@foreach (WebInterfaceLib.BO.BounceInfo bounce in Model.BounceInfo)
+							{
+								<tr>
+									<td>@bounce.LocalHostname<br /><small>@bounce.LocalIpAddress</small></td>
+									@switch (bounce.TransactionStatus)
+									{
+										case MantaMTA.Core.Enums.TransactionStatus.Deferred:
+											<td class="stat-blue">Deferred</td>
+											break;
+										case MantaMTA.Core.Enums.TransactionStatus.Discarded:
+										<td class="stat-red">Discarded</td>
+											break;
+										case MantaMTA.Core.Enums.TransactionStatus.Failed:
+										<td class="stat-red">Rejected</td>
+											break;
+										case MantaMTA.Core.Enums.TransactionStatus.TimedOut:
+										<td class="stat-red">Timed Out In Queue</td>
+											break;
+									}
+									<td>@bounce.RemoteHostname</td>
+									<td>@bounce.Message</td>
+									<td>@bounce.Count.ToString("N0")</td>
+									<td>@bounce.LastOccurred</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+				else
+				{
+					<div class="tile tile-green">
+						<h4>No bounces in the last hour :)</h4>
+					</div>
+				}
+			</div>
 		</div>
-}
-</div>
+
+	</div>

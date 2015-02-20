@@ -114,7 +114,6 @@
     <Compile Include="Sends\SendManager.cs" />
     <Compile Include="Server\SmtpServer.cs" />
     <Compile Include="Server\SmtpServerTransaction.cs" />
-    <Compile Include="ServiceContracts\ISendManager.cs" />
     <Compile Include="ServiceContracts\ServiceContractManager.cs" />
     <Compile Include="Smtp\SmtpStreamHandler.cs" />
     <Compile Include="Smtp\SmtpTransactionLogger.cs" />

@@ -59,8 +59,6 @@ namespace MantaMTA.Core.ServiceContracts
 		{
 			// Workout the endpoint address needed for contact.
 			string serviceAddress = string.Empty;
-			if (typeof(T) == typeof(ISendManagerContract))
-				serviceAddress = ServiceAddresses.SendManager;
 
 			// If couldn't workout the endpoint then contact isn't implemented.
 			if (string.IsNullOrWhiteSpace(serviceAddress))

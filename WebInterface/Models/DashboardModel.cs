@@ -34,11 +34,16 @@ namespace WebInterface.Models
 		/// </summary>
 		public SendSpeedInfo SendSpeedInfo { get; set; }
 
+		public long RabbitMqInbound { get; set; }
+		public long RabbitMqTotalOutbound { get; set; }
+
 		public DashboardModel()
 		{
 			SendTransactionSummaryCollection = new SendTransactionSummaryCollection();
 			Waiting = 0;
 			BounceInfo = new BounceInfo[] { };
+			RabbitMqInbound = 0;
+			RabbitMqTotalOutbound = 0;
 		}
 
 
