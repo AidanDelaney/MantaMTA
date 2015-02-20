@@ -93,17 +93,17 @@
 </script>
 
 <div class="row-fluid">
-	<div class="span3">
-		<div class="tile tile-orange">
-			<h6>Send Started</h6>
-			<h3>@Model.SendSpeedInfo.SendingStarted</h3>
+	<div class="span2">
+		<div class="tile tile-lightgrey">
+			<h6>First Transaction</h6>
+			<h4>@Model.SendSpeedInfo.FirstTransactionTimestamp.ToString("dd/MM/yyyy HH:mm")</h4>
 		</div>
-		<div class="tile tile-green">
-			<h6>Send Completed</h6>
-			<h3>-</h3>
+		<div class="tile tile-grey">
+			<h6>Last Transaction</h6>
+			<h4>@Model.SendSpeedInfo.LastTransactionTimestamp.ToString("dd/MM/yyyy HH:mm")</h4>
 		</div>
 	</div>
-	<div class="span9">
+	<div class="span10">
 		<div id="chart1" style="height: 300px; width: 100%; position: relative;" class="jqplot-target"></div>
 	</div>
 </div>
