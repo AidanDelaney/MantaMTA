@@ -97,6 +97,7 @@
 				<div class="sidebar-nav">
 					<ul class="nav nav-list">
 						<li @(Request.Url.PathAndQuery.StartsWith("/dashboard", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Dashboard"><i class="icon-th-large"></i> Dashboard</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/RabbitMQ", StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="/RabbitMQ"><i class="icon-chevron-right"></i> RabbitMQ</a></li>
 						<li @(Request.Url.PathAndQuery.Equals("/Sends/Queue", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Sends/Queue"><i class="icon-time"></i> Queue</a></li>
 						<li @(Request.Url.PathAndQuery.StartsWith("/Sends", StringComparison.OrdinalIgnoreCase) &&
 								!Request.Url.PathAndQuery.Equals("/Sends/Queue") ?"class=active":string.Empty)><a href="/Sends"><i class="icon-random"></i> Sends</a></li>
