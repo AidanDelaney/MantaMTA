@@ -7,6 +7,7 @@ using MantaMTA.Core.Smtp;
 using MantaMTA.Core.VirtualMta;
 using System;
 using System.Collections.Concurrent;
+using System.Configuration;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,7 +45,36 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
 		/// </summary>
-		private const int MAX_SENDING_WORKER_TASKS = 50;
+		private int _MaxSendingWorkerTasks = -1;
+		
+		/// <summary>
+		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
+		/// </summary>
+		private int MAX_SENDING_WORKER_TASKS
+		{
+			get
+			{
+				if(_MaxSendingWorkerTasks == -1)
+				{
+					if (!int.TryParse(ConfigurationManager.AppSettings["MantaMaximumClientWorkers"], out _MaxSendingWorkerTasks))
+					{
+						Logging.Fatal("MantaMaximumClientWorkers not set in AppConfig");
+						Environment.Exit(-1);
+					}
+					else if(_MaxSendingWorkerTasks < 1)
+					{
+						Logging.Fatal("MantaMaximumClientWorkers must be greater than 0");
+						Environment.Exit(-1);
+					}
+					else
+					{
+						Logging.Info("Maximum Client Workers is " + _MaxSendingWorkerTasks.ToString());
+					}
+				}
+
+				return _MaxSendingWorkerTasks;
+			}
+		}
 
 		/// <summary>
 		/// If TRUE then request for client to stop has been made.
