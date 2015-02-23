@@ -179,9 +179,7 @@ BEGIN TRANSACTION
 INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo)
 VALUES {0}
 
-{1}
-
-COMMIT TRANSACTION", sbMessageValues.ToString(), sbSendUpdate.ToString());
+COMMIT TRANSACTION", sbMessageValues.ToString());
 
 						cmd.Parameters.AddWithValue(datetimenow, DateTime.UtcNow);
 						cmd.CommandTimeout = 5 * 60 * 1000;
@@ -193,6 +191,9 @@ COMMIT TRANSACTION", sbMessageValues.ToString(), sbSendUpdate.ToString());
 
 							// Queue the messages in the RabbitMQ outbound queue.
 							RabbitMq.RabbitMqOutboundQueueManager.Enqueue(recordsToImportToSql);
+
+							cmd.CommandText = "BEGIN TRANSACTION " + sbSendUpdate.ToString() + " COMMIT TRANSACTION";
+							cmd.ExecuteNonQuery();
 						}
 						catch(Exception ex)
 						{

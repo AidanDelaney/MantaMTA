@@ -60,10 +60,15 @@
 		div.jqplot-table-legend-swatch-outline{ border:0px; }
 		div.jqplot-table-legend-swatch { border-radius: 12px !important; }
 		td.jqplot-table-legend.jqplot-table-legend-swatch{padding-top: 4px!important;}
+
+		#channel,#app-body, #app-body>.row-fluid {height:100%;}
+		#channel{background: #fff;}
+		body, html{background:#2a88c6;}
+
+		#channel-menu>.sidebar-nav {background-color: #80b8d8; height:100%;}
 	</style>
 </head>
 <body>
-<div id="wrap">
 	<div id="system-head" class="container-fluid">
 		<div class="row-fluid">
 			<div id="system-head-left" class="span6">
@@ -72,21 +77,6 @@
 			<div id="system-head-right" class="span6">
 				<a href="javascript:void(0);">@DateTime.UtcNow.ToString("HH:mm dd MMM yy")</a>
 				<a href="/Settings"><i class="icon-cog icon-white"></i></a>
-			</div>
-		</div>
-	</div>
-	<div id="app-head" class="container-fluid">
-		<div class="row-fluid">
-			<div id="header-title" class="span2"> </div>
-			<div id="header-actions" class="span5">
-
-			</div>
-			<div id="header-controls" class="span5"> 
-				<div class="row-fluid">
-					<div class="span12">
-
-					</div>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -110,11 +100,6 @@
 			</div>
 			
 			<div id="channel" class="span10">
-				<!--<div id="channel-head">
-					<ul class="breadcrumb">
-						<li><strong>@ViewBag.Title</strong></li>
-					</ul>
-				</div>-->
 				<div id="channel-content">					
 					<div class="row-fluid">
 						@RenderBody()								
@@ -123,6 +108,5 @@
 			</div>
 		</div>
 	</div>
-</div>
 </body>
 </html>
