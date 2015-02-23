@@ -23,7 +23,10 @@ namespace WebInterfaceLib.DAL
 FROM man_mta_send as s
 WHERE s.mta_sendStatus_id in (" + string.Join(",", Array.ConvertAll<SendStatus, int>(sendStatus, s => (int)s)) + ")";
 				conn.Open();
-				return Convert.ToInt64(cmd.ExecuteScalar());
+				Int64 result = Convert.ToInt64(cmd.ExecuteScalar());
+				if (result < 0)
+					return 0;
+				return result;
 			}
 		}
 
@@ -168,6 +171,9 @@ WHERE mta_send_internalId = @sndID";
 				TotalMessages = record.GetInt64("Messages"),
 				Waiting = record.GetInt64("Waiting")
 			};
+
+			if (sInfo.Waiting < 0)
+				sInfo.Waiting = 0;
 
 			if (!record.IsDBNull("LastTransactionTimestamp"))
 				sInfo.LastTransactionTimestamp = record.GetDateTime("LastTransactionTimestamp");
