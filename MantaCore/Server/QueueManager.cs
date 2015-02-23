@@ -100,7 +100,7 @@ namespace MantaMTA.Core.Server
 			int count = 0;
 			while (!_hasStopped)
 			{
-				if(count > 50)
+				if(count > 100)
 				{
 					Logging.Error("Failed to stop Bulk Inserter");
 					return;
