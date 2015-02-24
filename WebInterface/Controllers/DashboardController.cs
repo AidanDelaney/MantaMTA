@@ -1,6 +1,7 @@
 ﻿using MantaMTA.Core;
 using MantaMTA.Core.Enums;
 using Newtonsoft.Json.Linq;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -24,27 +25,35 @@ namespace WebInterface.Controllers
 				SendSpeedInfo = WebInterfaceLib.DAL.TransactionDB.GetLastHourSendSpeedInfo()
 			};
 
-			// Connect to Rabbit MQ and grab basic queue counts.
-			HttpWebRequest request = HttpWebRequest.CreateHttp("http://localhost:15672/api/queues");
-			request.Credentials = new NetworkCredential(MtaParameters.RabbitMQ.Username, MtaParameters.RabbitMQ.Password);
-			using(HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+			try
 			{
-				
-				string json = new StreamReader(response.GetResponseStream()).ReadToEnd();
-				JArray rabbitQueues = JArray.Parse(json);
-				foreach(JToken q in rabbitQueues.Children())
+				// Connect to Rabbit MQ and grab basic queue counts.
+				HttpWebRequest request = HttpWebRequest.CreateHttp("http://localhost:15672/api/queues");
+				request.Credentials = new NetworkCredential(MtaParameters.RabbitMQ.Username, MtaParameters.RabbitMQ.Password);
+				using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
 				{
-					JEnumerable<JProperty> qProperties = q.Children<JProperty>();
-					string queueName = (string)qProperties.First(x => x.Name.Equals("name")).Value;
-					if(queueName.StartsWith("manta_mta_"))
+
+					string json = new StreamReader(response.GetResponseStream()).ReadToEnd();
+					JArray rabbitQueues = JArray.Parse(json);
+					foreach (JToken q in rabbitQueues.Children())
 					{
-						long messages = (long)qProperties.First(x => x.Name.Equals("messages", System.StringComparison.OrdinalIgnoreCase)).Value;
-						if (queueName.IndexOf("_inbound_") > 0)
-							model.RabbitMqInbound += messages;
-						else if (queueName.IndexOf("_outbound_") > 0)
-							model.RabbitMqTotalOutbound += messages;
+						JEnumerable<JProperty> qProperties = q.Children<JProperty>();
+						string queueName = (string)qProperties.First(x => x.Name.Equals("name")).Value;
+						if (queueName.StartsWith("manta_mta_"))
+						{
+							long messages = (long)qProperties.First(x => x.Name.Equals("messages", System.StringComparison.OrdinalIgnoreCase)).Value;
+							if (queueName.IndexOf("_inbound_") > 0)
+								model.RabbitMqInbound += messages;
+							else if (queueName.IndexOf("_outbound_") > 0)
+								model.RabbitMqTotalOutbound += messages;
+						}
 					}
 				}
+			}
+			catch(Exception)
+			{
+				model.RabbitMqInbound = int.MinValue;
+				model.RabbitMqTotalOutbound = int.MinValue;
 			}
 
 
