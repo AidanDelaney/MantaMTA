@@ -1,13 +1,9 @@
 ﻿using MantaMTA.Core.Client.BO;
 using MantaMTA.Core.DNS;
-using MantaMTA.Core.Enums;
-using MantaMTA.Core.RabbitMq;
-using MantaMTA.Core.Sends;
 using MantaMTA.Core.Smtp;
 using MantaMTA.Core.VirtualMta;
 using System;
 using System.Collections.Concurrent;
-using System.Configuration;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,26 +13,26 @@ namespace MantaMTA.Core.Client
 	/// <summary>
 	/// MessageSender sends Emails to other servers from the Queue.
 	/// </summary>
-	public class MessageSender : IStopRequired
+	public class MessageSenderSql : IStopRequired
 	{
 		#region Singleton
 		/// <summary>
 		/// The Single instance of this class.
 		/// </summary>
-		private static MessageSender _Instance = new MessageSender();
+		private static MessageSenderSql _Instance = new MessageSenderSql();
 		
 		/// <summary>
 		/// Instance of the MessageSender class.
 		/// </summary>
-		public static MessageSender Instance
+		public static MessageSenderSql Instance
 		{
 			get
 			{
-				return MessageSender._Instance;
+				return MessageSenderSql._Instance;
 			}
 		}
 
-		private MessageSender()
+		private MessageSenderSql()
 		{
 			MantaCoreEvents.RegisterStopRequiredInstance(this);
 		}
@@ -45,36 +41,12 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
 		/// </summary>
-		private int _MaxSendingWorkerTasks = -1;
-		
-		/// <summary>
-		/// Holds the maximum amount of Tasks used for sending that should be run at anyone time.
-		/// </summary>
-		private int MAX_SENDING_WORKER_TASKS
-		{
-			get
-			{
-				if(_MaxSendingWorkerTasks == -1)
-				{
-					if (!int.TryParse(ConfigurationManager.AppSettings["MantaMaximumClientWorkers"], out _MaxSendingWorkerTasks))
-					{
-						Logging.Fatal("MantaMaximumClientWorkers not set in AppConfig");
-						Environment.Exit(-1);
-					}
-					else if(_MaxSendingWorkerTasks < 1)
-					{
-						Logging.Fatal("MantaMaximumClientWorkers must be greater than 0");
-						Environment.Exit(-1);
-					}
-					else
-					{
-						Logging.Info("Maximum Client Workers is " + _MaxSendingWorkerTasks.ToString());
-					}
-				}
+		private const int _MAX_SENDING_WORKER_TASKS = 400;
 
-				return _MaxSendingWorkerTasks;
-			}
-		}
+		/// <summary>
+		/// Client thread.
+		/// </summary>
+		private Thread _ClientThread = null;
 
 		/// <summary>
 		/// If TRUE then request for client to stop has been made.
@@ -87,118 +59,148 @@ namespace MantaMTA.Core.Client
 		public void Stop()
 		{
 			this._IsStopping = true;
+
+			// Hold the stopping thread here while we wait for _ClientThread to stop.
+			while (this._ClientThread != null && this._ClientThread.ThreadState != ThreadState.Stopped)
+			{
+				Thread.Sleep(10);
+			}
 		}
 
+		/// <summary>
+		/// Enqueue a message for delivery.
+		/// </summary>
+		/// <param name="outboundIP">The IP address that should be used to relay this message.</param>
+		/// <param name="mailFrom"></param>
+		/// <param name="rcptTo"></param>
+		/// <param name="message"></param>
+		public async Task<bool> EnqueueAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
+		{
+			MtaMessageSql msg = await MtaMessageSql.CreateAsync(messageID, internalSendID, mailFrom, rcptTo);
+			await msg.QueueAsync(message, ipGroupID);
+			return true;
+		}
 
+		/// <summary>
+		/// Starts the SMTP Client.
+		/// </summary>
 		public void Start()
 		{
-			Thread t = new Thread(new ThreadStart(() => {
-				// Dictionary will hold a single int for each running task. The int means nothing.
-				ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
-
-				Action<MtaQueuedMessage> taskWorker = (qMsg) => {
-					// Generate a unique ID for this task.
-					Guid taskID = Guid.NewGuid();
-					
-					// Add this task to the running list.
-					if (!runningTasks.TryAdd(taskID, 1))
-						return;
-
-					Task.Run(async () =>
-					{
-						try
-						{
-							// Loop while there is a task message to send.
-							while (qMsg != null && !_IsStopping)
-							{
-								// Send the message.
-								await SendMessageAsync(qMsg);
-
-								// Acknowledge of the message.
-								RabbitMqOutboundQueueManager.Ack(qMsg);
-
-								// Try to get another message to send.
-								qMsg = RabbitMq.RabbitMqOutboundQueueManager.Dequeue();
-							}
-						}
-						catch (Exception ex)
-						{
-							// Log if we can't send the message.
-							Logging.Debug("Failed to send message", ex);
-						}
-						finally
-						{
-							// If there is still a acknowledge of the message.
-							if (qMsg != null)
-								RabbitMqOutboundQueueManager.Ack(qMsg);
-
-							// Remove this task from the dictionary
-							int value;
-							runningTasks.TryRemove(taskID, out value);
-						}
-					});
-				};
-
-				Action startWorkerTasks = () => {
-					while ((runningTasks.Count < MAX_SENDING_WORKER_TASKS) && !_IsStopping)
-					{
-						MtaQueuedMessage qmsg = RabbitMq.RabbitMqOutboundQueueManager.Dequeue();
-						if (qmsg == null)
-							break; // Nothing to do, so don't start anymore workers.
-
-						taskWorker(qmsg);
-					}
-				};
-
-				while(!_IsStopping)
+			if (this._ClientThread == null || this._ClientThread.ThreadState != ThreadState.Running)
+			{
+				this._IsStopping = false;
+				this._ClientThread = new Thread(new ThreadStart(delegate
 				{
-					if (runningTasks.Count >= MAX_SENDING_WORKER_TASKS)
+						// Dictionary will hold a single int for each running task. The int means nothing.
+					ConcurrentDictionary<Guid, int> runningTasks = new ConcurrentDictionary<Guid, int>();
+
+					Action<MtaQueuedMessageSql> actSendMessage = delegate(MtaQueuedMessageSql taskMessage)
 					{
-						Thread.Sleep(100);
-						continue;
+							// Generate a unique ID for this task.
+						Guid taskID = Guid.NewGuid();
+
+						// Add this task to the running list.
+							if (!runningTasks.TryAdd(taskID, 1))
+								return;
+
+							Task.Run(new Action(async delegate()
+							{
+								try
+								{
+									// Loop while there is a task message to send.
+									while (taskMessage != null && !this._IsStopping)
+									{
+										// Send the message.
+										await SendMessageAsync(taskMessage);
+										// Dispose of the message.
+										taskMessage.Dispose();
+										// Try to get another message to send.
+										taskMessage = QueueManager.Instance.GetMessageForSending();
+									}
+								}
+								catch (Exception ex)
+								{
+									// Log if we can't send the message.
+									Logging.Debug("Failed to send message", ex);
+								}
+								finally
+								{
+									// If there is still a task message then dispose of it.
+									if (taskMessage != null)
+										taskMessage.Dispose();
+
+									// Remove this task from the dictionary
+									int value;
+									runningTasks.TryRemove(taskID, out value);
+								}
+							})); // Always dispose of the queued message.
+							};
+
+
+						// Will hold the current queued message we are working with.
+					MtaQueuedMessageSql queuedMessage = null;
+					while (!this._IsStopping) // Run until stop requested
+					{
+						Action actStartSendingTasks = delegate
+						{
+							// Loop to create the worker tasks.
+							for (int i = runningTasks.Count; i < _MAX_SENDING_WORKER_TASKS; i++)
+							{
+								// If we don't have a queued message attempt to get one from the queue.
+								if (queuedMessage == null)
+									queuedMessage = QueueManager.Instance.GetMessageForSending();
+
+								// There are no  more messages to send so exit the loop.
+								if (queuedMessage == null)
+									break;
+
+								// Don't try and send the message if stop has been issued.
+								if (!_IsStopping)
+								{
+									actSendMessage(queuedMessage);
+									queuedMessage = null;
+								}
+								else // Stop requested, dispose the message without any attempt to send it.
+									queuedMessage.Dispose();
+							}
+						};
+
+						actStartSendingTasks();
+
+						// As long as tasks are running then we should wait here.
+						while (runningTasks.Count > 0)
+						{
+							Thread.Sleep(100);
+							if (runningTasks.Count < _MAX_SENDING_WORKER_TASKS)
+								actStartSendingTasks();
+						}
+
+						// If not stopping get another message to send.
+						if (!this._IsStopping)
+						{
+							queuedMessage = QueueManager.Instance.GetMessageForSending();
+								
+							// There are no more messages at the moment. Take a nap so not to hammer cpu.
+							if (queuedMessage == null)
+								Thread.Sleep(1 * 1000);
+						}
 					}
 
-					startWorkerTasks();
-				}
-			}));
-			t.Start();
+					// If queued message isn't null dispose of it.
+					if (queuedMessage != null)
+						queuedMessage.Dispose();
+				}));
+				this._ClientThread.Start();
+			}
 		}
 
-
-		private async Task<bool> SendMessageAsync(MtaQueuedMessage msg)
+		/// <summary>
+		/// Sends the specified message.
+		/// </summary>
+		/// <param name="msg">Message to send</param>
+		/// <returns>True if message sent, false if not.</returns>
+		private async Task<bool> SendMessageAsync(MtaQueuedMessageSql msg)
 		{
-			// Check that the message next attempt after has passed.
-			if (msg.AttemptSendAfterUtc > DateTime.UtcNow)
-			{
-				RabbitMqOutboundQueueManager.Enqueue(msg);
-				return false;
-			}
-
-			// Get the send that this message belongs to so that we can check the send state.
-			Send snd = SendManager.Instance.GetSend(msg.InternalSendID);
-
-			switch(snd.SendStatus)
-			{
-				// The send is being discarded so we should discard the message.
-				case SendStatus.Discard:
-					await msg.HandleMessageDiscardAsync();
-					return false;
-				// The send is paused, the handle pause state will delay, without deferring, the message for a while so we can move on to other messages.
-				case SendStatus.Paused:
-					msg.HandleSendPaused();
-					return false;
-				// Send is active so we don't need to do anything.
-				case SendStatus.Active:
-					break;
-				// Unknown send state, requeue the message and log error. Cannot send!
-				default:
-					msg.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
-					RabbitMqOutboundQueueManager.Enqueue(msg);
-					Logging.Error("Failed to send message. Unknown SendStatus[" + snd.SendStatus + "]!");
-					return false;
-			}
-			
-
 			bool result;
 			// Check the message hasn't timed out. If it has don't attempt to send it.
 			// Need to do this here as there may be a massive backlog on the server
@@ -211,6 +213,14 @@ namespace MantaMTA.Core.Client
 			}
 			else
 			{
+				string data = await msg.GetDataAsync();
+				if(string.IsNullOrEmpty(data))
+				{
+					await msg.HandleDeliveryFailAsync("Email DATA file not found", null, null);
+					result = false;
+					return result;
+				}
+				
 				MailAddress mailAddress = new MailAddress(msg.RcptTo[0]);
 				MailAddress mailFrom = new MailAddress(msg.MailFrom);
 				MXRecord[] mXRecords = DNSManager.GetMXRecords(mailAddress.Host);
@@ -223,7 +233,7 @@ namespace MantaMTA.Core.Client
 				else
 				{
 					// The IP group that will be used to send the queued message.
-					VirtualMtaGroup virtualMtaGroup = VirtualMtaManager.GetVirtualMtaGroup(msg.VirtualMTAGroupID);
+					VirtualMtaGroup virtualMtaGroup = VirtualMtaManager.GetVirtualMtaGroup(msg.IPGroupID);
 					VirtualMTA sndIpAddress = virtualMtaGroup.GetVirtualMtasForSending(mXRecords[0]);
 
 					SmtpOutboundClientDequeueResponse dequeueResponse = await SmtpClientPool.Instance.DequeueAsync(sndIpAddress, mXRecords);
@@ -245,7 +255,7 @@ namespace MantaMTA.Core.Client
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.FailedMaxConnections:
 							msg.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(2);
-							RabbitMqOutboundQueueManager.Enqueue(msg);
+							await DAL.MtaMessageDB.SaveAsync((msg as MtaQueuedMessageSql));
 							break;
 					}
 
@@ -282,18 +292,18 @@ namespace MantaMTA.Core.Client
 										msg.HandleDeliveryDeferral(smtpResponse, sndIpAddress, smtpClient.MXRecord, false);
 									}
 								}
-								throw new SmtpTransactionFailedException();
+								throw new MessageSenderSql.SmtpTransactionFailedException();
 							};
 							// Run each SMTP command after the last.
 							await smtpClient.ExecHeloOrRsetAsync(failedCallback);
 							await smtpClient.ExecMailFromAsync(mailFrom, failedCallback);
 							await smtpClient.ExecRcptToAsync(mailAddress, failedCallback);
-							await smtpClient.ExecDataAsync(msg.Message, failedCallback);
+							await smtpClient.ExecDataAsync(data, failedCallback);
 							SmtpClientPool.Instance.Enqueue(smtpClient);
 							await msg.HandleDeliverySuccessAsync(sndIpAddress, smtpClient.MXRecord);
 							result = true;
 						}
-						catch (SmtpTransactionFailedException)
+						catch (MessageSenderSql.SmtpTransactionFailedException)
 						{
 							// Exception is thrown to exit transaction, logging of deferrals/failers already handled.
 							result = false;

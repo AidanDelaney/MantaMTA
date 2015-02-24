@@ -1,4 +1,5 @@
-﻿using MantaMTA.Core.Enums;
+﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.Enums;
 using System;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
@@ -10,23 +11,44 @@ namespace MantaMTA.Core.DAL
 		/// <summary>
 		/// Logs an MTA Transaction to the database.
 		/// </summary>
-		public static void LogTransaction(Guid msgID, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public static void LogTransaction(MtaMessage msg, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
-			LogTransactionAsync(msgID, status, svrResponse, ipAddress, mxRecord).Wait();
+			LogTransactionAsync(msg, status, svrResponse, ipAddress, mxRecord).Wait();
 		}
 
 		/// <summary>
 		/// Logs an MTA Transaction to the database.
 		/// </summary>
-		public static async Task<bool> LogTransactionAsync(Guid msgID, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public static async Task<bool> LogTransactionAsync(MtaMessage msg, TransactionStatus status, string svrResponse, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
+BEGIN TRANSACTION 
 INSERT INTO man_mta_transaction (mta_msg_id, ip_ipAddress_id, mta_transaction_timestamp, mta_transactionStatus_id, mta_transaction_serverResponse, mta_transaction_serverHostname)
 VALUES(@msgID, @ipAddressID, GETUTCDATE(), @status, @serverResponse, @serverHostname)";
-				cmd.Parameters.AddWithValue("@msgID", msgID);
+
+				switch(status)
+				{
+					case TransactionStatus.Discarded:
+					case TransactionStatus.Failed:
+					case TransactionStatus.TimedOut:
+						cmd.CommandText += @"UPDATE man_mta_send
+								SET mta_send_rejected = mta_send_rejected + 1
+								WHERE mta_send_internalID = @sendInternalID";
+						break;
+					case TransactionStatus.Success:
+						cmd.CommandText += @"UPDATE man_mta_send
+								SET mta_send_accepted = mta_send_accepted + 1
+								WHERE mta_send_internalID = @sendInternalID";
+						break;
+				}
+
+				cmd.CommandText += " COMMIT TRANSACTION";
+				cmd.Parameters.AddWithValue("@sendInternalID", msg.InternalSendID);
+
+				cmd.Parameters.AddWithValue("@msgID", msg.ID);
 				if (ipAddress != null)
 					cmd.Parameters.AddWithValue("@ipAddressID", ipAddress.ID);
 				else

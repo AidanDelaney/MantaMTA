@@ -21,21 +21,29 @@ namespace MantaMTA.Core.DAL
 		/// Save the MTA Message to the database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static async Task<bool> SaveAsync(MtaMessage message)
+		internal static async Task<bool> SaveAsync(MtaMessageSql message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
+	BEGIN TRANSACTION
 	INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_rcptTo, mta_msg_mailFrom)
-	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)";
+	VALUES(@msgID, @internalSendID, @rcptTo, @mailFrom)
+
+	UPDATE man_mta_send
+	SET mta_send_messages = mta_send_messages + 1
+	WHERE mta_send_internalId = @internalSendID
+
+	COMMIT TRANSACTION
+	";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@internalSendID", message.InternalSendID);
-				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt.Address));
+				cmd.Parameters.AddWithValue("@rcptTo", string.Join<string>(_RcptToDelimiter, from rcpt in message.RcptTo select rcpt));
 				if (message.MailFrom == null)
 					cmd.Parameters.AddWithValue("@mailFrom", DBNull.Value);
 				else
-					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom.Address);
+					cmd.Parameters.AddWithValue("@mailFrom", message.MailFrom);
 
 				await conn.OpenAsync();
 				await cmd.ExecuteNonQueryAsync();
@@ -47,7 +55,7 @@ namespace MantaMTA.Core.DAL
 		/// Saves the Mta Queued message to the Database.
 		/// </summary>
 		/// <param name="message"></param>
-		internal static async Task<bool> SaveAsync(MtaQueuedMessage message)
+		internal static async Task<bool> SaveAsync(MtaQueuedMessageSql message)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -61,8 +69,8 @@ IF EXISTS(SELECT 1 FROM man_mta_queue WHERE mta_msg_id = @msgID)
 	ip_group_id = @groupID
 	WHERE mta_msg_id = @msgID
 ELSE
-	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id, mta_send_internalId)
-	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID, @sendInternalID)";
+	INSERT INTO man_mta_queue(mta_msg_id, mta_queue_queuedTimestamp, mta_queue_attemptSendAfter, mta_queue_isPickupLocked, mta_queue_dataPath, ip_group_id, mta_send_internalId, mta_queue_data)
+	VALUES(@msgID, @queued, @sendAfter, @isPickupLocked, @dataPath, @groupID, @sendInternalID, @data)";
 				cmd.Parameters.AddWithValue("@msgID", message.ID);
 				cmd.Parameters.AddWithValue("@queued", message.QueuedTimestampUtc);
 				cmd.Parameters.AddWithValue("@sendAfter", message.AttemptSendAfterUtc);
@@ -70,6 +78,8 @@ ELSE
 				cmd.Parameters.AddWithValue("@dataPath", message.DataPath);
 				cmd.Parameters.AddWithValue("@groupID", message.IPGroupID);
 				cmd.Parameters.AddWithValue("@sendInternalID", message.InternalSendID);
+				cmd.Parameters.AddWithValue("@data", message.Data);
+
 
 				await conn.OpenAsync();
 				await cmd.ExecuteNonQueryAsync();
@@ -136,14 +146,14 @@ SELECT (SELECT COUNT(*)
 		FROM man_mta_transaction as [tran] WITH (READPAST) 
 		WHERE [tran].mta_msg_id = [msg].mta_msg_id
 		AND [tran].mta_transactionStatus_id = 1) as 'DeferredCount',
-		[msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
+		[msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id, que.mta_queue_data
 FROM man_mta_queue as [que] WITH (READPAST)
 JOIN man_mta_msg as [msg] WITH (READPAST) ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
 				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Active);
-				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
+				List<MtaQueuedMessageSql> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessageSql>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
 		}
@@ -176,14 +186,14 @@ UPDATE man_mta_queue
 SET mta_queue_isPickupLocked = 1
 WHERE mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
-SELECT 0 as 'DeferredCount', [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id
+SELECT 0 as 'DeferredCount', [msg].*, [que].mta_queue_attemptSendAfter, que.mta_queue_isPickupLocked, que.mta_queue_queuedTimestamp, que.mta_queue_dataPath, que.ip_group_id, que.mta_queue_data
 FROM man_mta_queue as [que]
 JOIN man_mta_msg as [msg] ON [que].[mta_msg_id] = [msg].[mta_msg_id]
 WHERE [que].mta_msg_id IN (SELECT msgID FROM @msgIdTbl)
 
 COMMIT TRANSACTION";
 				cmd.Parameters.AddWithValue("@sendStatus", (int)SendStatus.Discard);
-				List<MtaQueuedMessage> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessage>(cmd, CreateAndFillQueuedMessage);
+				List<MtaQueuedMessageSql> results = DataRetrieval.GetCollectionFromDatabase<MtaQueuedMessageSql>(cmd, CreateAndFillQueuedMessage);
 				return new MtaQueuedMessageCollection(results);
 			}
 		}
@@ -192,7 +202,7 @@ COMMIT TRANSACTION";
 		/// Deletes the MtaQueuedMessage from the database.
 		/// </summary>
 		/// <param name="mtaQueuedMessage"></param>
-		internal static async Task<bool> DeleteAsync(MtaQueuedMessage mtaQueuedMessage)
+		internal static async Task<bool> DeleteAsync(MtaQueuedMessageSql mtaQueuedMessage)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -212,7 +222,7 @@ COMMIT TRANSACTION";
 		/// </summary>
 		/// <param name="messageID">ID of the message to get.</param>
 		/// <returns>The MtaMessage if it exists otherwise null.</returns>
-		internal static MtaMessage GetMtaMessage(Guid messageID)
+		internal static MtaMessageSql GetMtaMessage(Guid messageID)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -222,7 +232,7 @@ SELECT *
 FROM man_mta_msg
 WHERE mta_msg_id = @msgID";
 				cmd.Parameters.AddWithValue("@msgID", messageID);
-				return DataRetrieval.GetSingleObjectFromDatabase<MtaMessage>(cmd, CreateAndFillMessage);
+				return DataRetrieval.GetSingleObjectFromDatabase<MtaMessageSql>(cmd, CreateAndFillMessage);
 			}
 		}
 
@@ -231,15 +241,16 @@ WHERE mta_msg_id = @msgID";
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		private static MtaQueuedMessage CreateAndFillQueuedMessage(IDataRecord record)
+		private static MtaQueuedMessageSql CreateAndFillQueuedMessage(IDataRecord record)
 		{
-			MtaQueuedMessage qMsg = new MtaQueuedMessage(CreateAndFillMessage(record),
+			MtaQueuedMessageSql qMsg = new MtaQueuedMessageSql(CreateAndFillMessage(record),
 														 record.GetDateTime("mta_queue_queuedTimestamp"),
 														 record.GetDateTime("mta_queue_attemptSendAfter"),
 														 record.GetBoolean("mta_queue_isPickupLocked"),
-														 record.GetString("mta_queue_dataPath"),
+														 record.GetStringOrEmpty("mta_queue_dataPath"),
 														 record.GetInt32("ip_group_id"),
-														 record.GetInt32("DeferredCount"));
+														 record.GetInt32("DeferredCount"),
+														 record.GetStringOrEmpty("mta_queue_data"));
 			return qMsg;
 		}
 
@@ -248,21 +259,21 @@ WHERE mta_msg_id = @msgID";
 		/// </summary>
 		/// <param name="record"></param>
 		/// <returns></returns>
-		private static MtaMessage CreateAndFillMessage(IDataRecord record)
+		private static MtaMessageSql CreateAndFillMessage(IDataRecord record)
 		{
-			MtaMessage msg = new MtaMessage();
+			MtaMessageSql msg = new MtaMessageSql();
 			
 			msg.ID = record.GetGuid("mta_msg_id");
 			msg.InternalSendID = record.GetInt32("mta_send_internalId");
 			if (!record.IsDBNull("mta_msg_mailFrom"))
-				msg.MailFrom = new MailAddress(record.GetString("mta_msg_mailFrom"));
+				msg.MailFrom = record.GetString("mta_msg_mailFrom");
 			else
 				msg.MailFrom = null;
 
 			// Get the recipients.
 			msg.RcptTo = (from r
 						  in record.GetString("mta_msg_rcptTo").Split(_RcptToDelimiter.ToCharArray(), StringSplitOptions.RemoveEmptyEntries) 
-						  select new MailAddress(r)).ToArray();
+						  select r).ToArray();
 
 			return msg;
 		}

@@ -115,6 +115,7 @@
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\OutboundRulesController.cs" />
+    <Compile Include="Controllers\RabbitMQController.cs" />
     <Compile Include="Controllers\SendsController.cs" />
     <Compile Include="Controllers\ServerStatusController.cs" />
     <Compile Include="Controllers\SettingsController.cs" />
@@ -125,6 +126,7 @@
     <Compile Include="Models\BounceModel.cs" />
     <Compile Include="Models\DashboardModel.cs" />
     <Compile Include="Models\OutboundRules.cs" />
+    <Compile Include="Models\RabbitMqModel.cs" />
     <Compile Include="Models\Sends.cs" />
     <Compile Include="Models\ServerStatusModel.cs" />
     <Compile Include="Models\SettingsModel.cs" />
@@ -205,8 +207,8 @@
     <Content Include="Views\Settings\Index.cshtml" />
     <Content Include="Views\Sends\Deferred.cshtml" />
     <Content Include="Views\Sends\Failed.cshtml" />
-    <Content Include="Views\Sends\Waiting.cshtml" />
     <None Include="Properties\PublishProfiles\MantaMTA.pubxml" />
+    <Content Include="Views\RabbitMQ\Index.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

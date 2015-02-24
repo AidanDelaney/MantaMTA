@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MantaMTA.Core.Sends;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -46,6 +47,27 @@ namespace WebInterface.Models
 		public SendReportBase(string sendID)
 		{
 			this.SendID = sendID;
+		}
+
+		/// <summary>
+		/// Gets a nice string of the metadata to display on Send Report pages.
+		/// </summary>
+		/// <returns></returns>
+		public string GetSendReportPageTitle()
+		{
+			int internalID = SendManager.Instance.GetSend(this.SendID).InternalID;
+
+			SendMetadataCollection meta = new SendMetadataCollection(WebInterfaceLib.DAL.SendDB.GetSendMetaData(internalID).OrderBy(m => m.Name));
+			
+			string result = string.Empty;
+			for (int i = 0; i < meta.Count; i++)
+			{
+				if (i > 0)
+					result += ", ";
+				result += meta[i].Value;
+			}
+
+			return result;
 		}
 	}
 
@@ -123,6 +145,30 @@ namespace WebInterface.Models
 			SendSpeedInfo = info;
 		}
 
+		private List<DateTime> _ChartDates = null;
+
+		/// <summary>
+		/// Gets the dates required for the Report Chart.
+		/// </summary>
+		/// <returns></returns>
+		private List<DateTime> GetChartDates()
+		{
+			if (_ChartDates == null)
+			{
+				DateTime start = SendSpeedInfo.Min(i => i.Timestamp);
+				DateTime end = SendSpeedInfo.Max(i => i.Timestamp);
+
+				_ChartDates = new List<DateTime>();
+				while (start <= end)
+				{
+					_ChartDates.Add(start);
+					start = start.AddMinutes(1);
+				}
+			}
+
+			return _ChartDates;
+		}
+
 		/// <summary>
 		/// Gets the Accepted Send Rates for chart.
 		/// </summary>
@@ -130,7 +176,7 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+			foreach (DateTime timestamp in GetChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
@@ -152,7 +198,7 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+			foreach (DateTime timestamp in GetChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);
@@ -174,7 +220,7 @@ namespace WebInterface.Models
 		{
 			StringBuilder sb = new StringBuilder();
 			bool first = true;
-			foreach (DateTime timestamp in SendSpeedInfo.Dates)
+			foreach (DateTime timestamp in GetChartDates())
 			{
 				long accepted, rejected, deferred = 0;
 				SendSpeedInfo.GetDataPoints(timestamp, out accepted, out rejected, out deferred);

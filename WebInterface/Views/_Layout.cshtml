@@ -43,9 +43,32 @@
 			});
 		}
 	</script>
+	<style type="text/css">
+		#channel-menu{margin-top:0px;}
+		.tile, .label, :not(.btn-group) > .btn {border-radius: 3px !important;}
+		.btn-group .btn:first-of-type {
+			border-top-left-radius: 3px !important;
+			border-bottom-left-radius: 3px !important;
+		}
+		.btn-group .btn:last-of-type{
+			border-top-right-radius: 3px !important;
+			border-bottom-right-radius: 3px !important;
+		}
+
+		table.jqplot-table-legend { border: 0px; }
+		.jqplot-table-legend { float:left; }
+		div.jqplot-table-legend-swatch-outline{ border:0px; }
+		div.jqplot-table-legend-swatch { border-radius: 12px !important; }
+		td.jqplot-table-legend.jqplot-table-legend-swatch{padding-top: 4px!important;}
+
+		#channel,#app-body, #app-body>.row-fluid {height:100%;}
+		#channel{background: #fff;}
+		body, html, #system-head, #channel-menu ul.nav.nav-list li a {background:#105e7c;}
+
+		#channel-menu>.sidebar-nav {background-color: #80b8d8; height:100%;}
+	</style>
 </head>
 <body>
-<div id="wrap">
 	<div id="system-head" class="container-fluid">
 		<div class="row-fluid">
 			<div id="system-head-left" class="span6">
@@ -57,21 +80,6 @@
 			</div>
 		</div>
 	</div>
-	<div id="app-head" class="container-fluid">
-		<div class="row-fluid">
-			<div id="header-title" class="span2"> </div>
-			<div id="header-actions" class="span5">
-
-			</div>
-			<div id="header-controls" class="span5"> 
-				<div class="row-fluid">
-					<div class="span12">
-
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 	
 	<div id="app-body" class="container-fluid">
 		<div class="row-fluid">
@@ -79,6 +87,7 @@
 				<div class="sidebar-nav">
 					<ul class="nav nav-list">
 						<li @(Request.Url.PathAndQuery.StartsWith("/dashboard", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Dashboard"><i class="icon-th-large"></i> Dashboard</a></li>
+						<li @(Request.Url.PathAndQuery.StartsWith("/RabbitMQ", StringComparison.OrdinalIgnoreCase) ? "class=active" : string.Empty)><a href="/RabbitMQ"><i class="icon-chevron-right"></i> RabbitMQ</a></li>
 						<li @(Request.Url.PathAndQuery.Equals("/Sends/Queue", StringComparison.OrdinalIgnoreCase) ?"class=active":string.Empty)><a href="/Sends/Queue"><i class="icon-time"></i> Queue</a></li>
 						<li @(Request.Url.PathAndQuery.StartsWith("/Sends", StringComparison.OrdinalIgnoreCase) &&
 								!Request.Url.PathAndQuery.Equals("/Sends/Queue") ?"class=active":string.Empty)><a href="/Sends"><i class="icon-random"></i> Sends</a></li>
@@ -91,11 +100,6 @@
 			</div>
 			
 			<div id="channel" class="span10">
-				<div id="channel-head">
-					<ul class="breadcrumb">
-						<li><strong>@ViewBag.Title</strong></li>
-					</ul>
-				</div>
 				<div id="channel-content">					
 					<div class="row-fluid">
 						@RenderBody()								

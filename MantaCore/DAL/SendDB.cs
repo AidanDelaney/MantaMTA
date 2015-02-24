@@ -58,58 +58,10 @@ WHERE mta_send_id = @sndID";
 		}
 
 		/// <summary>
-		/// Pause the specified send.
+		/// Gets the specified send.
 		/// </summary>
-		/// <param name="internalSendID">Internal SendID of the send to pause.</param>
-		public static void PauseSend(int internalSendID)
-		{
-			UpdateSendStatus(internalSendID, SendStatus.Paused);
-		}
-
-		/// <summary>
-		/// Sets the specified sends status to discard.
-		/// </summary>
-		/// <param name="internalSendID">Internal SendID of the send.</param>
-		public static void DiscardSend(int internalSendID)
-		{
-			UpdateSendStatus(internalSendID, SendStatus.Discard);
-		}
-
-		/// <summary>
-		/// Sets the specified sends status to active.
-		/// </summary>
-		/// <param name="internalSendID">Internal SendID of the send.</param>
-		public static void ResumeSend(int internalSendID)
-		{
-			UpdateSendStatus(internalSendID, SendStatus.Active);
-		}
-
-		/// <summary>
-		/// Updates a sends send status.
-		/// </summary>
-		/// <param name="internalSendID">Internal ID of the Send to pause.</param>
-		/// <param name="sendStatus">SendStatus to update to.</param>
-		private static void UpdateSendStatus(int internalSendID, SendStatus sendStatus)
-		{
-			using (SqlConnection conn = MantaDB.GetSqlConnection())
-			{
-				SqlCommand cmd = conn.CreateCommand();
-				cmd.CommandText = @"
-UPDATE man_mta_send
-SET mta_sendStatus_id = @sendStatus
-WHERE mta_send_internalId = @internalSndID";
-				cmd.Parameters.AddWithValue("@sendStatus", (int)sendStatus);
-				cmd.Parameters.AddWithValue("@internalSndID", (int)internalSendID);
-				conn.Open();
-				cmd.ExecuteNonQuery();
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="internalSendID"></param>
-		/// <returns></returns>
+		/// <param name="internalSendID">Internal ID of the Send to get.</param>
+		/// <returns>The specified Send or NULL if none with the ID exist.</returns>
 		internal static Send GetSend(int internalSendID)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
@@ -121,6 +73,27 @@ FROM man_mta_send
 WHERE mta_send_internalId = @internalSndID";
 				cmd.Parameters.AddWithValue("@internalSndID", internalSendID);
 				return DataRetrieval.GetSingleObjectFromDatabase<Send>(cmd, CreateAndFillSendFromRecord);
+			}
+		}
+
+		/// <summary>
+		/// Sets the status of the specified send to the specified status.
+		/// </summary>
+		/// <param name="sendID">ID of the send to set the staus of.</param>
+		/// <param name="status">The status to set the send to.</param>
+		internal static void SetSendStatus(string sendID, SendStatus status)
+		{
+			using (SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"
+UPDATE man_mta_send
+SET mta_sendStatus_id = @sendStatus
+WHERE mta_send_id = @sendID";
+				cmd.Parameters.AddWithValue("@sendID", sendID);
+				cmd.Parameters.AddWithValue("@sendStatus", (int)status);
+				conn.Open();
+				cmd.ExecuteNonQuery();
 			}
 		}
 	}

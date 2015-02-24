@@ -70,7 +70,7 @@ namespace MantaMTA.Core.Message
 		/// <returns>The generated return path or string.empty if no message with ID found.</returns>
 		public static string GetReturnPathFromMessageID(Guid messageID)
 		{
-			MtaMessage msg = MtaMessageDB.GetMtaMessage(messageID);
+			MtaMessageSql msg = MtaMessageDB.GetMtaMessage(messageID);
 			if (msg == null)
 				return string.Empty;
 

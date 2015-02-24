@@ -27,7 +27,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// The maximum size of the memory queue.
 		/// </summary>
-		private const int MAX_QUEUE_SIZE = 2000;
+		private const int MAX_QUEUE_SIZE = 1500;
 
 		/// <summary>
 		/// When set to TRUE signifies that the MTA is stopping.
@@ -37,7 +37,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// THE QUEUE.
 		/// </summary>
-		private ConcurrentQueue<MtaQueuedMessage> _MemoryQueue = new ConcurrentQueue<MtaQueuedMessage>();
+		private ConcurrentQueue<MtaQueuedMessageSql> _MemoryQueue = new ConcurrentQueue<MtaQueuedMessageSql>();
 		private Thread _QueueFillerThread = null;
 
 		/// <summary>
@@ -48,7 +48,7 @@ namespace MantaMTA.Core.Client
 			this._IsStopping = true;
 
 			// Ensure disposal of messages in the queue.
-			MtaQueuedMessage msg = null;
+			MtaQueuedMessageSql msg = null;
 			while (this._MemoryQueue.TryDequeue(out msg))
 			{
 				msg.Dispose();
@@ -59,9 +59,9 @@ namespace MantaMTA.Core.Client
 		/// Gets a message from the queue.
 		/// </summary>
 		/// <returns>Queued message or NULL</returns>
-		public MtaQueuedMessage GetMessageForSending()
+		public MtaQueuedMessageSql GetMessageForSending()
 		{
-			MtaQueuedMessage qMsg = null;
+			MtaQueuedMessageSql qMsg = null;
 			if (_MemoryQueue.TryDequeue(out qMsg))
 				return qMsg;
 

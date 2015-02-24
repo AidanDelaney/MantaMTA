@@ -261,5 +261,41 @@ SET " + colName + @" = @value";
 				cmd.ExecuteNonQuery();
 			}
 		}
+
+		/// <summary>
+		/// Gets the RabbitMQ enabled state from the parameters table.
+		/// </summary>
+		/// <returns>True if MantaMTA should use RabbitMQ.</returns>
+		internal static bool GetRabbitMqEnabled()
+		{
+			return Convert.ToBoolean(GetColumnValue("cfg_para_rabbitMqEnabled"));
+		}
+
+		/// <summary>
+		/// Gets the RabbitMQ username.
+		/// </summary>
+		/// <returns>RabbitMQ username.</returns>
+		internal static string GetRabbitMqUsername()
+		{
+			return GetColumnValue("cfg_para_rabbitMqUsername").ToString();
+		}
+
+		/// <summary>
+		/// Gets the RabbitMQ password.
+		/// </summary>
+		/// <returns>RabbitMQ password.</returns>
+		internal static string GetRabbitMqPassword()
+		{
+			return GetColumnValue("cfg_para_rabbitMqPassword").ToString();
+		}
+
+		/// <summary>
+		/// Gets the RabbitMQ hostname.
+		/// </summary>
+		/// <returns>RabbitMQ hostname.</returns>
+		internal static string GetRabbitMqHostname()
+		{
+			return GetColumnValue("cfg_para_rabbitMqHostname").ToString();
+		}
 	}
 }

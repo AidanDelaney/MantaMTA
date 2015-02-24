@@ -50,7 +50,6 @@
     <Compile Include="FeedbackLoopEmails.cs" />
     <Compile Include="InboundEmails.cs" />
     <Compile Include="BounceTests.cs" />
-    <Compile Include="QueueControl.cs" />
     <Compile Include="ReturnPath.cs" />
     <Compile Include="FeedbackLoopTests.cs" />
     <Compile Include="MimeMessageTests.cs" />
@@ -64,6 +63,7 @@
   <ItemGroup>
     <None Include="App.config">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

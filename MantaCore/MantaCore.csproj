@@ -36,6 +36,12 @@
     <Reference Include="log4net">
       <HintPath>..\log4net\1.2.11\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="RabbitMQ.Client">
+      <HintPath>..\ThirdPartyLibs\RabbitMQ.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="RabbitMQ.ServiceModel">
+      <HintPath>..\ThirdPartyLibs\RabbitMQ.ServiceModel.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -51,9 +57,12 @@
   <ItemGroup>
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
+    <Compile Include="Client\MessageSender.cs" />
+    <Compile Include="Client\BO\MtaMessageSql.cs" />
+    <Compile Include="Client\BO\MtaQueuedMessageSql.cs" />
     <Compile Include="Client\QueueManager.cs" />
     <Compile Include="Client\ServiceNotAvailableManager.cs" />
-    <Compile Include="Client\MessageSender.cs" />
+    <Compile Include="Client\MessageSenderSql.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />
@@ -89,6 +98,10 @@
     <Compile Include="MantaCoreEvents.cs" />
     <Compile Include="Message\MimeMessage.cs" />
     <Compile Include="Message\ReturnPathManager.cs" />
+    <Compile Include="RabbitMq\RabbitMqInboundQueueManager.cs" />
+    <Compile Include="RabbitMq\RabbitMqManager.cs" />
+    <Compile Include="RabbitMq\RabbitMqOutboundQueueManager.cs" />
+    <Compile Include="Server\QueueManager.cs" />
     <Compile Include="VirtualMTA\VirtualMtaClasses.cs" />
     <Compile Include="VirtualMTA\VirtualMtaManager.cs" />
     <Compile Include="VirtualMTA\VirtualMtaGroupClasses.cs" />
@@ -101,7 +114,6 @@
     <Compile Include="Sends\SendManager.cs" />
     <Compile Include="Server\SmtpServer.cs" />
     <Compile Include="Server\SmtpServerTransaction.cs" />
-    <Compile Include="ServiceContracts\ISendManager.cs" />
     <Compile Include="ServiceContracts\ServiceContractManager.cs" />
     <Compile Include="Smtp\SmtpStreamHandler.cs" />
     <Compile Include="Smtp\SmtpTransactionLogger.cs" />

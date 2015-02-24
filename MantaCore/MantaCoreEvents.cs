@@ -25,6 +25,9 @@ namespace MantaMTA.Core
 		{
 			Logging.Debug("InvokeMantaCoreStopping Started.");
 
+			// Always stop the Inbound Queue Manager first.
+			MantaMTA.Core.Server.QueueManager.Instance.Stop();
+
 			// Loop through the things that need stopping and stop them :)
 			for (int i = 0; i < _StopRequiredTasks.Count; i++)
 			{

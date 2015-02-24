@@ -5,6 +5,7 @@ using System.Web.Mvc;
 using MantaMTA.Core.ServiceContracts;
 using WebInterface.Models;
 using WebInterfaceLib.BO;
+using MantaMTA.Core.Sends;
 
 namespace WebInterface.Controllers
 {
@@ -80,9 +81,7 @@ namespace WebInterface.Controllers
 		// GET: /Sends/Pause?sendID=
 		public ActionResult Pause(string sendID, string redirectURL)
 		{
-			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
-			sendManager.Pause(internalID);
+			SendManager.Instance.SetSendStatus(sendID, MantaMTA.Core.Enums.SendStatus.Paused);
 			return View(new SendStatusUpdated(redirectURL));
 		}
 
@@ -90,9 +89,7 @@ namespace WebInterface.Controllers
 		// GET: /Sends/Resume?sendID=
 		public ActionResult Resume(string sendID, string redirectURL)
 		{
-			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
-			sendManager.Resume(internalID);
+			SendManager.Instance.SetSendStatus(sendID, MantaMTA.Core.Enums.SendStatus.Active);
 			return View(new SendStatusUpdated(redirectURL));
 		}
 
@@ -100,19 +97,8 @@ namespace WebInterface.Controllers
 		// GET: /Sends/Discard?sendID=
 		public ActionResult Discard(string sendID, string redirectURL)
 		{
-			ISendManagerContract sendManager = ServiceContractManager.GetServiceChannel<ISendManagerContract>();
-			int internalID = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID).InternalID;
-			sendManager.Discard(internalID);
+			SendManager.Instance.SetSendStatus(sendID, MantaMTA.Core.Enums.SendStatus.Discard);
 			return View(new SendStatusUpdated(redirectURL));
-		}
-
-		//
-		// GET: /Sends/Waiting?sendID=
-		public ActionResult Waiting(string sendID)
-		{
-			SendWaitingInfoCollection sendWaitingInfo = WebInterfaceLib.DAL.TransactionDB.GetSendWaitingInfo(sendID);
-			SendWaitingByDomainCollection sendWaitingByDomain = WebInterfaceLib.DAL.TransactionDB.GetSendWaitingByDomain(sendID);
-			return View(new SendReportWaiting(sendID, sendWaitingInfo, sendWaitingByDomain));
 		}
 
 		//
