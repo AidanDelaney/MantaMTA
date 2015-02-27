@@ -1,7 +1,7 @@
 ﻿using MantaMTA.Core.Client.BO;
 using System;
+using System.Data;
 using System.Data.SqlClient;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -79,6 +79,7 @@ namespace MantaMTA.Core.Server
 			{
 				_bulkInsertThread = new Thread(new ThreadStart(DoSqlBulkInsertFromRabbitMQ));
 				_bulkInsertThread.IsBackground = true;
+				_bulkInsertThread.Priority = ThreadPriority.AboveNormal;
 				_bulkInsertThread.Start();
 				//MantaCoreEvents.RegisterStopRequiredInstance(_Instance);
 			}
@@ -122,9 +123,8 @@ namespace MantaMTA.Core.Server
 			{
 				try
 				{
-					
 					// Get queued messages for bulk importing.
-					MtaMessageCollection recordsToImportToSql = RabbitMq.RabbitMqInboundQueueManager.Dequeue(50);
+					MtaMessageCollection recordsToImportToSql = RabbitMq.RabbitMqInboundQueueManager.Dequeue(100);
 					
 					// If there are no messages to import then sleep and try again.
 					if(recordsToImportToSql == null || recordsToImportToSql.Count == 0)
@@ -133,79 +133,49 @@ namespace MantaMTA.Core.Server
 						continue;
 					}
 
-					// Do the SQL Import
-					StringBuilder sbMessageValues = new StringBuilder(string.Empty);
-					StringBuilder sbQueueValues = new StringBuilder(string.Empty);
+					DataTable dt = new DataTable();
+					dt.Columns.Add("mta_msg_id", typeof(Guid));
+					dt.Columns.Add("mta_send_internalId", typeof(int));
+					dt.Columns.Add("mta_msg_rcptTo", typeof(string));
+					dt.Columns.Add("mta_msg_mailFrom", typeof(string));
 
 					using(SqlConnection conn = DAL.MantaDB.GetSqlConnection())
 					{
-						SqlCommand cmd = conn.CreateCommand();
-						string datetimenow = "@datetimenow";
-						for(int i = 0; i < recordsToImportToSql.Count; i++)
+						// Create a record of the messages in SQL server.
+						using (SqlConnection conn = DAL.MantaDB.GetSqlConnection())
 						{
-							string mta_msg_id = "@mta_msg_id" + i;
-							string mta_send_internalId = "@mta_send_internalId" + i;
-							string mta_msg_mailFrom = "@mta_msg_mailFrom" + i;
-							string mta_msg_rcptTo = "@mta_msg_rcptTo" + i;
-							string ip_group_id = "@ip_group_id" + i;
-							string mta_queue_data = "@mta_queue_data" + i;
+							SqlBulkCopy bulk = new SqlBulkCopy(conn);
+							bulk.DestinationTableName = "man_mta_msg_staging";
+							foreach (DataColumn c in dt.Columns)
+								bulk.ColumnMappings.Add(c.ColumnName, c.ColumnName);
 
-
-							string lastChar = (recordsToImportToSql.Count - 1) == i ? string.Empty : ",";
-							sbMessageValues.AppendFormat("({0}, {1}, {2}, {3}){4}", mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo, lastChar);
-							
-							cmd.Parameters.AddWithValue(mta_msg_id, recordsToImportToSql[i].ID);
-							cmd.Parameters.AddWithValue(mta_send_internalId, recordsToImportToSql[i].InternalSendID);
-							cmd.Parameters.AddWithValue(mta_msg_mailFrom, recordsToImportToSql[i].MailFrom);
-							cmd.Parameters.AddWithValue(mta_msg_rcptTo, recordsToImportToSql[i].RcptTo[0]);
-							cmd.Parameters.AddWithValue(ip_group_id, recordsToImportToSql[i].VirtualMTAGroupID);
-						}
-
-						StringBuilder sbSendUpdate = new StringBuilder();
-						foreach(IGrouping<int, MtaMessage> s in recordsToImportToSql.GroupBy(m=>m.InternalSendID))
-						{
-							int sendID = s.Key;
-							sbMessageValues.AppendFormat(@"
-								UPDATE man_mta_send
-								SET mta_send_messages = mta_send_messages + {0}
-								WHERE mta_send_internalID = {1}
-							", s.Count(), sendID);
-						}
-						
-
-						cmd.CommandText = string.Format(@"
+							conn.Open();
+							bulk.WriteToServer(dt);
+							SqlCommand cmd = conn.CreateCommand();
+							cmd.CommandText = @"
 BEGIN TRANSACTION
+MERGE man_mta_msg AS target
+    USING (SELECT * FROM man_mta_msg_staging) AS source
+    ON (target.[mta_msg_id] = source.[mta_msg_id])
+	WHEN NOT MATCHED THEN
+		INSERT ([mta_msg_id], [mta_send_internalId], [mta_msg_rcptTo], [mta_msg_mailFrom])
+		VALUES (source.[mta_msg_id], source.[mta_send_internalId], source.[mta_msg_rcptTo],  source.[mta_msg_mailFrom]);
 
-INSERT INTO man_mta_msg(mta_msg_id, mta_send_internalId, mta_msg_mailFrom, mta_msg_rcptTo)
-VALUES {0}
-
-COMMIT TRANSACTION", sbMessageValues.ToString());
-
-						cmd.Parameters.AddWithValue(datetimenow, DateTime.UtcNow);
-						cmd.CommandTimeout = 5 * 60 * 1000;
-						conn.Open();
-						try
-						{
-							// Create a record of the messages in SQL server.
-							cmd.ExecuteNonQuery();
-
-							// Queue the messages in the RabbitMQ outbound queue.
-							RabbitMq.RabbitMqOutboundQueueManager.Enqueue(recordsToImportToSql);
-
-							cmd.CommandText = "BEGIN TRANSACTION " + sbSendUpdate.ToString() + " COMMIT TRANSACTION";
+DELETE FROM [man_mta_msg_staging]
+COMMIT TRANSACTION";
 							cmd.ExecuteNonQuery();
 						}
-						catch(Exception ex)
-						{
-							Logging.Warn("Server Queue Manager", ex);
-						}
+
+						RabbitMq.RabbitMqOutboundQueueManager.Enqueue(recordsToImportToSql);
 					}
-
-					
+					catch(Exception ex)
+					{
+						Logging.Warn("Server Queue Manager", ex);
+					}
 				}
 				catch(Exception ex)
 				{
-					Logging.Error("Bulk Importer Error", ex);
+					//Logging.Error("Bulk Importer Error", ex);
 				}
 			}
 
