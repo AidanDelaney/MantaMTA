@@ -3,14 +3,13 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
 namespace MantaMTA.Core.RabbitMq
 {
 	internal static class RabbitMqInboundQueueManager
 	{
-		private static JavaScriptSerializer JsonFormatter = new JavaScriptSerializer();
-
 		/// <summary>
 		/// Dequeues a collection of inbound messages from RabbitMQ.
 		/// </summary>
@@ -25,8 +24,7 @@ namespace MantaMTA.Core.RabbitMq
 
 			foreach (BasicDeliverEventArgs ea in items)
 			{
-				string json = Encoding.UTF8.GetString(ea.Body);
-				MtaMessage msg = JsonFormatter.Deserialize<MtaMessage>(json);
+				MtaMessage msg = Serialisation.Deserialise<MtaMessage>(ea.Body);
 				msg.RabbitMqDeliveryTag = ea.DeliveryTag;
 				messages.Add(msg);
 			}
@@ -52,9 +50,13 @@ namespace MantaMTA.Core.RabbitMq
 				internalSendID,
 				mailFrom,
 				rcptTo,
-				message);
+				string.Empty);
 
 			RabbitMqManager.Publish(recordToSave, RabbitMqManager.RabbitMqQueue.Inbound);
+
+			recordToSave.Message = message;
+			RabbitMqOutboundQueueManager.Enqueue(MtaQueuedMessage.CreateNew(recordToSave));
+
 			return true;
 		}
 	}

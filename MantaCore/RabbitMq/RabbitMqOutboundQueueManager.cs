@@ -3,25 +3,24 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
 namespace MantaMTA.Core.RabbitMq
 {
 	internal static class RabbitMqOutboundQueueManager
 	{
-		private static JavaScriptSerializer JsonFormatter = new JavaScriptSerializer();
-
 		/// <summary>
 		/// Enqueue the messages in the collection for relaying.
 		/// </summary>
 		/// <param name="inboundMessages">Messages to enqueue.</param>
 		public static void Enqueue(MtaMessageCollection inboundMessages)
 		{
-			foreach(MtaMessage message in inboundMessages)
-			{
+			Parallel.ForEach(inboundMessages, message=>{
 				Enqueue(MtaQueuedMessage.CreateNew(message));
-				RabbitMqManager.Ack(RabbitMqManager.RabbitMqQueue.Inbound, message.RabbitMqDeliveryTag, false);
-			}
+			});
+
+			RabbitMqManager.Ack(RabbitMqManager.RabbitMqQueue.Inbound, inboundMessages.Max(m => m.RabbitMqDeliveryTag), true);
 		}
 
 		/// <summary>
@@ -36,8 +35,10 @@ namespace MantaMTA.Core.RabbitMq
 
 			if (secondsUntilNextAttempt > 0)
 			{
-				if (secondsUntilNextAttempt < 60)
+				if (secondsUntilNextAttempt < 10)
 					queue = RabbitMqManager.RabbitMqQueue.OutboundWait1;
+				else if (secondsUntilNextAttempt < 60)
+					queue = RabbitMqManager.RabbitMqQueue.OutboundWait10;
 				else if (secondsUntilNextAttempt < 300)
 					queue = RabbitMqManager.RabbitMqQueue.OutboundWait60;
 				else
@@ -57,8 +58,7 @@ namespace MantaMTA.Core.RabbitMq
 			if (ea == null)
 				return null;
 
-			string json = Encoding.UTF8.GetString(ea.Body);
-			MtaQueuedMessage qmsg = JsonFormatter.Deserialize<MtaQueuedMessage>(json);
+			MtaQueuedMessage qmsg = Serialisation.Deserialise<MtaQueuedMessage>(ea.Body);
 			qmsg.RabbitMqDeliveryTag = ea.DeliveryTag;
 			return qmsg;
 		}
