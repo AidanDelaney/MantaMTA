@@ -1,7 +1,0 @@
-syntax: glob
-*.suo
-*/bin/*
-*/obj/*
-*.psess
-*.vspx
-Database/MtaDB/scriptDb.log
