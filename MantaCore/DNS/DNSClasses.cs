@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace MantaMTA.Core.DNS
 {
@@ -39,13 +36,35 @@ namespace MantaMTA.Core.DNS
 			}
 		}
 
-		public MXRecord(string host, int preference, uint ttl)
+		/// <summary>
+		/// Identifies the source of an MX record.
+		/// </summary>
+		public MxRecordSrc MxRecordSrc { get; set; }
+
+		public MXRecord(string host, int preference, uint ttl, MxRecordSrc mxRecordSrc)
 		{
 			this.Host = host;
 			this.Preference = preference;
 			this.TTL = ttl;
 			this.LookupTimestamp = DateTime.UtcNow;
+			this.MxRecordSrc = mxRecordSrc;
 		}
+	}
+
+	/// <summary>
+	/// Identifies where the MX record came from.
+	/// </summary>
+	public enum MxRecordSrc
+	{
+		Unknown = 0,
+		/// <summary>
+		/// MX record exists in DNS.
+		/// </summary>
+		MX = 1,
+		/// <summary>
+		/// No MX record in DNS, using A instead.
+		/// </summary>
+		A = 2
 	}
 
 

@@ -1,4 +1,5 @@
 ﻿using MantaMTA.Core.Client.BO;
+using MantaMTA.Core.DAL;
 using MantaMTA.Core.DNS;
 using MantaMTA.Core.Enums;
 using MantaMTA.Core.RabbitMq;
@@ -114,6 +115,13 @@ namespace MantaMTA.Core.Client
 								// Send the message.
 								await SendMessageAsync(qMsg);
 
+								if(!qMsg.IsHandled)
+								{
+									Logging.Warn("Message not handled " + qMsg.ID);
+									qMsg.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+									RabbitMq.RabbitMqOutboundQueueManager.Enqueue(qMsg);
+								}
+
 								// Acknowledge of the message.
 								RabbitMqOutboundQueueManager.Ack(qMsg);
 
@@ -130,7 +138,16 @@ namespace MantaMTA.Core.Client
 						{
 							// If there is still a acknowledge of the message.
 							if (qMsg != null)
+							{
+								if (!qMsg.IsHandled)
+								{
+									Logging.Warn("Message not handled " + qMsg.ID);
+									qMsg.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+									RabbitMq.RabbitMqOutboundQueueManager.Enqueue(qMsg);
+								}
+
 								RabbitMqOutboundQueueManager.Ack(qMsg);
+							}
 
 							// Remove this task from the dictionary
 							int value;
@@ -171,7 +188,14 @@ namespace MantaMTA.Core.Client
 			if (msg.AttemptSendAfterUtc > DateTime.UtcNow)
 			{
 				RabbitMqOutboundQueueManager.Enqueue(msg);
+				await Task.Delay(50); // To prevent a tight loop within a Task thread we should sleep here.
 				return false;
+			}
+
+			if (await MtaTransaction.HasBeenHandled(msg.ID))
+			{
+				msg.IsHandled = true;
+				return true;
 			}
 
 			// Get the send that this message belongs to so that we can check the send state.
@@ -235,7 +259,7 @@ namespace MantaMTA.Core.Client
 						case SmtpOutboundClientDequeueAsyncResult.Unknown:
 							break; // Don't need to do anything for these results.
 						case SmtpOutboundClientDequeueAsyncResult.FailedToConnect:
-							await msg.HandleDeliveryDeferralAsync("Failed to connect", sndIpAddress, mXRecords[0]);
+							await msg.HandleFailedToConnectAsync(sndIpAddress, mXRecords[0]);
 							break;
 						case SmtpOutboundClientDequeueAsyncResult.ServiceUnavalible:
 							await msg.HandleServiceUnavailableAsync(sndIpAddress);

@@ -2,8 +2,7 @@
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Web.Script.Serialization;
+using System.Threading;
 
 namespace MantaMTA.Core.RabbitMq
 {
@@ -22,17 +21,12 @@ namespace MantaMTA.Core.RabbitMq
 		/// <summary>
 		/// The connection to the RabbitMQ instance.
 		/// </summary>
-		private static readonly IConnection LocalhostConnection = new ConnectionFactory
+		private static IConnection LocalhostConnection = new ConnectionFactory
 		{
 			HostName = MtaParameters.RabbitMQ.Hostname,
 			UserName = MtaParameters.RabbitMQ.Username,
 			Password = MtaParameters.RabbitMQ.Password
 		}.CreateConnection();
-
-		/// <summary>
-		/// Used to format Objects into JSON for queuing in RabbitMQ.
-		/// </summary>
-		private static JavaScriptSerializer JsonFormatter = new JavaScriptSerializer();
 
 		/// <summary>
 		/// (Spec method) Acknowledge one or more delivered message(s).
@@ -72,16 +66,92 @@ namespace MantaMTA.Core.RabbitMq
 		}
 
 		/// <summary>
+		/// Channel used for publishing.
+		/// </summary>
+		public class PublishChannel
+		{
+			/// <summary>
+			/// The Channel.
+			/// </summary>
+			private IModel _Channel = null;
+
+			/// <summary>
+			/// The Channel.
+			/// </summary>
+			public IModel Channel { get { return _Channel; } }
+
+			/// <summary>
+			/// Lock for the Channel.
+			/// </summary>
+			public object Lock = new object();
+
+			public PublishChannel(IModel channel)
+			{
+				_Channel = channel;
+			}
+		}
+
+		/// <summary>
+		/// Collection of Channels for Publishing.
+		/// </summary>
+		public static Dictionary<int, PublishChannel> _PublishChannels = new Dictionary<int, PublishChannel>();
+
+		/// <summary>
+		/// Lock for getting a publish channel.
+		/// </summary>
+		public static object _PublishChannelsLock = new object();
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="queue"></param>
+		/// <returns></returns>
+		public static PublishChannel GetPublishChannel(RabbitMqQueue queue, bool noConfirm)
+		{
+			IModel channel = GetChannel(queue); // Ensure the Queue exists.
+
+
+			if (noConfirm)
+				return new PublishChannel(channel);
+
+			int threadID = Thread.CurrentThread.ManagedThreadId;
+
+			lock (_PublishChannelsLock)
+			{
+				if (!_PublishChannels.ContainsKey(threadID))
+				{
+					PublishChannel pChannel = new PublishChannel(LocalhostConnection.CreateModel());
+					pChannel.Channel.ConfirmSelect();
+					_PublishChannels.Add(threadID, pChannel);
+				}
+			}
+
+			return _PublishChannels[threadID];
+		}
+
+
+		/// <summary>
 		/// Publishes the specified message to the specified queue.
 		/// </summary>
 		/// <param name="message">Message to queue.</param>
 		/// <param name="queue">Queue to place message in.</param>
-		public static void Publish(byte[] message, RabbitMqQueue queue)
+		public static bool Publish(byte[] message, RabbitMqQueue queue, bool noConfirm)
 		{
-			IModel channel = GetChannel(queue);
-			IBasicProperties msgProps = channel.CreateBasicProperties();
-			msgProps.SetPersistent(true);
-			channel.BasicPublish(string.Empty, GetQueueNameFromEnum(queue), msgProps, message);
+			PublishChannel pChannel = GetPublishChannel(queue, noConfirm);
+			lock (pChannel.Lock)
+			{
+				IModel channel = pChannel.Channel;
+				IBasicProperties msgProps = channel.CreateBasicProperties();
+				msgProps.SetPersistent(true);
+				channel.BasicPublish(string.Empty, GetQueueNameFromEnum(queue), true, msgProps, message);
+				if (noConfirm)
+					return true;
+
+				if (!channel.WaitForConfirms())
+					return false;
+
+				return true;
+			}
 		}
 
 		/// <summary>
@@ -89,21 +159,10 @@ namespace MantaMTA.Core.RabbitMq
 		/// </summary>
 		/// <param name="message">Message to queue.</param>
 		/// <param name="queue">Queue to place message in.</param>
-		public static void Publish(string message, RabbitMqQueue queue)
+		public static bool Publish(object obj, RabbitMqQueue queue, bool confirm = true)
 		{
-			byte[] body = Encoding.UTF8.GetBytes(message);
-			Publish(body, queue);
-		}
-
-		/// <summary>
-		/// Publishes the specified message to the specified queue.
-		/// </summary>
-		/// <param name="message">Message to queue.</param>
-		/// <param name="queue">Queue to place message in.</param>
-		public static void Publish(object obj, RabbitMqQueue queue)
-		{
-			string str = JsonFormatter.Serialize(obj);
-			Publish(str, queue);
+			byte[] bytes = Serialisation.Serialise(obj);
+			return Publish(bytes, queue, !confirm);
 		}
 
 		/// <summary>
@@ -119,10 +178,14 @@ namespace MantaMTA.Core.RabbitMq
 			{
 				case RabbitMqQueue.Inbound:
 					return manta_queue_prefix + "inbound";
+				case RabbitMqQueue.InboundStaging:
+					return manta_queue_prefix + "inbound_staging";
 				case RabbitMqQueue.OutboundWaiting:
 					return manta_queue_prefix + "outbound_waiting";
 				case RabbitMqQueue.OutboundWait1:
 					return manta_queue_prefix + "outbound_wait_____1";
+				case RabbitMqQueue.OutboundWait10:
+					return manta_queue_prefix + "outbound_wait____10";
 				case RabbitMqQueue.OutboundWait60:
 					return manta_queue_prefix + "outbound_wait____60";
 				case RabbitMqQueue.OutboundWait300:
@@ -155,10 +218,18 @@ namespace MantaMTA.Core.RabbitMq
 					_Channels[queue] = null;
 
 				IModel channel = _Channels[queue];
-				
+
 				// If the channel to the specified queue doesn't exist then we need to create it.
 				if (channel == null)
 				{
+					if (!LocalhostConnection.IsOpen)
+						LocalhostConnection = new ConnectionFactory
+						{
+							HostName = MtaParameters.RabbitMQ.Hostname,
+							UserName = MtaParameters.RabbitMQ.Username,
+							Password = MtaParameters.RabbitMQ.Password
+						}.CreateConnection();
+
 					channel = LocalhostConnection.CreateModel();
 					Dictionary<string, object> queueArgs = null;
 					bool isOutboundWaitingQueue = false;
@@ -166,6 +237,7 @@ namespace MantaMTA.Core.RabbitMq
 					switch(queue)
 					{
 						case RabbitMqQueue.OutboundWait1:
+						case RabbitMqQueue.OutboundWait10:
 						case RabbitMqQueue.OutboundWait60:
 						case RabbitMqQueue.OutboundWait300:
 							isOutboundWaitingQueue = true;
@@ -182,6 +254,8 @@ namespace MantaMTA.Core.RabbitMq
 							// Work out the TTL. 
 							if (queue == RabbitMqQueue.OutboundWait1)
 								messageTTL = 1 * 1000;
+							else if (queue == RabbitMqQueue.OutboundWait10)
+								messageTTL = 10 * 1000;
 							else if (queue == RabbitMqQueue.OutboundWait60)
 								messageTTL = 60 * 1000;
 							else if (queue == RabbitMqQueue.OutboundWait300)
@@ -207,9 +281,10 @@ namespace MantaMTA.Core.RabbitMq
 						channel.QueueBind(GetQueueNameFromEnum(RabbitMqQueue.OutboundWaiting), 
 										  MANTA_WAIT_DEAD_LETTER_EXCHANGE, 
 										  MANTA_WAIT_DEAD_LETTER_EXCHANGE_ROUTING_KEY);
+
+					_Channels[queue] = channel;
 				}
 
-				_Channels[queue] = channel;
 				return channel;
 			}
 		}
@@ -242,6 +317,11 @@ namespace MantaMTA.Core.RabbitMq
 				if (consumer == null)
 				{
 					IModel channel = GetChannel(queue);
+					if(queue == RabbitMqQueue.Inbound)
+						channel.BasicQos(0, 300, false);
+					else
+						channel.BasicQos(0, 750, false);
+
 					consumer = new QueueingBasicConsumer(channel);
 					channel.BasicConsume(GetQueueNameFromEnum(queue), false, consumer);
 				}
@@ -275,7 +355,9 @@ namespace MantaMTA.Core.RabbitMq
 			/// <summary>
 			/// Outbound wait queue, messages live here for five minutes before routing to OutboundWaiting.
 			/// </summary>
-			OutboundWait300 = 4
+			OutboundWait300 = 4,
+			OutboundWait10 = 5,
+			InboundStaging = 6
 		}
 	}
 }

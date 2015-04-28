@@ -52,7 +52,7 @@ namespace MantaMTA.Core.DNS
 				// If there are no MX records use the hostname as per SMTP RFC.
 				MXRecord[] mxs = new MXRecord[]
 				{
-					new MXRecord(domain, 10, 300u)
+					new MXRecord(domain, 10, 300u, MxRecordSrc.A)
 				};
 				_Records.AddOrUpdate(domain, mxs, (string key, MXRecord[] existing) => mxs);
 				return mxs;
@@ -63,7 +63,7 @@ namespace MantaMTA.Core.DNS
 			{
 				string[] split = records[i].Split(new char[] { ',' });
 				if(split.Length == 3)
-					mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]));
+					mxRecords[i] = new MXRecord(split[1], int.Parse(split[0]), uint.Parse(split[2]), MxRecordSrc.MX);
 			}
 
 			// Order by preferance

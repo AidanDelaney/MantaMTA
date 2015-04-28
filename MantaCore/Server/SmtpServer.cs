@@ -385,6 +385,9 @@ namespace MantaMTA.Core.Server
 							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.FailedSendDiscarding:
 								await smtpStream.WriteLineAsync("554 Send Discarding.");
 								break;
+							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.FailedToEnqueue:
+								await smtpStream.WriteLineAsync("421 Service unavalible");
+								break;
 							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.Unknown:
 							default:
 								await smtpStream.WriteLineAsync("451 Requested action aborted: local error in processing.");

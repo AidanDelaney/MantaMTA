@@ -238,7 +238,8 @@ namespace MantaMTA.Core.Server
 				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
 			// Attempt to Enqueue the Email for Relaying.
-			await QueueManager.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data);
+			if (!await QueueManager.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data))
+				return SmtpServerTransactionAsyncResult.FailedToEnqueue;
 
 			return SmtpServerTransactionAsyncResult.SuccessMessageQueued;
 		}
@@ -263,7 +264,8 @@ namespace MantaMTA.Core.Server
 			/// <summary>
 			/// The message was not queued as the Send it is apart of is discarding.
 			/// </summary>
-			FailedSendDiscarding = 3
+			FailedSendDiscarding = 3,
+			FailedToEnqueue = 4
 		}
 	}
 }

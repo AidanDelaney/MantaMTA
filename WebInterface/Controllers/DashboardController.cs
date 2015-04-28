@@ -42,7 +42,7 @@ namespace WebInterface.Controllers
 						if (queueName.StartsWith("manta_mta_"))
 						{
 							long messages = (long)qProperties.First(x => x.Name.Equals("messages", System.StringComparison.OrdinalIgnoreCase)).Value;
-							if (queueName.IndexOf("_inbound_") > 0)
+							if (queueName.IndexOf("_inbound") > 0)
 								model.RabbitMqInbound += messages;
 							else if (queueName.IndexOf("_outbound_") > 0)
 								model.RabbitMqTotalOutbound += messages;

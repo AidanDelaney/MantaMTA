@@ -20,7 +20,7 @@ namespace MantaMTA.Core.Tests
 			using (SmtpServer s = new SmtpServer(25))
 			{
 				VirtualMta.VirtualMTA ipAddress = new VirtualMta.VirtualMTA() { IPAddress = IPAddress.Parse("127.0.0.1") };
-				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
+				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue, DNS.MxRecordSrc.A);
 
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.ConnectAsync(mxRecord).Wait();
@@ -41,7 +41,7 @@ namespace MantaMTA.Core.Tests
 			using (SmtpServer s = new SmtpServer(25))
 			{
 				VirtualMta.VirtualMTA ipAddress = new VirtualMta.VirtualMTA() { IPAddress = IPAddress.Parse("127.0.0.1") };
-				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
+				MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue, DNS.MxRecordSrc.A);
 
 				SmtpOutboundClient smtpClient = new SmtpOutboundClient(ipAddress);
 				smtpClient.ConnectAsync(mxRecord).Wait();
@@ -88,7 +88,7 @@ namespace MantaMTA.Core.Tests
 				using (SmtpServer s = new SmtpServer(25))
 				{
 					VirtualMta.VirtualMTA outboundEndpoint = new VirtualMta.VirtualMTA() { IPAddress = IPAddress.Parse("127.0.0.1") };
-					MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue);
+					MantaMTA.Core.DNS.MXRecord mxRecord = new MantaMTA.Core.DNS.MXRecord("localhost", 10, uint.MaxValue, DNS.MxRecordSrc.A);
 
 					SmtpOutboundClient smtpClient = new SmtpOutboundClient(outboundEndpoint);
 					smtpClient.ConnectAsync(mxRecord).Wait();

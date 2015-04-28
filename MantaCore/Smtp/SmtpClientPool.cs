@@ -90,7 +90,7 @@ namespace MantaMTA.Core.Smtp
 					}
 					catch (Exception ex)
 					{
-						Logging.Debug("SmtpClientQueue :: RunInUseCleaner", ex);
+						//Logging.Debug("SmtpClientQueue :: RunInUseCleaner", ex);
 						RunInUseCleaner();
 					}
 				}));
@@ -225,9 +225,9 @@ namespace MantaMTA.Core.Smtp
 									current2 = enumClients.Current;
 									if (arg_8B_0.TryRemove(current2.Key, out clients))
 									{
-										string arg_AF_0 = "Removed empty SMTP Clients Queue for ";
-										current2 = enumClients.Current;
-										Logging.Debug(arg_AF_0 + current2.Key);
+										//string arg_AF_0 = "Removed empty SMTP Clients Queue for ";
+										//current2 = enumClients.Current;
+										//Logging.Debug(arg_AF_0 + current2.Key);
 										removed++;
 									}
 									else

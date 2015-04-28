@@ -99,8 +99,10 @@
     <Compile Include="Message\MimeMessage.cs" />
     <Compile Include="Message\ReturnPathManager.cs" />
     <Compile Include="RabbitMq\RabbitMqInboundQueueManager.cs" />
+    <Compile Include="RabbitMq\RabbitMqInboundStagingHandler.cs" />
     <Compile Include="RabbitMq\RabbitMqManager.cs" />
     <Compile Include="RabbitMq\RabbitMqOutboundQueueManager.cs" />
+    <Compile Include="Serialisation.cs" />
     <Compile Include="Server\QueueManager.cs" />
     <Compile Include="VirtualMTA\VirtualMtaClasses.cs" />
     <Compile Include="VirtualMTA\VirtualMtaManager.cs" />

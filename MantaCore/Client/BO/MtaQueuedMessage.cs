@@ -13,6 +13,11 @@ namespace MantaMTA.Core.Client.BO
 	internal class MtaQueuedMessage : MtaMessage
 	{
 		/// <summary>
+		/// 
+		/// </summary>
+		public bool IsHandled { get; set; }
+
+		/// <summary>
 		/// Timestamp of when the message was originally queued.
 		/// </summary>
 		public DateTime QueuedTimestampUtc { get; set; }
@@ -48,7 +53,8 @@ namespace MantaMTA.Core.Client.BO
 				AttemptSendAfterUtc = DateTime.UtcNow,
 				QueuedTimestampUtc = DateTime.UtcNow,
 				RcptTo = inbound.RcptTo,
-				VirtualMTAGroupID = inbound.VirtualMTAGroupID
+				VirtualMTAGroupID = inbound.VirtualMTAGroupID,
+				IsHandled = false
 			};
 
 			return outbound;
@@ -78,6 +84,7 @@ namespace MantaMTA.Core.Client.BO
 		public async Task<bool> HandleMessageDiscardAsync()
 		{
 			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Discarded, string.Empty, null, null);
+			IsHandled = true;
 			return true;
 		}
 
@@ -93,7 +100,7 @@ namespace MantaMTA.Core.Client.BO
 		/// <param name="mxRecord">MX Record of the server tried to send too.</param>
 		/// <param name="isServiceUnavailable">If false will backoff the retry, if true will use the MtaParameters.MtaRetryInterval, 
 		/// this is needed to reduce the tail when sending as a message could get multiple try again laters and soon be 1h+ before next retry.</param>
-		public async Task<bool> HandleDeliveryDeferralAsync(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false)
+		public async Task<bool> HandleDeliveryDeferralAsync(string defMsg, VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, bool isServiceUnavailable = false, int? overrideTimeminutes = null)
 		{
 			// Log the deferral.
 			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Deferred, defMsg, ipAddress, mxRecord);
@@ -107,24 +114,46 @@ namespace MantaMTA.Core.Client.BO
 			// Hold the minutes to wait until next retry.
 			double nextRetryInterval = MtaParameters.MtaRetryInterval;
 
-			if (!isServiceUnavailable)
+			if (overrideTimeminutes.HasValue)
 			{
-				// Increase the deferred wait interval by doubling for each retry.
-				for (int i = 1; i < DeferredCount; i++)
-					nextRetryInterval = nextRetryInterval * 2;
-
-				// If we have gone over the max interval then set to the max interval value.
-				if (nextRetryInterval > maxInterval)
-					nextRetryInterval = maxInterval;
+				nextRetryInterval = overrideTimeminutes.Value;
 			}
 			else
-				nextRetryInterval = 1; // For service unavalible use 1 minute between retries.
+			{
+				if (!isServiceUnavailable)
+				{
+					// Increase the deferred wait interval by doubling for each retry.
+					for (int i = 1; i < DeferredCount; i++)
+						nextRetryInterval = nextRetryInterval * 2;
+
+					// If we have gone over the max interval then set to the max interval value.
+					if (nextRetryInterval > maxInterval)
+						nextRetryInterval = maxInterval;
+				}
+				else
+					nextRetryInterval = 1; // For service unavalible use 1 minute between retries.
+			}
 
 			// Set next retry time and release the lock.
 			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(nextRetryInterval);
 			Requeue();
 
 			return true;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ipAddress"></param>
+		/// <param name="mxRecord"></param>
+		/// <returns></returns>
+		public async Task<bool> HandleFailedToConnectAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		{
+			// If there was no MX record in DNS, so using A, we should fail and not retry.
+			if(mxRecord.MxRecordSrc == DNS.MxRecordSrc.A)
+				return await HandleDeliveryFailAsync("550 Failed to connect", ipAddress, mxRecord);
+			else
+				return await HandleDeliveryDeferralAsync("Failed to connect", ipAddress, mxRecord, false, 15);
 		}
 
 		/// <summary>
@@ -135,6 +164,7 @@ namespace MantaMTA.Core.Client.BO
 		public async Task<bool> HandleDeliverySuccessAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
 		{
 			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
+			IsHandled = true;
 			return true;
 		}
 
@@ -164,7 +194,7 @@ namespace MantaMTA.Core.Client.BO
 			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Deferred, "Service Unavailable", ipAddress, null);
 
 			// Set next retry time and release the lock.
-			this.AttemptSendAfterUtc = DateTime.UtcNow.AddMinutes(1);
+			this.AttemptSendAfterUtc = DateTime.UtcNow.AddSeconds(15);
 			Requeue();
 			return true;
 		}
@@ -193,6 +223,8 @@ namespace MantaMTA.Core.Client.BO
 
 			}
 
+			IsHandled = true;
+
 			return true;
 		}
 
@@ -212,6 +244,7 @@ namespace MantaMTA.Core.Client.BO
 		private void Requeue()
 		{
 			RabbitMqOutboundQueueManager.Enqueue(this);
+			IsHandled = true;
 		}
 	}
 }

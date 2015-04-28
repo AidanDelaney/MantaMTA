@@ -8,6 +8,7 @@ using MantaMTA.Core.Events;
 using MantaMTA.Core.VirtualMta;
 using MantaMTA.Core.Sends;
 using MantaMTA.Core.Server;
+using MantaMTA.Core.RabbitMq;
 
 namespace MantaService
 {
@@ -23,12 +24,9 @@ namespace MantaService
 
 		protected override void OnStart(string[] args)
 		{
-			Logging.Info("Starting Manta MTA Service.");
+			RabbitMqInboundStagingHandler.Start();
 
-			/*AppDomain.CurrentDomain.FirstChanceException += delegate(object sender, FirstChanceExceptionEventArgs e)
-			{
-				Logging.Debug("", e.Exception);
-			};*/
+			Logging.Info("Starting Manta MTA Service.");
 
 			AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e)
 			{

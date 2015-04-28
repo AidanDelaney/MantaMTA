@@ -8,6 +8,25 @@ namespace MantaMTA.Core.DAL
 {
 	internal class MtaTransaction
 	{
+		public static async Task<bool> HasBeenHandled(Guid messageID)
+		{
+			using(SqlConnection conn = MantaDB.GetSqlConnection())
+			{
+				SqlCommand cmd = conn.CreateCommand();
+				cmd.CommandText = @"IF EXISTS(SELECT 1
+FROM man_mta_transaction
+WHERE man_mta_transaction.mta_msg_id = @msgID
+AND man_mta_transaction.mta_transactionStatus_id IN (2,3,4,6))
+	SELECT 1
+ELSE 
+	SELECT 0";
+				cmd.Parameters.AddWithValue("@msgID", messageID);
+				await conn.OpenAsync();
+				return Convert.ToBoolean(await cmd.ExecuteScalarAsync());
+			}
+		}
+
+
 		/// <summary>
 		/// Logs an MTA Transaction to the database.
 		/// </summary>

@@ -193,7 +193,7 @@ namespace MantaMTA.Core.OutboundRules
 						try
 						{
 							// If they are a match return the rules.
-							if (strings[i].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
+							if (strings[c].Equals(record.Host, StringComparison.OrdinalIgnoreCase))
 							{
 								if (pattern.LimitedToOutboundIpAddressID.HasValue)
 									matchedPatterns.Add(pattern.ID, ipAddress);

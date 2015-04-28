@@ -35,6 +35,7 @@ namespace MantaMTA.Core.Server
 			if (MtaParameters.RabbitMQ.IsEnabled && RabbitMq.RabbitMqInboundQueueManager.Enqueue(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
 				return true;
 
+			return false;
 			// If we failed to queue in RabbitMQ there must be something wrong so try to go to SQL.
 			return await EnqueueSqlAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
 		}
@@ -139,7 +140,10 @@ namespace MantaMTA.Core.Server
 					dt.Columns.Add("mta_msg_rcptTo", typeof(string));
 					dt.Columns.Add("mta_msg_mailFrom", typeof(string));
 
-					using(SqlConnection conn = DAL.MantaDB.GetSqlConnection())
+					foreach(MtaMessage msg in recordsToImportToSql)
+						dt.Rows.Add(new object[]{msg.ID, msg.InternalSendID, msg.RcptTo[0], msg.MailFrom});
+					
+					try
 					{
 						// Create a record of the messages in SQL server.
 						using (SqlConnection conn = DAL.MantaDB.GetSqlConnection())
@@ -165,8 +169,8 @@ DELETE FROM [man_mta_msg_staging]
 COMMIT TRANSACTION";
 							cmd.ExecuteNonQuery();
 						}
-
-						RabbitMq.RabbitMqOutboundQueueManager.Enqueue(recordsToImportToSql);
+						
+						RabbitMq.RabbitMqManager.Ack(RabbitMq.RabbitMqManager.RabbitMqQueue.Inbound, recordsToImportToSql.Max(r => r.RabbitMqDeliveryTag), true);
 					}
 					catch(Exception ex)
 					{

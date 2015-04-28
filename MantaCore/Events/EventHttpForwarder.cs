@@ -125,7 +125,7 @@ namespace MantaMTA.Core.Events
 							}
 
 							// If response body is just a "." then event was received successfully.
-							if (responseBody.Trim().Equals("."))
+							if (responseBody.Trim().StartsWith("."))
 							{
 								// Log that the event forwared.
 								evt.Forwarded = true;

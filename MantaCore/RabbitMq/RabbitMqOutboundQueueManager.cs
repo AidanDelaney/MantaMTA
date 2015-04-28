@@ -27,7 +27,7 @@ namespace MantaMTA.Core.RabbitMq
 		/// Enqueue the message for relaying.
 		/// </summary>
 		/// <param name="msg">Message to enqueue.</param>
-		public static void Enqueue(MtaQueuedMessage msg)
+		public static bool Enqueue(MtaQueuedMessage msg)
 		{
 			RabbitMqManager.RabbitMqQueue queue = RabbitMqManager.RabbitMqQueue.OutboundWaiting;
 
@@ -45,7 +45,10 @@ namespace MantaMTA.Core.RabbitMq
 					queue = RabbitMqManager.RabbitMqQueue.OutboundWait300;
 			}
 
-			RabbitMqManager.Publish(msg, queue);
+			if (!RabbitMqManager.Publish(msg, queue))
+				return false;
+			msg.IsHandled = true;
+			return true;
 		}
 
 		/// <summary>
@@ -60,6 +63,7 @@ namespace MantaMTA.Core.RabbitMq
 
 			MtaQueuedMessage qmsg = Serialisation.Deserialise<MtaQueuedMessage>(ea.Body);
 			qmsg.RabbitMqDeliveryTag = ea.DeliveryTag;
+			qmsg.IsHandled = false;
 			return qmsg;
 		}
 

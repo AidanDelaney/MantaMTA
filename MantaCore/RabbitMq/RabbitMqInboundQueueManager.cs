@@ -2,9 +2,6 @@
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 
 namespace MantaMTA.Core.RabbitMq
 {
@@ -50,14 +47,9 @@ namespace MantaMTA.Core.RabbitMq
 				internalSendID,
 				mailFrom,
 				rcptTo,
-				string.Empty);
+				message);
 
-			RabbitMqManager.Publish(recordToSave, RabbitMqManager.RabbitMqQueue.Inbound);
-
-			recordToSave.Message = message;
-			RabbitMqOutboundQueueManager.Enqueue(MtaQueuedMessage.CreateNew(recordToSave));
-
-			return true;
+			return RabbitMqManager.Publish(MtaQueuedMessage.CreateNew(recordToSave), RabbitMqManager.RabbitMqQueue.InboundStaging, true);
 		}
 	}
 }
