@@ -14,7 +14,7 @@ namespace MantaMTA.Core.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"IF EXISTS(SELECT 1
-FROM man_mta_transaction
+FROM man_mta_transaction WITH(readuncommitted)
 WHERE man_mta_transaction.mta_msg_id = @msgID
 AND man_mta_transaction.mta_transactionStatus_id IN (2,3,4,6))
 	SELECT 1

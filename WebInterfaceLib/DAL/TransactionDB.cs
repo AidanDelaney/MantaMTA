@@ -27,8 +27,8 @@ FROM man_mta_send
 WHERE mta_send_id = @sndID
 
 SELECT COUNT(*) AS 'Count', [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp) as 'mta_transaction_timestamp'
-FROM man_mta_transaction as [tran]
-JOIN man_mta_msg AS [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+FROM man_mta_transaction as [tran] with(nolock)
+JOIN man_mta_msg AS [msg] with(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 WHERE [msg].mta_send_internalId = @internalSendID
 GROUP BY [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp)
 ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
@@ -48,7 +48,7 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT COUNT(*) AS 'Count', [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp) as 'mta_transaction_timestamp'
-FROM man_mta_transaction as [tran]
+FROM man_mta_transaction as [tran] WITH (nolock)
 WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id, CONVERT(smalldatetime, [tran].mta_transaction_timestamp)
 ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
@@ -88,7 +88,7 @@ ORDER BY CONVERT(smalldatetime, [tran].mta_transaction_timestamp)";
 				cmd.CommandText = (hasSendID ? @"
 declare @internalSendID int
 SELECT @internalSendID = mta_send_internalId
-FROM man_mta_send
+FROM man_mta_send WITH(nolock)
 WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT [sorted].*
@@ -100,8 +100,8 @@ FROM (
 			   [ip].ip_ipAddress_hostname, 
 			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
 			   MAX(mta_transaction_timestamp) as 'LastOccurred'
-		FROM man_mta_transaction as [tran]
-		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		FROM man_mta_transaction as [tran] with(nolock)
+		JOIN man_mta_msg as [msg] with(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE mta_transactionStatus_id IN (1, 2, 3, 6) --// Todo: Make this enum!
 		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID " : string.Empty) + @"
@@ -130,7 +130,7 @@ WHERE [Row] >= " + (((pageNum * pageSize) - pageSize) + 1) + " AND [Row] <= " + 
 				cmd.CommandText = (hasSendID ? @"
 declare @internalSendID int
 SELECT @internalSendID = mta_send_internalId
-FROM man_mta_send
+FROM man_mta_send WITH(nolock)
 WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT [sorted].*
@@ -142,8 +142,8 @@ FROM (
 			   [ip].ip_ipAddress_hostname, 
 			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
 			   MAX(mta_transaction_timestamp) as 'LastOccurred'
-		FROM man_mta_transaction as [tran]
-		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		FROM man_mta_transaction as [tran] WITH(nolock)
+		JOIN man_mta_msg as [msg] WITH(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE mta_transactionStatus_id IN (2, 3, 6) --// Todo: Make this enum!
 		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID " : string.Empty) + @"
@@ -184,8 +184,8 @@ FROM (
 			   [ip].ip_ipAddress_hostname, 
 			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
 			   MAX(mta_transaction_timestamp) as 'LastOccurred'
-		FROM man_mta_transaction as [tran]
-		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		FROM man_mta_transaction as [tran] WITH(nolock)
+		JOIN man_mta_msg as [msg] WITH(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE mta_transactionStatus_id IN (1) --// Todo: Make this enum!
 		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID " : string.Empty) + @"
@@ -216,8 +216,8 @@ SELECT TOP " + count + @" ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC, mta_transac
 			   [ip].ip_ipAddress_hostname, 
 			   [ip].ip_ipAddress_ipAddress, COUNT(*) as 'Count',
 			   MAX(mta_transaction_timestamp) as 'LastOccurred'
-FROM man_mta_transaction as [tran]
-JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+FROM man_mta_transaction as [tran] WITH (nolock)
+JOIN man_mta_msg as [msg] WITH(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE()) 
 AND mta_transactionStatus_id IN (1, 2, 3, 6)
@@ -276,14 +276,14 @@ SELECT 1 as 'Col'
 				cmd.CommandText = (hasSendID ? @"
 declare @internalSendID int
 SELECT @internalSendID = mta_send_internalId
-FROM man_mta_send
+FROM man_mta_send WITH(nolock)
 WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT COUNT(*)
 FROM(
 SELECT 1 as 'Col'
-		FROM man_mta_transaction as [tran]
-		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		FROM man_mta_transaction as [tran] WITH(nolock)
+		JOIN man_mta_msg as [msg] WITH(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE mta_transactionStatus_id IN (1) --// Todo: Make this enum! 
 		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID" : string.Empty) + @"
@@ -310,14 +310,14 @@ SELECT 1 as 'Col'
 				cmd.CommandText = (hasSendID ? @"
 declare @internalSendID int
 SELECT @internalSendID = mta_send_internalId
-FROM man_mta_send
+FROM man_mta_send WITH(nolock)
 WHERE mta_send_id = @sndID
 " : string.Empty) + @"
 SELECT COUNT(*)
 FROM(
 SELECT 1 as 'Col'
-		FROM man_mta_transaction as [tran]
-		JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id
+		FROM man_mta_transaction as [tran] WITH(nolock)
+		JOIN man_mta_msg as [msg] WITH(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id
 		JOIN man_ip_ipAddress as [ip] ON [tran].ip_ipAddress_id = [ip].ip_ipAddress_id
 		WHERE mta_transactionStatus_id IN (2, 3, 6) --// Todo: Make this enum! 
 		" + (hasSendID ? "AND [msg].mta_send_internalId = @internalSendID" : string.Empty) + @"
@@ -345,11 +345,11 @@ declare @deferred bigint
 declare @rejected bigint
 
 SELECT @deferred = COUNT(*)
-FROM man_mta_transaction
+FROM man_mta_transaction WITH(nolock)
 WHERE mta_transactionStatus_id = 1
 
 SELECT @rejected = COUNT(*)
-FROM man_mta_transaction
+FROM man_mta_transaction WITH(nolock)
 WHERE mta_transactionStatus_id IN (2, 3, 6)
 
 SELECT @deferred as 'Deferred', @rejected as 'Rejected'";			
@@ -390,7 +390,7 @@ SELECT @deferred as 'Deferred', @rejected as 'Rejected'";
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT [tran].mta_transactionStatus_id, COUNT(*) AS 'Count'
-FROM man_mta_transaction as [tran]
+FROM man_mta_transaction as [tran] WITH(nolock)
 WHERE [tran].mta_transaction_timestamp >= DATEADD(HOUR, -1, GETUTCDATE())
 GROUP BY [tran].mta_transactionStatus_id";
 				return new SendTransactionSummaryCollection(DataRetrieval.GetCollectionFromDatabase<SendTransactionSummary>(cmd, CreateAndFillTransactionSummary));

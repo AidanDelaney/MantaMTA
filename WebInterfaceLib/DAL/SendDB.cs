@@ -20,7 +20,7 @@ namespace WebInterfaceLib.DAL
 			{
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"SELECT SUM(s.mta_send_messages) - SUM(s.mta_send_accepted + s.mta_send_rejected)
-FROM man_mta_send as s
+FROM man_mta_send as s WITH(nolock)
 WHERE s.mta_sendStatus_id in (" + string.Join(",", Array.ConvertAll<SendStatus, int>(sendStatus, s => (int)s)) + ")";
 				conn.Open();
 				Int64 result = Convert.ToInt64(cmd.ExecuteScalar());
@@ -62,7 +62,7 @@ WHERE s.mta_sendStatus_id in (" + string.Join(",", Array.ConvertAll<SendStatus, 
 INSERT INTO @sends
 SELECT [sends].RowNumber, [sends].mta_send_internalId
 FROM (SELECT (ROW_NUMBER() OVER(ORDER BY mta_send_createdTimestamp DESC)) as RowNumber, man_mta_send.mta_send_internalId
-FROM man_mta_send) [sends]
+FROM man_mta_send with(nolock)) [sends]
 WHERE [sends].RowNumber >= " + ((pageNum * pageSize) - pageSize + 1) + " AND [sends].RowNumber <= " + (pageSize * pageNum) + @"
 
 SELECT [send].*, 
@@ -70,10 +70,10 @@ SELECT [send].*,
 	mta_send_accepted AS 'Accepted',
 	mta_send_rejected AS 'Rejected',
 	([send].mta_send_messages - (mta_send_accepted + mta_send_rejected)) AS 'Waiting',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
-	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId) AS 'LastTransactionTimestamp'
-FROM man_mta_send as [send]
+	(SELECT COUNT(*) FROM man_mta_transaction as [tran] with(nolock) JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
+	(SELECT COUNT(*) FROM man_mta_transaction as [tran] with(nolock) JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
+	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] with(nolock) JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [send].mta_send_internalId) AS 'LastTransactionTimestamp'
+FROM man_mta_send as [send] with(nolock)
 WHERE [send].mta_send_internalId in (SELECT [s].mta_send_internalId FROM @sends as [s])
 ORDER BY [send].mta_send_createdTimestamp DESC";
 				cmd.CommandTimeout = 90; // Query can take a while to run due to the size of the Transactions table.
@@ -122,10 +122,10 @@ ORDER BY [send].mta_send_createdTimestamp DESC";
 	mta_send_accepted AS 'Accepted',
 	mta_send_rejected AS 'Rejected',
 	([snd].mta_send_messages - (mta_send_accepted + mta_send_rejected)) AS 'Waiting',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
-	(SELECT COUNT(*) FROM man_mta_transaction as [tran] JOIN man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
-	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] JOIN  man_mta_msg as [msg] ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) AS 'LastTransactionTimestamp'
-FROM man_mta_send as [snd]
+	(SELECT COUNT(*) FROM man_mta_transaction as [tran] with(nolock) JOIN man_mta_msg as [msg] with(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 5) AS 'Throttled',
+	(SELECT COUNT(*) FROM man_mta_transaction as [tran] with(nolock) JOIN man_mta_msg as [msg] with(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId AND [tran].mta_transactionStatus_id = 1) AS 'Deferred',
+	(SELECT MAX(mta_transaction_timestamp) FROM man_mta_transaction as [tran] with(nolock) JOIN  man_mta_msg as [msg] with(nolock) ON [tran].mta_msg_id = [msg].mta_msg_id WHERE [msg].mta_send_internalId = [snd].mta_send_internalId) AS 'LastTransactionTimestamp'
+FROM man_mta_send as [snd] with(nolock)
 WHERE [snd].mta_send_id = @sndID";
 				cmd.Parameters.AddWithValue("@sndID", sendID);
 				return DataRetrieval.GetSingleObjectFromDatabase<SendInfo>(cmd, CreateAndFillSendInfo);
