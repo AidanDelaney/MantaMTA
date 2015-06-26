@@ -8,7 +8,7 @@ namespace MantaMTA.Core.DAL
 {
 	internal class MtaTransaction
 	{
-		public static async Task<bool> HasBeenHandled(Guid messageID)
+		public static async Task<bool> HasBeenHandledAsync(Guid messageID)
 		{
 			using(SqlConnection conn = MantaDB.GetSqlConnection())
 			{

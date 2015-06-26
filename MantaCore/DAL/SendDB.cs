@@ -32,7 +32,7 @@ WHEN NOT MATCHED THEN
 COMMIT TRANSACTION
 
 SELECT *
-FROM man_mta_send
+FROM man_mta_send WITH(nolock)
 WHERE mta_send_id = @sndID";
 				cmd.Parameters.AddWithValue("@sndID", sendID);
 				cmd.Parameters.AddWithValue("@activeStatusID", (int)SendStatus.Active);
@@ -69,7 +69,7 @@ WHERE mta_send_id = @sndID";
 				SqlCommand cmd = conn.CreateCommand();
 				cmd.CommandText = @"
 SELECT *
-FROM man_mta_send
+FROM man_mta_send WITH(NOLOCK)
 WHERE mta_send_internalId = @internalSndID";
 				cmd.Parameters.AddWithValue("@internalSndID", internalSendID);
 				return DataRetrieval.GetSingleObjectFromDatabase<Send>(cmd, CreateAndFillSendFromRecord);

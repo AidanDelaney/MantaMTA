@@ -8,6 +8,7 @@ using MantaMTA.Core.Smtp;
 using MantaMTA.Core.VirtualMta;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Net.Mail;
 using System.Threading;
@@ -20,6 +21,14 @@ namespace MantaMTA.Core.Client
 	/// </summary>
 	public class MessageSender : IStopRequired
 	{
+		/// <summary>
+		/// List of MX domains that we should not attempt to deliver to. The emails will hard bounce as "Domain Blacklisted".
+		/// Todo: Put this in database and web interface.
+		/// </summary>
+		private List<string> _blacklistMx = new List<string> { 
+			"uk-com-wildcard-null-mx.centralnic.net" 
+		};
+
 		#region Singleton
 		/// <summary>
 		/// The Single instance of this class.
@@ -182,6 +191,23 @@ namespace MantaMTA.Core.Client
 		}
 
 
+		/// <summary>
+		/// Checks to see if the MX record collection contains blacklisted domains/ips.
+		/// </summary>
+		/// <param name="mxRecords">Collection of MX records to check.</param>
+		/// <returns>True if collection contains blacklisted record.</returns>
+		private bool IsMxBlacklisted(MXRecord[] mxRecords)
+		{
+			// Check for blacklisted MX
+			foreach (var mx in mxRecords)
+			{
+				if (_blacklistMx.Contains(mx.Host.ToLower()))
+					return true;
+			}
+
+			return false;
+		}
+
 		private async Task<bool> SendMessageAsync(MtaQueuedMessage msg)
 		{
 			// Check that the message next attempt after has passed.
@@ -192,7 +218,7 @@ namespace MantaMTA.Core.Client
 				return false;
 			}
 
-			if (await MtaTransaction.HasBeenHandled(msg.ID))
+			if (await MtaTransaction.HasBeenHandledAsync(msg.ID))
 			{
 				msg.IsHandled = true;
 				return true;
@@ -244,8 +270,15 @@ namespace MantaMTA.Core.Client
 					await msg.HandleDeliveryFailAsync("550 Domain Not Found.", null, null);
 					result = false;
 				}
+				else if(IsMxBlacklisted(mXRecords))
+				{
+					await msg.HandleDeliveryFailAsync("550 Domain blacklisted.", null, mXRecords[0]);
+					result = false;
+				}
 				else
 				{
+					
+
 					// The IP group that will be used to send the queued message.
 					VirtualMtaGroup virtualMtaGroup = VirtualMtaManager.GetVirtualMtaGroup(msg.VirtualMTAGroupID);
 					VirtualMTA sndIpAddress = virtualMtaGroup.GetVirtualMtasForSending(mXRecords[0]);
