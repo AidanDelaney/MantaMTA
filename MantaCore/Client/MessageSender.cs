@@ -26,7 +26,9 @@ namespace MantaMTA.Core.Client
 		/// Todo: Put this in database and web interface.
 		/// </summary>
 		private List<string> _blacklistMx = new List<string> { 
-			"uk-com-wildcard-null-mx.centralnic.net" 
+			".",
+			"mx-uk.newses.de",
+			"uk-com-wildcard-null-mx.centralnic.net"
 		};
 
 		#region Singleton
