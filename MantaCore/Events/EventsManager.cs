@@ -693,7 +693,12 @@ namespace MantaMTA.Core.Events
 		/// <returns>The Events ID</returns>
 		internal int Save(MantaEvent evt)
 		{
-			return MantaMTA.Core.DAL.EventDB.Save(evt);
+			return SaveAsync(evt).Result;
+		}
+
+		internal async Task<int> SaveAsync(MantaEvent evt)
+		{
+			return await MantaMTA.Core.DAL.EventDB.SaveAsync(evt);
 		}
 
 		/// <summary>

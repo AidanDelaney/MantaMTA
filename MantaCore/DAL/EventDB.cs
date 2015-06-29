@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using MantaMTA.Core.Events;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.DAL
 {
@@ -64,7 +65,7 @@ ORDER BY evn_event_id ASC";
 		/// </summary>
 		/// <param name="evn">The Manta Event to save.</param>
 		/// <returns>ID of the MantaEvent.</returns>
-		public static int Save(MantaEvent evn)
+		public static async Task<int> SaveAsync(MantaEvent evn)
 		{
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
@@ -117,8 +118,8 @@ ELSE
 				cmd.CommandText += @"SELECT @eventID
 ";
 
-				conn.Open();
-				return Convert.ToInt32(cmd.ExecuteScalar());
+				await conn.OpenAsync();
+				return Convert.ToInt32(await cmd.ExecuteScalarAsync());
 			}
 		}
 

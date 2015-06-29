@@ -2,6 +2,7 @@
 using MantaMTA.Core.Enums;
 using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Sends
 {
@@ -47,7 +48,7 @@ namespace MantaMTA.Core.Sends
 		/// </summary>
 		/// <param name="sendId">ID of the Send.</param>
 		/// <returns>The Send.</returns>
-		public Send GetSend(string sendId)
+		public async Task<Send> GetSendAsync(string sendId)
 		{
 			// Don't want send IDs sitting in memory for to long so clear every so often.
 			if (this._SendsLastCleared.AddSeconds(10) < DateTime.UtcNow)
@@ -59,7 +60,7 @@ namespace MantaMTA.Core.Sends
 			if (!this._Sends.TryGetValue(sendId, out snd))
 			{
 				// Doesn't exist so need to create or load from datbase.
-				snd = SendDB.CreateAndGetInternalSendID(sendId);
+				snd = await SendDB.CreateAndGetInternalSendIDAsync(sendId);
 
 				// Add are new item to the cache.
 				this._Sends.TryAdd(sendId, snd);
@@ -75,7 +76,7 @@ namespace MantaMTA.Core.Sends
 		/// </summary>
 		/// <param name="internalSendID">Internal ID of the Send.</param>
 		/// <returns>The Send.</returns>
-		public Send GetSend(int internalSendID)
+		public async Task<Send> GetSendAsync(int internalSendID)
 		{
 			// Don't want send IDs sitting in memory for to long so clear every so often.
 			if (this._SendsLastCleared.AddSeconds(10) < DateTime.UtcNow)
@@ -87,7 +88,7 @@ namespace MantaMTA.Core.Sends
 			if (!this._SendsInternalID.TryGetValue(internalSendID, out snd))
 			{
 				// Doesn't exist so need to create or load from datbase.
-				snd = SendDB.GetSend(internalSendID);
+				snd = await SendDB.GetSendAsync(internalSendID);
 
 				// Add are new item to the cache.
 				this._SendsInternalID.TryAdd(internalSendID, snd);
@@ -101,10 +102,10 @@ namespace MantaMTA.Core.Sends
 		/// Gets the default send ID, based of the current time.
 		/// </summary>
 		/// <returns></returns>
-		internal Send GetDefaultInternalSendId()
+		internal async Task<Send> GetDefaultInternalSendIdAsync()
 		{
 			string sendID = DateTime.UtcNow.ToString("yyyyMMdd");
-			return this.GetSend(sendID);
+			return await this.GetSendAsync(sendID);
 		}
 
 		/// <summary>

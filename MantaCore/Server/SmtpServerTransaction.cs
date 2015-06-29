@@ -173,14 +173,14 @@ namespace MantaMTA.Core.Server
 			int internalSendId = -1;
 			if (sendIdHeader != null)
 			{
-				Sends.Send sndID = Sends.SendManager.Instance.GetSend(sendIdHeader.Value);
+				Sends.Send sndID = await Sends.SendManager.Instance.GetSendAsync(sendIdHeader.Value);
 				if (sndID.SendStatus == SendStatus.Discard)
 					return SmtpServerTransactionAsyncResult.FailedSendDiscarding;
 				internalSendId = sndID.InternalID;
 			}
 			else
 			{
-				Sends.Send sndID = Sends.SendManager.Instance.GetDefaultInternalSendId();
+				Sends.Send sndID = await Sends.SendManager.Instance.GetDefaultInternalSendIdAsync();
 				if (sndID.SendStatus == SendStatus.Discard)
 					return SmtpServerTransactionAsyncResult.FailedSendDiscarding;
 				internalSendId = sndID.InternalID;

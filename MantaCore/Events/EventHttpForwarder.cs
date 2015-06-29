@@ -79,7 +79,7 @@ namespace MantaMTA.Core.Events
 					}
 
 					// Forward the events
-					Parallel.ForEach<MantaEvent>(events, evt => {
+					Parallel.ForEach<MantaEvent>(events, async evt => {
 						try
 						{
 							if (_IsStopping)
@@ -109,13 +109,13 @@ namespace MantaMTA.Core.Events
 							eventJson = Regex.Replace(eventJson, ",\"Forwarded\":(false|true)", string.Empty);
 
 							// Write the event json to the POST body.
-							using (StreamWriter writer = new StreamWriter(httpRequest.GetRequestStream()))
+							using (StreamWriter writer = new StreamWriter(await httpRequest.GetRequestStreamAsync()))
 							{
-								writer.Write(eventJson);
+								await writer.WriteAsync(eventJson);
 							}
 
 							// Send the POST and get the response.
-							HttpWebResponse httpResponse = (HttpWebResponse)httpRequest.GetResponse();
+							HttpWebResponse httpResponse = (HttpWebResponse)await httpRequest.GetResponseAsync();
 
 							// Get the response body.
 							string responseBody = string.Empty;
@@ -129,7 +129,7 @@ namespace MantaMTA.Core.Events
 							{
 								// Log that the event forwared.
 								evt.Forwarded = true;
-								EventsManager.Instance.Save(evt);
+								await EventsManager.Instance.SaveAsync(evt);
 							}
 						}
 						catch (Exception ex)

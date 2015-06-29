@@ -227,7 +227,7 @@ namespace MantaMTA.Core.Client
 			}
 
 			// Get the send that this message belongs to so that we can check the send state.
-			Send snd = SendManager.Instance.GetSend(msg.InternalSendID);
+			Send snd = await SendManager.Instance.GetSendAsync(msg.InternalSendID);
 
 			switch(snd.SendStatus)
 			{

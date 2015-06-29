@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace MantaMTA.Core.DAL
 {
@@ -66,6 +67,35 @@ namespace MantaMTA.Core.DAL
 			return obj;
 		}
 
+
+		/// <summary>
+		/// Attempts to retrieve a database record and return a Business Object populated with
+		/// values from that record.
+		/// </summary>
+		/// <typeparam name="T">The Type of the Business Object that we're working with, e.g. BroadcastEmail, Format, Audience, etc.</typeparam>
+		/// <param name="command">A SqlCommand to execute to retrieve a database record.</param>
+		/// <param name="createObjectMethod">A delegate method used to create a Business Object
+		/// and to copy values from the retrieved database record into it.</param>
+		/// <returns>If a database record is not found by executing <paramref name="command"/>,
+		/// null is returned.  If a database record does exist, an instantied object with
+		/// values set from the retrieved database record is returned.</returns>
+		public static async Task<T> GetSingleObjectFromDatabaseAsync<T>(SqlCommand command, CreateObjectMethod<T> createObjectMethod)
+		{
+			var obj = default(T);
+
+			await command.Connection.OpenAsync();
+
+			using (var reader = await command.ExecuteReaderAsync())
+			{
+				if (await reader.ReadAsync())
+					obj = createObjectMethod(reader);
+			}
+
+
+			command.Connection.Close();
+
+			return obj;
+		}
 
 		/// <summary>
 		/// Retrieves a database record and uses the FillObjectMethod delegate provided in

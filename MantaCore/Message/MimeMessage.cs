@@ -32,40 +32,48 @@ namespace MantaMTA.Core.Message
 		/// <returns>The MimeMessage represented by the string content in <paramref name="message"/>.</returns>
 		public static MimeMessage Parse(string message)
 		{
-			MimeMessage msg = new MimeMessage();
-			string headersChunk;
-			string bodyChunk;
-			SeparateBodyPartHeadersAndBody(message, out headersChunk, out bodyChunk);
-
-			msg.Headers = GetMessageHeaders(headersChunk);
-
-			// Check the email is a MIME message.
-			if (msg.Headers.GetFirstOrDefault("MIME-Version") == null)
+			try
 			{
-				// TODO BenC (2013-07-25): Think this just means there's a single, plain text body part
-				// so we add code here to handle it.
+				MimeMessage msg = new MimeMessage();
+				string headersChunk;
+				string bodyChunk;
+				SeparateBodyPartHeadersAndBody(message, out headersChunk, out bodyChunk);
 
-				Logging.Debug("Not a MIME Message");
+				msg.Headers = GetMessageHeaders(headersChunk);
+
+				// Check the email is a MIME message.
+				if (msg.Headers.GetFirstOrDefault("MIME-Version") == null)
+				{
+					// TODO BenC (2013-07-25): Think this just means there's a single, plain text body part
+					// so we add code here to handle it.
+
+					Logging.Debug("Not a MIME Message");
+					return null;
+				}
+
+
+				// Get the boundary of the message and use that to chop up the content, then loop through each
+				// of those chunks looking for bodyparts within each.
+				ContentType msgContentType = new ContentType(msg.Headers.GetFirstOrDefault("Content-Type").Value);
+
+				// Content-Type: multipart/alternative; differences=Content-Type;
+				//  boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
+				// msgContentType.Value.Contains("boundary")
+
+
+				// If no boundary, then there's just the one BodyPart in the content.
+				if (string.IsNullOrWhiteSpace(msgContentType.Boundary))
+					msg.BodyParts = new BodyPart[] { CreateBodyPart(msg.Headers, bodyChunk) };
+				else
+					msg.BodyParts = DivideIntoBodyParts(bodyChunk, msgContentType.Boundary);
+
+				return msg;
+			}
+			catch (FormatException)
+			{
+				Logging.Warn("Failed to parse message");
 				return null;
 			}
-
-
-			// Get the boundary of the message and use that to chop up the content, then loop through each
-			// of those chunks looking for bodyparts within each.
-			ContentType msgContentType = new ContentType(msg.Headers.GetFirstOrDefault("Content-Type").Value);
-
-			// Content-Type: multipart/alternative; differences=Content-Type;
-			//  boundary="b2420641-bd9f-4b3d-9a4f-c14c58c6ba30"
-			// msgContentType.Value.Contains("boundary")
-			
-
-			// If no boundary, then there's just the one BodyPart in the content.
-			if (string.IsNullOrWhiteSpace(msgContentType.Boundary))
-				msg.BodyParts = new BodyPart[] { CreateBodyPart(msg.Headers, bodyChunk) };
-			else
-				msg.BodyParts = DivideIntoBodyParts(bodyChunk, msgContentType.Boundary);
-
-			return msg;
 		}
 
 
