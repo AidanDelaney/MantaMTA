@@ -28,6 +28,7 @@ namespace MantaMTA.Core.Client
 		private List<string> _blacklistMx = new List<string> { 
 			".",
 			"mx-uk.newses.de",
+			"spamgoes.in",
 			"uk-com-wildcard-null-mx.centralnic.net"
 		};
 

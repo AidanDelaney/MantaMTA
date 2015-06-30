@@ -65,7 +65,7 @@ namespace MantaMTA.Core.Smtp
 					// Were done deleting so tell the timer to do the callback again in n.
 					_DeleteOldLogsTimer.Change(intervalBetweenDeleteCallbacksMilliseconds, Timeout.Infinite);
 				}
-			}), null, intervalBetweenDeleteCallbacksMilliseconds, Timeout.Infinite);
+			}), null, 1 * 1000, Timeout.Infinite);
 		}
 
 		/// <summary>
@@ -124,7 +124,16 @@ namespace MantaMTA.Core.Smtp
 
 				// If the stream writer doesn't exist, the filestream doesn't exist or is not writeable
 				if (_Writer == null || _Writer.BaseStream == null || !_Writer.BaseStream.CanWrite)
-					_Writer = new StreamWriter(GetCurrentLogPath(), true);
+				{
+					try
+					{
+						_Writer = new StreamWriter(GetCurrentLogPath(), true);
+					}
+					catch(IOException)
+					{
+						_Writer = new StreamWriter(GetCurrentLogPath() + "2", true);
+					}
+				}
 
 				_Writer.WriteLine(GetCurrentTimestamp() + " " + msg.TrimEnd());
 				_Writer.Flush();
@@ -149,7 +158,7 @@ namespace MantaMTA.Core.Smtp
 		private string GetCurrentLogPath()
 		{
 			_CurrentLogHour = DateTime.UtcNow.Hour;
-			return Path.Combine(MtaParameters.MTA_SMTP_LOGFOLDER , DateTime.UtcNow.ToString("yyyyMMddhh") + ".txt");
+			return Path.Combine(MtaParameters.MTA_SMTP_LOGFOLDER , DateTime.UtcNow.ToString("yyyyMMddHH") + ".txt");
 		}
 	}
 }
