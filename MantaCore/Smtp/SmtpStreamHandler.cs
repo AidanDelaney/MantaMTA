@@ -23,9 +23,17 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		public IPAddress LocalAddress { get; set; }
 		/// <summary>
+		/// The port number connected to at the local address.
+		/// </summary>
+		public int LocalPort { get; set; }
+		/// <summary>
 		/// The remote address is the source of the client request.
 		/// </summary>
 		public IPAddress RemoteAddress { get; set; }
+		/// <summary>
+		/// The port number connected to at the remote address.
+		/// </summary>
+		public int RemotePort { get; set; }
 
 		/// <summary>
 		/// Stream reader for the underlying connection. Encoding is UTF8.
@@ -58,8 +66,13 @@ namespace MantaMTA.Core.Smtp
 		/// <param name="client"></param>
 		public SmtpStreamHandler(TcpClient client) : this(client.GetStream())
 		{
-			this.RemoteAddress = (client.Client.RemoteEndPoint as IPEndPoint).Address;
-			this.LocalAddress = (client.Client.LocalEndPoint as IPEndPoint).Address;
+			IPEndPoint remote = client.Client.RemoteEndPoint as IPEndPoint;			
+			this.RemoteAddress = remote.Address;
+			this.RemotePort = remote.Port;
+
+			IPEndPoint local = client.Client.LocalEndPoint as IPEndPoint;
+			this.LocalAddress = local.Address;
+			this.LocalPort = local.Port;
 		}
 
 		/// <summary>
@@ -107,7 +120,7 @@ namespace MantaMTA.Core.Smtp
 				throw new IOException("Remote Endpoint Disconnected.");
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Inbound, " + response);
+				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Inbound, " + response);
 
 			return response;
 		}
@@ -159,7 +172,7 @@ namespace MantaMTA.Core.Smtp
 			string result = sb.ToString();
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log("," + this.LocalAddress + ", " + this.RemoteAddress + ", Inbound, " + result);
+				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Inbound, " + result);
 
 			return result;
 		}
@@ -195,7 +208,7 @@ namespace MantaMTA.Core.Smtp
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + message);
+				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Outbound, " + message);
 
 			return true;
 		}
@@ -221,7 +234,7 @@ namespace MantaMTA.Core.Smtp
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ", " + this.RemoteAddress + ", Outbound, " + message);
+				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Outbound, " + message);
 
 			return true;
 		}
