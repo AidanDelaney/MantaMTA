@@ -55,7 +55,7 @@ namespace MantaMTA.Core.Tests
 						await smtpClient.ExecHeloOrRsetAsync(callback);
 						await smtpClient.ExecMailFromAsync(new System.Net.Mail.MailAddress("testing@localhost"), callback);
 						await smtpClient.ExecRcptToAsync(new System.Net.Mail.MailAddress("postmaster@localhost"), callback);
-						await smtpClient.ExecDataAsync("hello", callback);
+						await smtpClient.ExecDataAsync("hello", callback, async (response) => { await Task.Delay(100); });
 						return true;
 					}).Wait();
 				});

@@ -356,7 +356,7 @@ namespace MantaMTA.Core.Smtp
 		/// </summary>
 		/// <param name="data">Data to send to the server</param>
 		/// <param name="failedCallback">Action to call if fails to send.</param>
-		public async Task<bool> ExecDataAsync(string data, Action<string> failedCallback)
+		public async Task<bool> ExecDataAsync(string data, Action<string> failedCallback, Func<string, Task> successCallbackAsync)
 		{
 			if (!base.Connected)
 				return false;
@@ -385,7 +385,7 @@ namespace MantaMTA.Core.Smtp
 				{
 					failedCallback(response);
 					IsActive = false;
-					return false;
+					return false; 
 				}
 
 				// Get the Data Command response.
@@ -421,6 +421,8 @@ namespace MantaMTA.Core.Smtp
 
 			if (!response.StartsWith("250"))
 				failedCallback(response);
+			else
+				await successCallbackAsync(response);
 
 
 			// If max messages have been sent quit the connection.			

@@ -161,9 +161,9 @@ namespace MantaMTA.Core.Client.BO
 		/// Logs success
 		/// Deletes queued data
 		/// </summary>
-		public async Task<bool> HandleDeliverySuccessAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord)
+		public async Task<bool> HandleDeliverySuccessAsync(VirtualMta.VirtualMTA ipAddress, DNS.MXRecord mxRecord, string response)
 		{
-			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Success, string.Empty, ipAddress, mxRecord);
+			await MtaTransaction.LogTransactionAsync(this, TransactionStatus.Success, response, ipAddress, mxRecord);
 			IsHandled = true;
 			return true;
 		}

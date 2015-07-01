@@ -298,9 +298,11 @@ namespace MantaMTA.Core.Client
 							await smtpClient.ExecHeloOrRsetAsync(failedCallback);
 							await smtpClient.ExecMailFromAsync(mailFrom, failedCallback);
 							await smtpClient.ExecRcptToAsync(mailAddress, failedCallback);
-							await smtpClient.ExecDataAsync(data, failedCallback);
+							await smtpClient.ExecDataAsync(data, failedCallback, async(response) => {
+								await msg.HandleDeliverySuccessAsync(sndIpAddress, smtpClient.MXRecord);
+							});
 							SmtpClientPool.Instance.Enqueue(smtpClient);
-							await msg.HandleDeliverySuccessAsync(sndIpAddress, smtpClient.MXRecord);
+							
 							result = true;
 						}
 						catch (MessageSenderSql.SmtpTransactionFailedException)

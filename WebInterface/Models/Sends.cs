@@ -55,7 +55,7 @@ namespace WebInterface.Models
 		/// <returns></returns>
 		public string GetSendReportPageTitle()
 		{
-			int internalID = SendManager.Instance.GetSend(this.SendID).InternalID;
+			int internalID = SendManager.Instance.GetSendAsync(this.SendID).Result.InternalID;
 
 			SendMetadataCollection meta = new SendMetadataCollection(WebInterfaceLib.DAL.SendDB.GetSendMetaData(internalID).OrderBy(m => m.Name));
 			
