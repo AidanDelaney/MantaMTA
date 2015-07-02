@@ -14,6 +14,22 @@ namespace MantaMTA.Core.Smtp
 	public class SmtpStreamHandler
 	{
 		/// <summary>
+		///	Logging directions for SMTP conversations.
+		/// </summary>
+		private struct SmtpConversationDirection
+		{
+			/// <summary>
+			/// This server sent the message.
+			/// </summary>
+			public const string OUTBOUND = "Outbound";
+
+			/// <summary>
+			/// This server received the message.
+			/// </summary>
+			public const string INBOUND = "Inbound";
+		}
+
+		/// <summary>
 		/// Holds a Copy of a UTF8 Encoding without a BOM.
 		/// </summary>
 		private static Encoding _UTF8Encoding = new UTF8Encoding(false);
@@ -22,18 +38,21 @@ namespace MantaMTA.Core.Smtp
 		/// The local address is the address on the server that the client is connected to.
 		/// </summary>
 		public IPAddress LocalAddress { get; set; }
+
 		/// <summary>
 		/// The port number connected to at the local address.
 		/// </summary>
-		public int LocalPort { get; set; }
+		private int LocalPort { get; set; }
+
 		/// <summary>
 		/// The remote address is the source of the client request.
 		/// </summary>
 		public IPAddress RemoteAddress { get; set; }
+
 		/// <summary>
 		/// The port number connected to at the remote address.
 		/// </summary>
-		public int RemotePort { get; set; }
+		private int RemotePort { get; set; }
 
 		/// <summary>
 		/// Stream reader for the underlying connection. Encoding is UTF8.
@@ -120,7 +139,7 @@ namespace MantaMTA.Core.Smtp
 				throw new IOException("Remote Endpoint Disconnected.");
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Inbound, " + response);
+				LogSmtpConversationMessage(SmtpConversationDirection.INBOUND, response);
 
 			return response;
 		}
@@ -172,7 +191,7 @@ namespace MantaMTA.Core.Smtp
 			string result = sb.ToString();
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Inbound, " + result);
+				LogSmtpConversationMessage(SmtpConversationDirection.INBOUND, result);
 
 			return result;
 		}
@@ -208,7 +227,7 @@ namespace MantaMTA.Core.Smtp
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Outbound, " + message);
+				LogSmtpConversationMessage(SmtpConversationDirection.OUTBOUND, message);
 
 			return true;
 		}
@@ -234,9 +253,19 @@ namespace MantaMTA.Core.Smtp
 				throw new NotImplementedException(_CurrentTransportMIME.ToString());
 
 			if (log)
-				SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", Outbound, " + message);
+				LogSmtpConversationMessage(SmtpConversationDirection.OUTBOUND, message);
 
 			return true;
+		}
+
+		/// <summary>
+		/// Log Smtp conversation message.
+		/// </summary>
+		/// <param name="direction">Direction the message went, either Inbound or Outbound.</param>
+		/// <param name="message">The smtp message.</param>
+		private void LogSmtpConversationMessage(string direction, string message)
+		{
+			SmtpTransactionLogger.Instance.Log(", " + this.LocalAddress + ":" + this.LocalPort + ", " + this.RemoteAddress + ":" + this.RemotePort + ", " + direction + ", " + message);
 		}
 	}
 }
