@@ -1,5 +1,4 @@
-﻿using MantaMTA.Core.Client;
-using MantaMTA.Core.Enums;
+﻿using MantaMTA.Core.Enums;
 using MantaMTA.Core.Message;
 using System;
 using System.Collections.Generic;
@@ -9,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Server
 {
-	/// <summary>
-	/// Represents an SMTP Server Transaction.
-	/// That is a Transaction where we are the Server and someone is sending us stuff.
-	/// </summary>
-	internal class SmtpServerTransaction
+    /// <summary>
+    /// Represents an SMTP Server Transaction.
+    /// That is a Transaction where we are the Server and someone is sending us stuff.
+    /// </summary>
+    internal class SmtpServerTransaction
 	{
 		/// <summary>
 		/// The destination for this message.
@@ -238,7 +237,7 @@ namespace MantaMTA.Core.Server
 				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
 			// Attempt to Enqueue the Email for Relaying.
-			if (!await QueueManager.Instance.EnqueueAsync(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data))
+			if (QueueManager.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data))
 				return SmtpServerTransactionAsyncResult.FailedToEnqueue;
 
 			return SmtpServerTransactionAsyncResult.SuccessMessageQueued;

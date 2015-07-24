@@ -29,15 +29,13 @@ namespace MantaMTA.Core.Server
 		/// <param name="rcptTo">The envelope rcpt to.</param>
 		/// <param name="message">The Email.</param>
 		/// <returns>True if the Message has been queued, false if not.</returns>
-		public async Task<bool> EnqueueAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
+		public bool Enqueue(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
 		{
 			// Try to queue the message in RabbitMQ.
 			if (MtaParameters.RabbitMQ.IsEnabled && RabbitMq.RabbitMqInboundQueueManager.Enqueue(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message))
 				return true;
 
 			return false;
-			// If we failed to queue in RabbitMQ there must be something wrong so try to go to SQL.
-			return await EnqueueSqlAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
 		}
 
 		/// <summary>
@@ -177,7 +175,7 @@ COMMIT TRANSACTION";
 						Logging.Warn("Server Queue Manager", ex);
 					}
 				}
-				catch(Exception ex)
+				catch(Exception)
 				{
 					//Logging.Error("Bulk Importer Error", ex);
 				}

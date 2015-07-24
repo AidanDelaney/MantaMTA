@@ -698,7 +698,7 @@ namespace MantaMTA.Core.Events
 
 		internal async Task<int> SaveAsync(MantaEvent evt)
 		{
-			return await MantaMTA.Core.DAL.EventDB.SaveAsync(evt);
+			return await EventDB.SaveAsync(evt);
 		}
 
 		/// <summary>
@@ -708,7 +708,7 @@ namespace MantaMTA.Core.Events
 		/// <returns>The MantaEvent or NULL if ID doesn't belong to any.</returns>
 		internal MantaEvent GetEvent(int ID)
 		{
-			return MantaMTA.Core.DAL.EventDB.GetEvent(ID);
+			return EventDB.GetEvent(ID);
 		}
 
 		/// <summary>

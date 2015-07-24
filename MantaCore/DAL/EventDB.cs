@@ -161,12 +161,25 @@ ELSE
 		/// <param name="record">The data record to fill with.</param>
 		private static void FillMantaBounceEvent(MantaBounceEvent evt, IDataRecord record)
 		{
-			evt.BounceInfo = new BouncePair
-			{
-				BounceCode = (MantaBounceCode)record.GetInt32("evn_bounceCode_id"),
-				BounceType = (MantaBounceType)record.GetInt32("evn_bounceType_id")
-			};
-			evt.Message = record.GetString("evn_bounceEvent_message");
+            if (record.IsDBNull("evn_bounceCode_id"))   // The bounce record is incomplete
+            {
+                evt.BounceInfo = new BouncePair
+                {
+                    BounceCode = MantaBounceCode.Unknown,   // Don't know what the bounce was.
+                    BounceType = MantaBounceType.Soft // Assume soft bounce, just to be nice. If it happens 3 times sentoi will mark bad.
+                };
+
+                evt.Message = string.Empty; // There is no message.
+            }
+            else
+            {
+                evt.BounceInfo = new BouncePair
+                {
+                    BounceCode = (MantaBounceCode)record.GetInt32("evn_bounceCode_id"),
+                    BounceType = (MantaBounceType)record.GetInt32("evn_bounceType_id")
+                };
+                evt.Message = record.GetString("evn_bounceEvent_message");
+            }
 		}
 	}
 }

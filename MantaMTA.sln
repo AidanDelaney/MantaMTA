@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaCore", "MantaCore\MantaCore.csproj", "{ABF5EF93-77AD-44F4-933F-FF6CCE139AAA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MantaCoreTests", "MantaCoreTests\MantaCoreTests.csproj", "{0C43A363-4A3F-4FE8-B853-872578CDD1AD}"

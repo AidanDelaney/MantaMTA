@@ -88,7 +88,7 @@ namespace MantaMTA.Core.Smtp
 							await Task.Delay(30 * 1000);
 						}
 					}
-					catch (Exception ex)
+					catch (Exception)
 					{
 						//Logging.Debug("SmtpClientQueue :: RunInUseCleaner", ex);
 						RunInUseCleaner();
