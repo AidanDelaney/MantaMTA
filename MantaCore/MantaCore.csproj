@@ -58,11 +58,7 @@
     <Compile Include="Client\BO\MtaMessage.cs" />
     <Compile Include="Client\BO\MtaQueuedMessage.cs" />
     <Compile Include="Client\MessageSender.cs" />
-    <Compile Include="Client\BO\MtaMessageSql.cs" />
-    <Compile Include="Client\BO\MtaQueuedMessageSql.cs" />
-    <Compile Include="Client\QueueManager.cs" />
     <Compile Include="Client\ServiceNotAvailableManager.cs" />
-    <Compile Include="Client\MessageSenderSql.cs" />
     <Compile Include="DAL\CfgLocalDomains.cs" />
     <Compile Include="DAL\CfgPara.cs" />
     <Compile Include="DAL\CfgRelayingPermittedIP.cs" />

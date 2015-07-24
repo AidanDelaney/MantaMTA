@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MantaMTA.Core.Client.BO
 {
-	/// <summary>
-	/// Represents an Inbound Email that is going to be queued for relaying, but has not yet been.
-	/// </summary>
-	public class MtaMessage
+    /// <summary>
+    /// Represents an Inbound Email that is going to be queued for relaying, but has not yet been.
+    /// </summary>
+    public class MtaMessage
 	{
 		/// <summary>
 		/// ID of the RabbitMQ delivery that this message represents.

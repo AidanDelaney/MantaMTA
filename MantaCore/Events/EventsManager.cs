@@ -598,7 +598,7 @@ namespace MantaMTA.Core.Events
 					}
 				}
 				// Function to use against BodyParts to find a return-path header.
-				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = delegate(MessageHeaderCollection headers)
+				Func<MessageHeaderCollection, bool> checkForReturnPathHeaders = delegate (MessageHeaderCollection headers)
 				{
 					MessageHeader returnPathHeader = headers.GetFirstOrDefault("Return-Path");
 

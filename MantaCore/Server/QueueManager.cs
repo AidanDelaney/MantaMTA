@@ -39,22 +39,6 @@ namespace MantaMTA.Core.Server
 		}
 
 		/// <summary>
-		/// Enqueues the Inbound Message in SQL Server.
-		/// </summary>
-		/// <param name="messageID">ID of the Message being Queued.</param>
-		/// <param name="ipGroupID">ID of the Virtual MTA Group to send the Message through.</param>
-		/// <param name="internalSendID">ID of the Send the Message is apart of.</param>
-		/// <param name="mailFrom">The envelope mailfrom, should be return-path in most instances.</param>
-		/// <param name="rcptTo">The envelope rcpt to.</param>
-		/// <param name="message">The Email.</param>
-		/// <returns>True if the Message has been queued, false if not.</returns>
-		private async Task<bool> EnqueueSqlAsync(Guid messageID, int ipGroupID, int internalSendID, string mailFrom, string[] rcptTo, string message)
-		{
-			// Need to put this message in the database for relaying to pickup
-			return await MantaMTA.Core.Client.MessageSenderSql.Instance.EnqueueAsync(messageID, ipGroupID, internalSendID, mailFrom, rcptTo, message);
-		}
-
-		/// <summary>
 		/// Thread used for copying data from RabbitMQ to SQL Server.
 		/// </summary>
 		private Thread _bulkInsertThread = null;
