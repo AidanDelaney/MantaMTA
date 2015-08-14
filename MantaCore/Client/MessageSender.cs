@@ -28,9 +28,11 @@ namespace MantaMTA.Core.Client
 		private List<string> _blacklistMx = new List<string> { 
 			".",
 			"anmail.namebrightmail.com",
-			"mx-uk.newses.de",
+			"amail.germanmails.biz",
+            "mx-uk.newses.de",
 			"spamgoes.in",
-			"uk-com-wildcard-null-mx.centralnic.net"
+			"uk-com-wildcard-null-mx.centralnic.net",
+			"yudifuta.weirdcups.com" // Spamlist
 		};
 
 		#region Singleton

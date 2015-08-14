@@ -16,6 +16,7 @@ namespace WebInterfaceLib.DAL
 		/// <returns>Count of the messages waiting in the queue.</returns>
 		public static long GetQueueCount(SendStatus[] sendStatus)
 		{
+			return 0;
 			using (SqlConnection conn = MantaDB.GetSqlConnection())
 			{
 				SqlCommand cmd = conn.CreateCommand();

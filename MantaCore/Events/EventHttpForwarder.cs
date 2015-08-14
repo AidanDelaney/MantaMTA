@@ -81,10 +81,11 @@ namespace MantaMTA.Core.Events
                     {
                         // Found events to forward, create and run Tasks to forward.
                         var eventTasks = new Task[events.Count];
-                        for (var i = 0; i < events.Count; i++)
-                            eventTasks[0] = Task.Factory.StartNew(async (evt) => await ForwardEventAsync((MantaEvent)evt), events[i]);
+						for (var i = 0; i < events.Count; i++)
+							ForwardEventAsync(events[i]).Wait();
+                           // eventTasks[0] = Task.Factory.StartNew(async (evt) => await ForwardEventAsync((MantaEvent)evt), events[i]);
 
-                        Task.WaitAll(eventTasks);
+                        //Task.WaitAll(eventTasks);
                     }
                 }
 			}
