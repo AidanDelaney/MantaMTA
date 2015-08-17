@@ -32,7 +32,8 @@ namespace MantaMTA.Core.Client
             "mx-uk.newses.de",
 			"spamgoes.in",
 			"uk-com-wildcard-null-mx.centralnic.net",
-			"yudifuta.weirdcups.com" // Spamlist
+			"yudifuta.weirdcups.com", // Spamlist
+            "erick555.servehttp.com"
 		};
 
 		#region Singleton
@@ -95,7 +96,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// If TRUE then request for client to stop has been made.
 		/// </summary>
-		private bool _IsStopping = false;
+		private volatile bool _IsStopping = false;
 
 		/// <summary>
 		/// IStopRequired method. Will be called by MantaCoreEvents on stopping of MTA.

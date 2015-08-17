@@ -44,7 +44,7 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// Will be set to true when MantaMTA is stopping.
 		/// </summary>
-		private bool _IsStopping = false;
+		private volatile bool _IsStopping = false;
 
 		/// <summary>
 		/// Method will be called to stop EventsFileHandler.

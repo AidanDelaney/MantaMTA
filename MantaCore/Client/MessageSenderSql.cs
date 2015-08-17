@@ -61,10 +61,10 @@ namespace MantaMTA.Core.Client
 			this._IsStopping = true;
 
 			// Hold the stopping thread here while we wait for _ClientThread to stop.
-			while (this._ClientThread != null && this._ClientThread.ThreadState != ThreadState.Stopped)
-			{
-				Thread.Sleep(10);
-			}
+		//	while (this._ClientThread != null && this._ClientThread.ThreadState != ThreadState.Stopped)
+			//{
+			//	Thread.Sleep(10);
+			//}
 		}
 
 		/// <summary>
@@ -86,6 +86,7 @@ namespace MantaMTA.Core.Client
 		/// </summary>
 		public void Start()
 		{
+			return;
 			if (this._ClientThread == null || this._ClientThread.ThreadState != ThreadState.Running)
 			{
 				this._IsStopping = false;

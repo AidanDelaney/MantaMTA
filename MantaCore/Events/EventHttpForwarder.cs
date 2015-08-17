@@ -18,7 +18,7 @@ namespace MantaMTA.Core.Events
 		/// <summary>
 		/// Will be set to true when MTA is stopping.
 		/// </summary>
-		private bool _IsStopping = false;
+		private volatile bool _IsStopping = false;
 
 		/// <summary>
 		/// Should be set to true when processing events and false when done.

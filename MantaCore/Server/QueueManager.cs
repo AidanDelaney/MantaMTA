@@ -62,7 +62,7 @@ namespace MantaMTA.Core.Server
 		/// <summary>
 		/// Will be set to true when the Stop() method is called.
 		/// </summary>
-		private bool _isStopping = false;
+		private volatile bool _isStopping = false;
 
 		/// <summary>
 		/// Will be set to true when the _bulkInsertThread has stopped.

@@ -32,7 +32,7 @@ namespace MantaMTA.Core.Client
 		/// <summary>
 		/// When set to TRUE signifies that the MTA is stopping.
 		/// </summary>
-		private bool _IsStopping = false;
+		private volatile bool _IsStopping = false;
 
 		/// <summary>
 		/// THE QUEUE.
