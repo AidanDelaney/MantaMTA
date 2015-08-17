@@ -2,6 +2,8 @@
 using MantaMTA.Core.DAL;
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
+
 namespace MantaMTA.Core.Message
 {
 	public static class ReturnPathManager
@@ -68,13 +70,19 @@ namespace MantaMTA.Core.Message
 		/// </summary>
 		/// <param name="messageID">ID of the message.</param>
 		/// <returns>The generated return path or string.empty if no message with ID found.</returns>
+		public static async Task<string> GetReturnPathFromMessageIDAsync(Guid messageID)
+		{
+			return await MtaMessageDB.GetMailFrom(messageID).ConfigureAwait(false);
+		}
+
+		/// <summary>
+		/// Gets a return path from a MtaMessage ID.
+		/// </summary>
+		/// <param name="messageID">ID of the message.</param>
+		/// <returns>The generated return path or string.empty if no message with ID found.</returns>
 		public static string GetReturnPathFromMessageID(Guid messageID)
 		{
-			MtaMessageSql msg = MtaMessageDB.GetMtaMessage(messageID);
-			if (msg == null)
-				return string.Empty;
-
-			return msg.MailFrom.ToString();
+			return GetReturnPathFromMessageIDAsync(messageID).Result;
 		}
 	}
 }
