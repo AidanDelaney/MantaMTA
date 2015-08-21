@@ -9,155 +9,176 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     <_PublishTargetUrl>c:\temp\mantamta</_PublishTargetUrl>
   </PropertyGroup>
   <ItemGroup>
+    <File Include="AppendSendMetadata.ashx">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="bin/App_global.asax.compiled">
+      <publishTime>08/21/2015 12:30:31</publishTime>
+    </File>
+    <File Include="bin/App_global.asax.dll">
+      <publishTime>08/21/2015 12:30:31</publishTime>
+    </File>
     <File Include="bin/Log4net.config">
-      <publishTime>10/10/2013 12:37:16</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="bin/log4net.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:03:41</publishTime>
     </File>
     <File Include="bin/MantaCore.dll">
-      <publishTime>02/12/2014 13:20:47</publishTime>
+      <publishTime>08/21/2015 12:11:54</publishTime>
     </File>
     <File Include="bin/MantaEventTypes.dll">
-      <publishTime>02/12/2014 13:20:46</publishTime>
+      <publishTime>08/21/2015 12:11:53</publishTime>
     </File>
     <File Include="bin/Microsoft.Web.Infrastructure.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:56</publishTime>
     </File>
     <File Include="bin/Microsoft.Web.Mvc.FixedDisplayModes.dll">
       <publishTime>10/10/2013 12:31:39</publishTime>
     </File>
     <File Include="bin/Newtonsoft.Json.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:05:21</publishTime>
+    </File>
+    <File Include="bin/RabbitMQ.Client.dll">
+      <publishTime>08/21/2015 12:04:12</publishTime>
+    </File>
+    <File Include="bin/System.Net.Http.Extensions.dll">
+      <publishTime>08/21/2015 12:05:57</publishTime>
     </File>
     <File Include="bin/System.Net.Http.Formatting.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:05:40</publishTime>
+    </File>
+    <File Include="bin/System.Net.Http.Primitives.dll">
+      <publishTime>08/21/2015 12:05:57</publishTime>
     </File>
     <File Include="bin/System.Web.Helpers.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:57</publishTime>
     </File>
     <File Include="bin/System.Web.Http.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:05:41</publishTime>
     </File>
     <File Include="bin/System.Web.Http.WebHost.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:05:43</publishTime>
     </File>
     <File Include="bin/System.Web.Mvc.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:21:04</publishTime>
     </File>
     <File Include="bin/System.Web.Razor.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:55</publishTime>
     </File>
     <File Include="bin/System.Web.WebPages.Deployment.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:57</publishTime>
     </File>
     <File Include="bin/System.Web.WebPages.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:57</publishTime>
     </File>
     <File Include="bin/System.Web.WebPages.Razor.dll">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:20:57</publishTime>
     </File>
     <File Include="bin/WebInterface.dll">
-      <publishTime>02/12/2014 13:20:48</publishTime>
+      <publishTime>08/21/2015 12:21:21</publishTime>
     </File>
     <File Include="bin/WebInterfaceLib.dll">
-      <publishTime>02/12/2014 13:20:47</publishTime>
+      <publishTime>08/21/2015 12:11:54</publishTime>
     </File>
     <File Include="packages.config">
-      <publishTime>10/10/2013 12:31:39</publishTime>
+      <publishTime>08/21/2015 12:21:05</publishTime>
     </File>
     <File Include="PrecompiledApp.config">
-      <publishTime>02/12/2014 13:20:50</publishTime>
+      <publishTime>08/21/2015 12:30:28</publishTime>
     </File>
     <File Include="Services/OutboundRulesService.asmx">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Services/SettingsService.asmx">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Services/VirtualMtaService.asmx">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Bounces/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Dashboard/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Views/Home/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/OutboundRules/Delete.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/OutboundRules/Edit.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/OutboundRules/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="Views/RabbitMQ/Index.cshtml">
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Views/Sends/Bounces.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Deferred.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Discard.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Failed.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Views/Sends/Overview.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Pause.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Queue.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Resume.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Speed.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Views/Sends/VirtualMTA.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Waiting.cshtml">
       <publishTime>11/07/2013 16:23:48</publishTime>
     </File>
     <File Include="Views/Sends/_ReportLayout.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Views/ServerStatus/Index.cshtml">
-      <publishTime>02/12/2014 13:14:55</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Settings/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/VirtualMta/Edit.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/VirtualMta/EditGroup.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/VirtualMta/Index.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Web.config">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>08/21/2015 12:29:41</publishTime>
     </File>
     <File Include="Views/_Layout.cshtml">
-      <publishTime>10/10/2013 12:31:38</publishTime>
+      <publishTime>07/01/2015 15:19:54</publishTime>
     </File>
     <File Include="Web.config">
-      <publishTime>02/12/2014 13:20:48</publishTime>
+      <publishTime>08/21/2015 12:30:27</publishTime>
     </File>
   </ItemGroup>
 </Project>
