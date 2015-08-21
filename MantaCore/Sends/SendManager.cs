@@ -60,7 +60,7 @@ namespace MantaMTA.Core.Sends
 			if (!this._Sends.TryGetValue(sendId, out snd))
 			{
 				// Doesn't exist so need to create or load from datbase.
-				snd = await SendDB.CreateAndGetInternalSendIDAsync(sendId);
+				snd = await SendDB.CreateAndGetInternalSendIDAsync(sendId).ConfigureAwait(false);
 
 				// Add are new item to the cache.
 				this._Sends.TryAdd(sendId, snd);
@@ -69,6 +69,17 @@ namespace MantaMTA.Core.Sends
 
 			// return the value.
 			return snd;
+		}
+
+		/// <summary>
+		/// Gets Send with the specified sendID.
+		/// If it doesn't exist it will be created in the database.
+		/// </summary>
+		/// <param name="sendId">ID of the Send.</param>
+		/// <returns>The Send.</returns>
+		public Send GetSend(string sendId)
+		{
+			return Task.Run(()=>GetSendAsync(sendId)).Result;
 		}
 
 		/// <summary>

@@ -33,7 +33,7 @@ namespace WebInterface
 				return;
 			}
 
-			MantaMTA.Core.Sends.Send snd = MantaMTA.Core.Sends.SendManager.Instance.GetSendAsync(sendID).Result;
+			MantaMTA.Core.Sends.Send snd = MantaMTA.Core.Sends.SendManager.Instance.GetSend(sendID);
 			WebInterfaceLib.DAL.SendDB.SaveSendMetadata(snd.InternalID, new WebInterfaceLib.BO.SendMetadata { 
 				Name = name,
 				Value = value
