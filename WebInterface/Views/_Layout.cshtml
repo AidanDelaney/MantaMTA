@@ -5,21 +5,12 @@
 <title>MantaMTA - @ViewBag.Title</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" type="text/css" href="/assets/bootstrap/css/bootstrap.css">
-<link rel="stylesheet" type="text/css" href="/assets/bootstrap/css/bootstrap-responsive.css">
-<link rel="stylesheet" type="text/css" href="/assets/css/app-base.css">
-<link rel="stylesheet" type="text/css" href="/assets/css/fonts.css">
-<link rel="stylesheet" type="text/css" href="/assets/css/jquery.jqplot.css">
+@Styles.Render("~/resources/css/bootstrap")
+@Styles.Render("~/resources/css/jqplot")
 
-<script src="/assets/js/jquery.min.js"></script>
-<script src="/assets/bootstrap/js/bootstrap.min.js"></script>
-<script src="/assets/js/plugins/jquery.sparkline.min.js"></script>
-<script src="/assets/js/plugins/jquery.jqplot.min.js"></script>
-
-<!--[if lt IE 9]>
-<script src="/assets/js/html5shiv.js"></script>
-<script src="/assets/js/plugins/excanvas.min.js"></script>
-<![endif]-->
+@Scripts.Render("~/resources/js/jquery")
+@Scripts.Render("~/resources/js/bootstrap")
+@Scripts.Render("~/resources/js/jqplot")
 	
 	<script type="text/javascript">
 		$(document).ready(function () {

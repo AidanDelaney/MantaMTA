@@ -12,6 +12,9 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     <File Include="AppendSendMetadata.ashx">
       <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
+    <File Include="bin/Antlr3.Runtime.dll">
+      <publishTime>08/21/2015 13:00:45</publishTime>
+    </File>
     <File Include="bin/App_global.asax.compiled">
       <publishTime>08/21/2015 12:30:31</publishTime>
     </File>
@@ -25,13 +28,13 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>08/21/2015 12:03:41</publishTime>
     </File>
     <File Include="bin/MantaCore.dll">
-      <publishTime>08/21/2015 12:11:54</publishTime>
+      <publishTime>08/21/2015 13:32:33</publishTime>
     </File>
     <File Include="bin/MantaEventTypes.dll">
       <publishTime>08/21/2015 12:11:53</publishTime>
     </File>
     <File Include="bin/Microsoft.Web.Infrastructure.dll">
-      <publishTime>08/21/2015 12:20:56</publishTime>
+      <publishTime>08/21/2015 12:54:19</publishTime>
     </File>
     <File Include="bin/Microsoft.Web.Mvc.FixedDisplayModes.dll">
       <publishTime>10/10/2013 12:31:39</publishTime>
@@ -63,6 +66,9 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     <File Include="bin/System.Web.Mvc.dll">
       <publishTime>08/21/2015 12:21:04</publishTime>
     </File>
+    <File Include="bin/System.Web.Optimization.dll">
+      <publishTime>08/21/2015 13:01:24</publishTime>
+    </File>
     <File Include="bin/System.Web.Razor.dll">
       <publishTime>08/21/2015 12:20:55</publishTime>
     </File>
@@ -75,17 +81,311 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     <File Include="bin/System.Web.WebPages.Razor.dll">
       <publishTime>08/21/2015 12:20:57</publishTime>
     </File>
+    <File Include="bin/WebGrease.dll">
+      <publishTime>08/21/2015 13:00:49</publishTime>
+    </File>
     <File Include="bin/WebInterface.dll">
-      <publishTime>08/21/2015 12:21:21</publishTime>
+      <publishTime>08/21/2015 13:41:22</publishTime>
     </File>
     <File Include="bin/WebInterfaceLib.dll">
-      <publishTime>08/21/2015 12:11:54</publishTime>
+      <publishTime>08/21/2015 13:32:33</publishTime>
+    </File>
+    <File Include="Content/app.css">
+      <publishTime>08/21/2015 13:31:39</publishTime>
+    </File>
+    <File Include="Content/bootstrap-responsive.css">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Content/bootstrap-responsive.min.css">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Content/bootstrap.css">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Content/bootstrap.min.css">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Content/fonts.css">
+      <publishTime>08/21/2015 13:25:51</publishTime>
+    </File>
+    <File Include="Content/fonts/ArchivoNarrow-Bold.ttf">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="Content/fonts/ArchivoNarrow-BoldItalic.ttf">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="Content/fonts/ArchivoNarrow-Italic.ttf">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="Content/fonts/ArchivoNarrow-Regular.ttf">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="Content/fonts/OFL.txt">
+      <publishTime>04/28/2015 17:50:15</publishTime>
+    </File>
+    <File Include="favicon.ico">
+      <publishTime>08/21/2015 13:39:14</publishTime>
+    </File>
+    <File Include="img/glyphicons-halflings-white.png">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="img/glyphicons-halflings.png">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="img/manta-logo.png">
+      <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="packages.config">
-      <publishTime>08/21/2015 12:21:05</publishTime>
+      <publishTime>08/21/2015 13:26:59</publishTime>
     </File>
     <File Include="PrecompiledApp.config">
-      <publishTime>08/21/2015 12:30:28</publishTime>
+      <publishTime>08/21/2015 13:41:23</publishTime>
+    </File>
+    <File Include="Scripts/bootstrap.js">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Scripts/bootstrap.min.js">
+      <publishTime>08/21/2015 13:14:25</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/changes.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/copyright.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/excanvas.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/excanvas.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/gpl-2.0.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jqPlotCssStyling.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jqPlotOptions.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.jqplot.css">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.jqplot.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.jqplot.min.css">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.jqplot.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/jquery.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/MIT-LICENSE.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/optionsTutorial.txt">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.barRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.barRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.BezierCurveRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.BezierCurveRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.blockRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.blockRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.bubbleRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.bubbleRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasAxisLabelRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasAxisLabelRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasAxisTickRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasAxisTickRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasOverlay.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasOverlay.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasTextRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.canvasTextRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.categoryAxisRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.categoryAxisRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.ciParser.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.ciParser.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.cursor.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.cursor.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.dateAxisRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.dateAxisRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.donutRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.donutRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.dragable.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.dragable.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.enhancedLegendRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.enhancedLegendRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.funnelRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.funnelRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.highlighter.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.highlighter.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.json2.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.json2.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.logAxisRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.logAxisRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mekkoAxisRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mekkoAxisRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mekkoRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mekkoRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.meterGaugeRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.meterGaugeRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mobile.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.mobile.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.ohlcRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.ohlcRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pieRenderer.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pieRenderer.min.js">
+      <publishTime>08/21/2015 13:26:59</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pointLabels.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pointLabels.min.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidAxisRenderer.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidAxisRenderer.min.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidGridRenderer.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidGridRenderer.min.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidRenderer.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.pyramidRenderer.min.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.trendline.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/plugins/jqplot.trendline.min.js">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/README.txt">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jqPlot/usage.txt">
+      <publishTime>08/21/2015 13:26:58</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.1.js">
+      <publishTime>08/21/2015 12:55:29</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.1.min.js">
+      <publishTime>08/21/2015 12:55:29</publishTime>
+    </File>
+    <File Include="Scripts/jquery-1.9.1.min.map">
+      <publishTime>08/21/2015 12:55:29</publishTime>
     </File>
     <File Include="Services/OutboundRulesService.asmx">
       <publishTime>04/28/2015 17:50:15</publishTime>
@@ -100,7 +400,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Dashboard/Index.cshtml">
-      <publishTime>07/01/2015 15:19:54</publishTime>
+      <publishTime>08/21/2015 13:32:00</publishTime>
     </File>
     <File Include="Views/Home/Index.cshtml">
       <publishTime>04/28/2015 17:50:15</publishTime>
@@ -145,7 +445,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Sends/Speed.cshtml">
-      <publishTime>07/01/2015 15:19:54</publishTime>
+      <publishTime>08/21/2015 13:32:11</publishTime>
     </File>
     <File Include="Views/Sends/VirtualMTA.cshtml">
       <publishTime>04/28/2015 17:50:15</publishTime>
@@ -172,13 +472,13 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>04/28/2015 17:50:15</publishTime>
     </File>
     <File Include="Views/Web.config">
-      <publishTime>08/21/2015 12:29:41</publishTime>
+      <publishTime>08/21/2015 13:12:27</publishTime>
     </File>
     <File Include="Views/_Layout.cshtml">
-      <publishTime>07/01/2015 15:19:54</publishTime>
+      <publishTime>08/21/2015 13:30:02</publishTime>
     </File>
     <File Include="Web.config">
-      <publishTime>08/21/2015 12:30:27</publishTime>
+      <publishTime>08/21/2015 13:32:34</publishTime>
     </File>
   </ItemGroup>
 </Project>
