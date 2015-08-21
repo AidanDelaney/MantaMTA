@@ -6,3 +6,4 @@ syntax: glob
 *.vspx
 Database/MtaDB/scriptDb.log
 /packages/
+/.vs/
