@@ -142,7 +142,7 @@ namespace MantaMTA.Core.RabbitMq
 			{
 				IModel channel = pChannel.Channel;
 				IBasicProperties msgProps = channel.CreateBasicProperties();
-				msgProps.SetPersistent(true);
+				msgProps.Persistent = true;
 				channel.BasicPublish(string.Empty, GetQueueNameFromEnum(queue), true, msgProps, message);
 				if (noConfirm)
 					return true;
