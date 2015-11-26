@@ -15,7 +15,7 @@ namespace MantaMTA.Core.Server
 		private QueueManager() { }
 
 		/// <summary>
-		/// The maximum time between loooking for messages that have been queued in RabbitMQ.
+		/// The maximum time between looking for messages that have been queued in RabbitMQ.
 		/// </summary>
 		private const int RABBITMQ_MAX_TIME_IN_QUEUE = 5 * 1000;
 

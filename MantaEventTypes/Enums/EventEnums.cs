@@ -24,7 +24,12 @@ namespace MantaMTA.Core.Events
 		/// complaints created by each campaign. Continuing to send to an address that has complained about spam can 
 		/// have a negative effect on your deliverability.
 		/// </summary>
-		Abuse = 3
+		Abuse = 3,
+		/// <summary>
+		/// Event occurs when a message has been in Manta's outbound queue over the <paramref name="MantaMTA.Core.MtaParameters.MtaMaxTimeInQueue"/> value
+		/// without it being successfully accepted by a remote MTA. Manta stops attempting to send it and creates a TimedOutInQueue Event.
+		/// </summary>
+		TimedOutInQueue = 4
 	}
 
 

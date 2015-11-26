@@ -386,7 +386,7 @@ namespace MantaMTA.Core.Server
 								await smtpStream.WriteLineAsync("554 Send Discarding.");
 								break;
 							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.FailedToEnqueue:
-								await smtpStream.WriteLineAsync("421 Service unavalible");
+								await smtpStream.WriteLineAsync("421 Service unavailable");
 								break;
 							case SmtpServerTransaction.SmtpServerTransactionAsyncResult.Unknown:
 							default:

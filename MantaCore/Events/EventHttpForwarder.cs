@@ -122,6 +122,9 @@ namespace MantaMTA.Core.Events
                     case MantaEventType.Bounce:
                         eventJson = new JavaScriptSerializer().Serialize((MantaBounceEvent)evt);
                         break;
+					case MantaEventType.TimedOutInQueue:
+                        eventJson = new JavaScriptSerializer().Serialize((MantaTimedOutInQueueEvent)evt);
+                        break;
                     default:
                         eventJson = new JavaScriptSerializer().Serialize(evt);
                         break;
