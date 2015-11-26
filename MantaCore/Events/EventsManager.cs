@@ -330,8 +330,38 @@ namespace MantaMTA.Core.Events
 		{
 			bounceIdentification = new EmailProcessingDetails();
 
+
+
+			// Check for TimedOutInQueue message first.
+			if (response.Equals(MtaParameters.TIMED_OUT_IN_QUEUE_MESSAGE, StringComparison.OrdinalIgnoreCase))
+			{
+				bounceIdentification = null;
+
+				MantaTimedOutInQueueEvent timeOut = new MantaTimedOutInQueueEvent
+				{
+					EventType = MantaEventType.TimedOutInQueue,
+					EmailAddress = rcptTo,
+					SendID = SendDB.GetSend(internalSendID).ID,
+					EventTime = DateTime.UtcNow
+				};
+
+				// Log to DB.
+				Save(timeOut);
+
+				// All done return true.
+				return true;
+			}
+
+
+
+
+
+
+
+
 			BouncePair bouncePair = new BouncePair();
 			string bounceMessage = string.Empty;
+
 
 			if (ParseBounceMessage(response, out bouncePair, out bounceMessage, out bounceIdentification))
 			{

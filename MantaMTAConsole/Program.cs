@@ -37,7 +37,10 @@ namespace MantaMTA.Console
 			MessageSender.Instance.Start();
 			// Start the events (bounce/abuse) handler.
 			EventsFileHandler.Instance.Start();
-			
+
+			QueueManager.Instance.Start();
+			MantaMTA.Core.RabbitMq.RabbitMqInboundStagingHandler.Start();
+
 			bool quit = false;
 			while (!quit)
 			{

@@ -56,38 +56,38 @@ namespace MantaMTA.Core.Events
 
 			try
 			{
-                // Keep looping as long as the MTA is running.
-                while (!_IsStopping)
-                {
-                    MantaEventCollection events = null;
-                    // Get events for forwarding.
-                    try
-                    {
-                        events = Core.DAL.EventDB.GetEventsForForwarding(10);
-                    }
-                    catch (SqlNullValueException)
-                    {
-                        events = new MantaEventCollection();
-                    }
+				// Keep looping as long as the MTA is running.
+				while (!_IsStopping)
+				{
+					MantaEventCollection events = null;
+					// Get events for forwarding.
+					try
+					{
+						events = Core.DAL.EventDB.GetEventsForForwarding(10);
+					}
+					catch (SqlNullValueException)
+					{
+						events = new MantaEventCollection();
+					}
 
-                    
-                    if (events.Count == 0)
-                    {
-                        // No events to forward sleep for a second and look again.
-                        Thread.Sleep(1000);
-                        continue;
-                    }
-                    else
-                    {
-                        // Found events to forward, create and run Tasks to forward.
-                        var eventTasks = new Task[events.Count];
+
+					if (events.Count == 0)
+					{
+						// No events to forward sleep for a second and look again.
+						Thread.Sleep(1000);
+						continue;
+					}
+					else
+					{
+						// Found events to forward, create and run Tasks to forward.
+						var eventTasks = new Task[events.Count];
 						for (var i = 0; i < events.Count; i++)
 							ForwardEventAsync(events[i]).Wait();
-                           // eventTasks[0] = Task.Factory.StartNew(async (evt) => await ForwardEventAsync((MantaEvent)evt), events[i]);
+						// eventTasks[0] = Task.Factory.StartNew(async (evt) => await ForwardEventAsync((MantaEvent)evt), events[i]);
 
-                        //Task.WaitAll(eventTasks);
-                    }
-                }
+						//Task.WaitAll(eventTasks);
+					}
+				}
 			}
 			catch (Exception ex)
 			{
@@ -100,65 +100,68 @@ namespace MantaMTA.Core.Events
 			_IsRunning = false;
 		}
 
-        private async Task ForwardEventAsync(MantaEvent evt)
-        {
-            try
-            {
-                if (_IsStopping)
-                    return;
+		private async Task ForwardEventAsync(MantaEvent evt)
+		{
+			try
+			{
+				if (_IsStopping)
+					return;
 
-                // Create the HTTP POST request to the remove endpoint.
-                var httpRequest = (HttpWebRequest)WebRequest.Create(MtaParameters.EventForwardingHttpPostUrl);
-                httpRequest.Method = "POST";
-                httpRequest.ContentType = "text/json";
+				// Create the HTTP POST request to the remove endpoint.
+				var httpRequest = (HttpWebRequest)WebRequest.Create(MtaParameters.EventForwardingHttpPostUrl);
+				httpRequest.Method = "POST";
+				httpRequest.ContentType = "text/json";
 
-                // Convert the Event to JSON.
-                string eventJson = string.Empty;
-                switch (evt.EventType)
-                {
-                    case MantaEventType.Abuse:
-                        eventJson = new JavaScriptSerializer().Serialize((MantaAbuseEvent)evt);
-                        break;
-                    case MantaEventType.Bounce:
-                        eventJson = new JavaScriptSerializer().Serialize((MantaBounceEvent)evt);
-                        break;
-                    default:
-                        eventJson = new JavaScriptSerializer().Serialize(evt);
-                        break;
-                }
+				// Convert the Event to JSON.
+				string eventJson = string.Empty;
+				switch (evt.EventType)
+				{
+					case MantaEventType.Abuse:
+						eventJson = new JavaScriptSerializer().Serialize((MantaAbuseEvent)evt);
+						break;
+					case MantaEventType.Bounce:
+						eventJson = new JavaScriptSerializer().Serialize((MantaBounceEvent)evt);
+						break;
+					case MantaEventType.TimedOutInQueue:
+						eventJson = new JavaScriptSerializer().Serialize((MantaTimedOutInQueueEvent)evt);
+						break;
+					default:
+						eventJson = new JavaScriptSerializer().Serialize(evt);
+						break;
+				}
 
-                // Remove the forwarded property as it is internal only.
-                eventJson = Regex.Replace(eventJson, ",\"Forwarded\":(false|true)", string.Empty);
+				// Remove the forwarded property as it is internal only.
+				eventJson = Regex.Replace(eventJson, ",\"Forwarded\":(false|true)", string.Empty);
 
-                // Write the event json to the POST body.
-                using (StreamWriter writer = new StreamWriter(await httpRequest.GetRequestStreamAsync()))
-                {
-                    await writer.WriteAsync(eventJson);
-                }
+				// Write the event json to the POST body.
+				using (StreamWriter writer = new StreamWriter(await httpRequest.GetRequestStreamAsync()))
+				{
+					await writer.WriteAsync(eventJson);
+				}
 
-                // Send the POST and get the response.
-                HttpWebResponse httpResponse = (HttpWebResponse)await httpRequest.GetResponseAsync();
+				// Send the POST and get the response.
+				HttpWebResponse httpResponse = (HttpWebResponse)await httpRequest.GetResponseAsync();
 
-                // Get the response body.
-                string responseBody = string.Empty;
-                using (StreamReader reader = new StreamReader(httpResponse.GetResponseStream()))
-                {
-                    responseBody = await reader.ReadToEndAsync();
-                }
+				// Get the response body.
+				string responseBody = string.Empty;
+				using (StreamReader reader = new StreamReader(httpResponse.GetResponseStream()))
+				{
+					responseBody = await reader.ReadToEndAsync();
+				}
 
-                // If response body is just a "." then event was received successfully.
-                if (responseBody.Trim().StartsWith("."))
-                {
-                    // Log that the event forwared.
-                    evt.Forwarded = true;
-                    await EventsManager.Instance.SaveAsync(evt);
-                }
-            }
-            catch (Exception ex)
-            {
-                // We failed to forward the event. Most likly because the remote server didn't respond.
-                Logging.Error("Failed to forward event " + evt.ID, ex);
-            }
-        }
+				// If response body is just a "." then event was received successfully.
+				if (responseBody.Trim().StartsWith("."))
+				{
+					// Log that the event forwared.
+					evt.Forwarded = true;
+					await EventsManager.Instance.SaveAsync(evt);
+				}
+			}
+			catch (Exception ex)
+			{
+				// We failed to forward the event. Most likly because the remote server didn't respond.
+				Logging.Error("Failed to forward event " + evt.ID, ex);
+			}
+		}
 	}
 }

@@ -1,8 +1,10 @@
-﻿using MantaMTA.Core.Enums;
+﻿using MantaMTA.Core.DAL;
+using MantaMTA.Core.Enums;
 using MantaMTA.Core.Events;
 using MantaMTA.Core.Message;
 using NUnit.Framework;
 using System;
+using System.Linq;
 
 namespace MantaMTA.Core.Tests
 {
@@ -143,6 +145,46 @@ namespace MantaMTA.Core.Tests
 			}
 		}
 
+		/// <summary>
+		/// Check a "Timed out in queue" message from Manta.
+		/// </summary>
+		[Test]
+		public void TimedOutInQueue()
+		{
+			using (System.Transactions.TransactionScope ts = CreateTransactionScopeObject())
+			{
+				MantaEventCollection events = EventsManager.Instance.GetEvents();
+				int initialMaxEventID = events.Max(e => e.ID);
+
+
+				bool result = false;
+				EmailProcessingDetails processingDetails;
+
+				result = EventsManager.Instance.ProcessSmtpResponseMessage(MtaParameters.TIMED_OUT_IN_QUEUE_MESSAGE, "bobobobobobobobobobobob@aol.com", 1, out processingDetails);
+				Assert.IsTrue(result);
+				Assert.IsNull(processingDetails);
+
+
+
+				// Check an Event has been created.
+				events = EventsManager.Instance.GetEvents();
+				int newMaxEventID = events.Max(e => e.ID);
+
+				Assert.AreNotEqual(initialMaxEventID, newMaxEventID);
+
+
+				MantaEvent ev = events.First(e => e.ID == newMaxEventID);
+
+				// Check the new Event record.
+				Assert.IsTrue(ev is MantaTimedOutInQueueEvent);
+				Assert.AreEqual(ev.ID, newMaxEventID);
+				Assert.AreEqual(ev.EventType, MantaEventType.TimedOutInQueue);
+				Assert.AreEqual(ev.EmailAddress, "bobobobobobobobobobobob@aol.com");
+				Assert.AreEqual(ev.SendID, SendDB.GetSend(1).ID);
+				Assert.That(ev.EventTime, Is.EqualTo(DateTime.UtcNow).Within(TimeSpan.FromSeconds(1)));	// Depends on how long it takes to get the Events out of the DB.
+				Assert.IsFalse(ev.Forwarded);
+			}
+		}
 
 		[Test]
 		public void FeedbackLoop()

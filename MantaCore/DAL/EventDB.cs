@@ -141,6 +141,9 @@ ELSE
 					thisEvent = new MantaBounceEvent();
 					FillMantaBounceEvent((thisEvent as MantaBounceEvent), record);
 					break;
+				case MantaEventType.TimedOutInQueue:
+					thisEvent = new MantaTimedOutInQueueEvent();
+					break;
 				default:
 					throw new NotImplementedException("Unknown Event Type (" + type + ")");
 			}

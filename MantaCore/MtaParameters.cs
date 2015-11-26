@@ -26,6 +26,12 @@ namespace MantaMTA.Core
 		public const int OUTBOUND_RULES_DEFAULT_PATTERN_ID = -1;
 
 		/// <summary>
+		/// The string Manta uses when a message could not be delivered within the <paramref name="MantaMTA.Core.MtaParameters.MtaMaxTimeInQueue"/> value.
+		/// This used as the text to process to identify what happened with delivery.
+		/// </summary>
+		public const string TIMED_OUT_IN_QUEUE_MESSAGE = "Timed out in queue.";
+
+		/// <summary>
 		/// Gets the ports that the SMTP server should listen for client connections on.
 		/// This will almost always be 25 & 587.
 		/// </summary>

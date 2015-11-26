@@ -263,7 +263,7 @@ namespace MantaMTA.Core.Client
 			// before picking up. The MAX_TIME_IN_QUEUE should always be enforced.
 			if (msg.AttemptSendAfterUtc - msg.QueuedTimestampUtc > new TimeSpan(0, MtaParameters.MtaMaxTimeInQueue, 0))
 			{
-				await msg.HandleDeliveryFailAsync("Timed out in queue.", null, null);
+				await msg.HandleDeliveryFailAsync(MtaParameters.TIMED_OUT_IN_QUEUE_MESSAGE, null, null);
 				result = false;
 			}
 			else

@@ -72,9 +72,14 @@ namespace MantaMTA.Core.Events
 	/// </summary>
 	public class MantaAbuseEvent : MantaEvent
 	{
-		
 	}
 
+	/// <summary>
+	/// Manta Timed Out In Queue event.  The result of an email failing to be delivered within the maximum allowed time.
+	/// </summary>
+	public class MantaTimedOutInQueueEvent : MantaEvent
+	{
+	}
 
 	/// <summary>
 	/// Holds information about an SMTP code returned by a server as a bounce.
