@@ -33,8 +33,14 @@ namespace MantaMTA.Core.Client
 			"spamgoes.in",
 			"uk-com-wildcard-null-mx.centralnic.net",
 			"yudifuta.weirdcups.com", // Spamlist
-            "erick555.servehttp.com"
-		};
+            "erick555.servehttp.com",
+            "freeletter.me",
+            "muirfieldcontracts.co.uk",
+            "techgroup.me",
+            "exchange.uk.com",
+            "inboxdesign.me",
+            "banff-buchan.ac.uk"
+        };
 
 		#region Singleton
 		/// <summary>

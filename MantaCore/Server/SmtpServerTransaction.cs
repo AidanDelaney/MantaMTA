@@ -237,7 +237,7 @@ namespace MantaMTA.Core.Server
 				ipGroupID = VirtualMta.VirtualMtaManager.GetDefaultVirtualMtaGroup().ID;
 
 			// Attempt to Enqueue the Email for Relaying.
-			if (QueueManager.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data))
+			if (!QueueManager.Instance.Enqueue(messageID, ipGroupID, internalSendId, returnPath, RcptTo.ToArray(), Data))
 				return SmtpServerTransactionAsyncResult.FailedToEnqueue;
 
 			return SmtpServerTransactionAsyncResult.SuccessMessageQueued;
